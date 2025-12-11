@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35027.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "B2CReplacementDesigner.Server", "B2CReplacementDesigner.Server\B2CReplacementDesigner.Server.csproj", "{6636A7AF-BBA6-47E5-B753-2925EE4BDBE1}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "B2CReplacementDesigner.Client", "B2CReplacementDesigner.Client\B2CReplacementDesigner.Client.esproj", "{615B45C6-5842-407D-A11F-66F6FA797879}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6636A7AF-BBA6-47E5-B753-2925EE4BDBE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6636A7AF-BBA6-47E5-B753-2925EE4BDBE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6636A7AF-BBA6-47E5-B753-2925EE4BDBE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6636A7AF-BBA6-47E5-B753-2925EE4BDBE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Release|Any CPU.Build.0 = Release|Any CPU
+		{615B45C6-5842-407D-A11F-66F6FA797879}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {258CA21C-C48E-408F-B9EC-07C604D32A91}
+	EndGlobalSection
+EndGlobal

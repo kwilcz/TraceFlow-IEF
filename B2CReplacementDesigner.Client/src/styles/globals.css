@@ -1,0 +1,246 @@
+@import "@xyflow/react/dist/style.css";
+@import "./nodes-base.css";
+@import "./ui-components-base.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --foreground-rgb: 0, 0, 0;
+    --background-start-rgb: 214, 219, 220;
+    --background-end-rgb: 255, 255, 255;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+} */
+
+.-z-1 {
+    z-index: -1;
+}
+
+.origin-0 {
+    transform-origin: 0%;
+}
+
+input:focus ~ label,
+input:not(:placeholder-shown) ~ label,
+textarea:focus ~ label,
+textarea:not(:placeholder-shown) ~ label,
+select:focus ~ label,
+select:not([value=""]):valid ~ label {
+    /* @apply transform; scale-75; -translate-y-6; */
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    transform: translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate))
+        skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+    --tw-scale-x: 0.75;
+    --tw-scale-y: 0.75;
+    --tw-translate-y: -1.5rem;
+}
+
+input:focus ~ label,
+select:focus ~ label {
+    /* @apply text-black; left-0; */
+    --tw-text-opacity: 1;
+    color: rgba(0, 0, 0, var(--tw-text-opacity));
+    left: 0px;
+}
+
+@layer components {
+    body,
+    html {
+        height: 100%;
+    }
+
+    li {
+        @apply ml-6 list-disc;
+    }
+
+    .btn-primary {
+        @apply flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3;
+    }
+
+    .form-input-base {
+        @apply pt-3 pb-2 block w-full px-0 mt-0 bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 focus:border-black border-gray-200;
+    }
+
+    .label-input-base {
+        @apply absolute duration-300 top-3 -z-1 origin-0 text-gray-500;
+    }
+
+    .collapsible-content {
+        @apply overflow-hidden
+    data-[state=open]:animate-in data-[state=closed]:animate-out
+    data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
+    data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
+    data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2
+    data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
+    }
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 3.9%;
+        --primary: 0 0% 9%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 0 0% 96%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 45.1%;
+        --accent: 0 0% 96%;
+        --accent-foreground: 0 0% 9%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 89.8%;
+        --input: 0 0% 89.8%;
+        --ring: 0 0% 3.9%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.5rem;
+        --nodes-combined-signinup: 0, 0%, 99.5%;
+        --nodes-claims-exchange: 200, 50%, 90%;
+        --nodes-group: 0 0% 95%;
+        --nodes-group-border: 215 25% 85%;
+        --flow-minimap-mask: hsl(var(--background) / 0.82);
+        --flow-minimap-mask-stroke: rgba(15, 23, 42, 0.25);
+        --flow-minimap-node-surface: hsl(var(--card));
+        --flow-minimap-node-outline: hsl(var(--border));
+        --flow-minimap-node-accent: hsl(var(--primary));
+        --flow-minimap-node-detail: hsl(var(--foreground) / 0.4);
+        --flow-minimap-group-stroke: hsl(var(--nodes-group-border));
+        --flow-minimap-group-accent: hsl(var(--nodes-group-border));
+    }
+    .dark {
+        --background: 0 0% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 0 0% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 0 0% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 0 0% 9%;
+        --secondary: 0 0% 15%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 15%;
+        --muted-foreground: 0 0% 63.9%;
+        --accent: 0 0% 15%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 15%;
+        --input: 0 0% 15%;
+        --ring: 0 0% 83.1%;
+        --chart-1: 220 70% 50%;
+        --chart-2: 160 60% 45%;
+        --chart-3: 30 80% 55%;
+        --chart-4: 280 65% 60%;
+        --chart-5: 340 75% 55%;
+        --nodes-combined-signinup: 0, 0%, 8%;
+        --nodes-claims-exchange: 200, 45%, 30%;
+        --nodes-group: 0 0% 15%;
+        --nodes-group-border: 215 25% 35%;
+        --flow-minimap-mask: hsl(var(--background) / 0.6);
+        --flow-minimap-mask-stroke: rgba(255, 255, 255, 0.35);
+        --flow-minimap-node-surface: hsl(var(--card));
+        --flow-minimap-node-outline: hsl(var(--border));
+        --flow-minimap-node-accent: hsl(var(--primary));
+        --flow-minimap-node-detail: hsl(var(--foreground) / 0.6);
+        --flow-minimap-group-stroke: hsl(var(--nodes-group-border));
+        --flow-minimap-group-accent: hsl(var(--nodes-group-border));
+    }
+
+    /* https://reactflow.dev/learn/customization/theming */
+    .react-flow {
+        --xy-minimap-background-color: hsl(var(--background));
+        --xy-minimap-node-background-color: hsl(var(--muted-foreground));
+        --xy-attribution-background-color: hsl(var(--background));
+        --xy-controls-button-background-color: hsl(var(--background));
+        --xy-controls-button-border-color: hsl(var(--border));
+        --xy-controls-button-background-color-hover: hsl(var(--accent));
+
+        .react-flow__attribution {
+            @apply rounded-md backdrop-blur bg-background/30;
+        }
+
+        .react-flow__minimap-svg {
+            @apply rounded-lg backdrop-blur;
+        }
+    }
+
+    .flow-minimap {
+        @apply rounded-xl border bg-background/80 backdrop-blur shadow-xl ring-1 ring-black/5;
+        min-width: 11rem;
+    }
+
+    .flow-minimap svg {
+        width: 12rem !important;
+        height: 9.5rem !important;
+    }
+
+    .flow-minimap__shape {
+        filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.35));
+    }
+
+    .dark .flow-minimap__shape {
+        filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+    }
+
+    .flow-minimap__node text {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        letter-spacing: 0.02em;
+    }
+}
+
+@layer debug {
+    :root {
+        --background: hsl(0 0% 100%);
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* fixes reactflow bug with no border on last child element */
+.react-flow__controls-button:last-child {
+    @apply border-b;
+    border-bottom: 1px solid
+        var(
+            --xy-controls-button-border-color-props,
+            var(--xy-controls-button-border-color, var(--xy-controls-button-border-color-default))
+        );
+}
+
+.react-flow__edge-textbg {
+    @apply fill-background/90 rounded-md p-4;
+}
+
+.react-flow__edge-text {
+    @apply font-mono text-lg text-foreground backdrop-blur m-4 bg-background;
+}
+
+/* Ensure edge labels render above everything */
+.react-flow__edge-label-renderer {
+    z-index: 1000 !important;
+}

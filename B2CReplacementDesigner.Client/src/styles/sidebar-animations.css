@@ -1,0 +1,29 @@
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+.sidebar-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.sidebar-slide-out {
+  animation: slideOut 0.3s ease-out;
+}

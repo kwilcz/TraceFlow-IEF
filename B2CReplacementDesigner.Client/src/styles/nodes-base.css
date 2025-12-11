@@ -1,0 +1,19 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .nodes--shapes--rhombus {
+        @apply transform translate-x-[15%] translate-y-[15%]
+            w-[77%] h-[77%] rotate-45 -z-10 rounded-2xl
+    }
+    
+    .nodes__border {
+        @apply border border-muted-foreground shadow-md
+    }
+    
+    .node-dot-pattern {
+        background-image: radial-gradient(circle at 1px 1px, rgba(203, 213, 225, 0.1) 1px, transparent 0px);
+        background-size: 1.2rem 1.2rem;
+    }
+}
