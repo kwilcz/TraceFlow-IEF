@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import {Link} from "@tanstack/react-router";
 import { HouseIcon } from "lucide-react";
 
 import { useStore } from "@/hooks/use-store";
@@ -21,7 +21,7 @@ export function Sidebar() {
         <SidebarToggle isOpen={sidebar.isOpen} setIsOpen={sidebar.setIsOpen} />
         <div className="sidebar-content">
           <Button variant="link" asChild className={`sidebar-brand ${sidebar.isOpen ? 'open' : 'closed'}`}>
-            <Link href="/" className="sidebar-brand-link">
+            <Link to="/" className="sidebar-brand-link">
               <HouseIcon className="sidebar-brand-icon" />
               <h1 className={`sidebar-brand-text ${sidebar.isOpen ? 'open' : 'closed'}`}>
                 MIP B2C UI

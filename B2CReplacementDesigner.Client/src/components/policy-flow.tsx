@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
-import {useTheme} from 'next-themes';
+import {useTheme} from '@/components/theme-provider';
 import {LayoutTemplateIcon, Search, PanelRightClose, PanelRight} from "lucide-react";
 import {ReactFlow, Background, Controls, ControlButton, Node, Edge} from '@xyflow/react';
 import {GroupNode, ConditionedNode, StartNode, EndNode, CommentNode, CombinedSignInAndSignUpNode, ClaimsExchangeNode, GetClaimsNode, NODE_TYPES} from './nodeTypes';
@@ -35,7 +35,7 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
         useReactFlowState(graph.nodes, graph.edges);
 
     const applyLayout = useLayout();
-    const {theme} = useTheme();
+    const {resolvedTheme} = useTheme();
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
     const searchRef = useRef<PolicySearchRef>(null);
@@ -127,7 +127,7 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
                     nodesConnectable={false}
                     elementsSelectable={true}
                     minZoom={0.25}
-                    colorMode={theme === 'dark' ? 'dark' : theme === 'light' ? 'light' : 'system'}
+                    colorMode={resolvedTheme}
                     onPaneContextMenu={showContextMenu}
                 >
                     <Controls position="top-center" orientation="horizontal">

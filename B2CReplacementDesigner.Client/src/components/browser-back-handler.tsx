@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from 'react';
 import { useSidebarNavigation } from '@/hooks/use-sidebar-navigation';
 
@@ -11,17 +9,12 @@ export function BrowserBackHandler() {
 
     useEffect(() => {
         const handlePopState = (event: PopStateEvent) => {
-            // Check if this is a synthetic history entry from sidebar
             if (event.state?.sidebar) {
-                // Handle sidebar navigation first
                 const shouldPreventNavigation = handleBrowserBack();
                 if (shouldPreventNavigation) {
-                    // Prevent the default page navigation
                     event.preventDefault();
-                    // Push the state back to maintain history consistency
                     window.history.pushState({ sidebar: true }, '', window.location.href);
                 }
-                // If shouldPreventNavigation is false, allow normal page navigation
             }
         };
 
@@ -32,5 +25,5 @@ export function BrowserBackHandler() {
         };
     }, [handleBrowserBack]);
 
-    return null; // This component doesn't render anything
+    return null;
 }
