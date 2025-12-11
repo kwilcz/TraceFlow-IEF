@@ -9,7 +9,7 @@ import {type PolicyData} from "@/lib/policyParser";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import useSessionStore from "@hooks/use-session-store";
 import {Button} from "@components/ui/button";
-import {TrashIcon} from 'lucide-react'
+import { Trash as TrashIcon } from '@phosphor-icons/react'
 
 const TabbedPolicyFlow: React.FC = () => {
     const {data: policyData, setData: setPolicyData} = useSessionStore<PolicyData>('policy-data')();

@@ -1,9 +1,9 @@
-﻿import {LucideIcon} from "lucide-react";
+﻿import type { Icon } from "@phosphor-icons/react";
 
 export interface MenuItem {
     label: string;
     href: string;
-    icon?: LucideIcon;
+    icon?: Icon;
     active: boolean;
     submenus: MenuItem[];
 }

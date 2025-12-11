@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 import PolicySearch, { PolicySearchRef } from './policy-search';
 
 interface FloatingPolicySearchProps {

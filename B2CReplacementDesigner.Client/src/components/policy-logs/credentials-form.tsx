@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ChangeEvent, useEffect, useState } from "react";
-import { AlertCircle, Loader2, RefreshCw, Search } from "lucide-react";
+import { Warning as AlertCircle, SpinnerGap as Loader2, ArrowsClockwise as RefreshCw, MagnifyingGlass as Search } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

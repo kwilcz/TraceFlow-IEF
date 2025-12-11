@@ -2,6 +2,8 @@
 
 This document describes all available trace interpreters and how they map B2C handler events to trace steps.
 
+> **Note:** This is part of the TraceFlow-IEF Log Analyzer feature. For getting started, see [QUICK_START.md](./QUICK_START.md). For overall logging architecture, see [LOGGING_ARCHITECTURE.md](./LOGGING_ARCHITECTURE.md).
+
 ## Table of Contents
 
 1. [Overview](#overview)

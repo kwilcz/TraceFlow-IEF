@@ -21,33 +21,33 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-    ChevronRight,
-    ChevronDown,
-    Activity,
-    Layers,
+    CaretRight,
+    CaretDown,
+    Pulse as Activity,
+    Stack as Layers,
     Database,
     GitBranch,
     Play,
-    Workflow,
-    Zap,
-    Settings2,
-    ExternalLink,
-    Server,
+    FlowArrow as Workflow,
+    Lightning as Zap,
+    GearSix as Settings2,
+    ArrowSquareOut as ExternalLink,
+    Desktop as Server,
     Clock,
-    Search,
-    ChevronLeft,
+    MagnifyingGlass as Search,
+    CaretLeft,
     ArrowRight,
     Eye,
-    CheckCircle2,
+    CheckCircle as CheckCircle2,
     XCircle,
     SkipForward,
-    AlertTriangle,
+    Warning as AlertTriangle,
     Copy,
     Check,
     Hash,
-    FolderTree,
+    TreeView as FolderTree,
     List,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
 import {
     StepPanel,
@@ -754,9 +754,9 @@ const TreeNodeComponent: React.FC<{
                         className="w-4 h-4 flex items-center justify-center flex-shrink-0 hover:bg-accent rounded"
                     >
                         {isExpanded ? (
-                            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            <CaretDown className="w-3.5 h-3.5 text-muted-foreground" />
                         ) : (
-                            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                            <CaretRight className="w-3.5 h-3.5 text-muted-foreground" />
                         )}
                     </button>
                 ) : (
@@ -1266,7 +1266,7 @@ export const TraceTimeline: React.FC = () => {
                             onClick={() => handleSelect({ type: "step", stepIndex: Math.max(0, (selection?.stepIndex ?? 0) - 1) })}
                             disabled={!selection || selection.stepIndex === 0}
                         >
-                            <ChevronLeft className="w-4 h-4" />
+                            <CaretLeft className="w-4 h-4" />
                         </Button>
                         <span className="text-sm text-muted-foreground min-w-[60px] text-center">
                             {(selection?.stepIndex ?? 0) + 1} / {traceSteps.length}
@@ -1277,7 +1277,7 @@ export const TraceTimeline: React.FC = () => {
                             onClick={() => handleSelect({ type: "step", stepIndex: Math.min(traceSteps.length - 1, (selection?.stepIndex ?? 0) + 1) })}
                             disabled={!selection || selection.stepIndex === traceSteps.length - 1}
                         >
-                            <ChevronRight className="w-4 h-4" />
+                            <CaretRight className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
@@ -1299,7 +1299,7 @@ export const TraceTimeline: React.FC = () => {
                                     onClick={() => setSidebarCollapsed(false)}
                                     className="mb-2"
                                 >
-                                    <ChevronRight className="w-4 h-4" />
+                                    <CaretRight className="w-4 h-4" />
                                 </Button>
                                 <ScrollArea className="flex-1">
                                     <div className="space-y-1 px-1">
@@ -1336,7 +1336,7 @@ export const TraceTimeline: React.FC = () => {
                                         onClick={() => setSidebarCollapsed(true)}
                                         className="h-6 w-6 p-0"
                                     >
-                                        <ChevronLeft className="w-4 h-4" />
+                                        <CaretLeft className="w-4 h-4" />
                                     </Button>
                                 </div>
                                 <TreeSidebar

@@ -2,7 +2,7 @@
 
 import React, {useState} from "react";
 import {Link} from "@tanstack/react-router";
-import {ChevronDown, Dot} from "lucide-react";
+import { CaretDown as ChevronDown, Circle as Dot } from "@phosphor-icons/react";
 import {Button} from "@/components/ui/button";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@/components/ui/collapsible";
 import {Tooltip, TooltipTrigger, TooltipContent, TooltipProvider} from "@/components/ui/tooltip";

@@ -1,18 +1,76 @@
-# Log Analyzer Quick Start Guide
+# TraceFlow-IEF Quick Start Guide
 
-A practical guide for developers working with the B2C Log Analyzer feature.
+A practical guide for getting started with TraceFlow-IEF and the Log Analyzer feature.
 
 ## Table of Contents
 
-1. [Getting Started](#getting-started)
-2. [Common Tasks](#common-tasks)
-3. [Debugging Tips](#debugging-tips)
-4. [Code Examples](#code-examples)
-5. [Testing](#testing)
+1. [Installation](#installation)
+2. [Running the Application](#running-the-application)
+3. [Log Analyzer Setup](#log-analyzer-setup)
+4. [Common Tasks](#common-tasks)
+5. [Debugging Tips](#debugging-tips)
+6. [Code Examples](#code-examples)
+7. [Testing](#testing)
 
 ---
 
-## Getting Started
+## Installation
+
+### System Requirements
+
+- **Node.js:** 18.x or later
+- **npm:** 9.x or later
+- **Browser:** Chrome 90+, Firefox 90+, Safari 15+, or Edge 90+
+
+### Clone and Install
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/TraceFlow-IEF.git
+cd TraceFlow-IEF
+
+# Navigate to client folder
+cd B2CReplacementDesigner.Client
+
+# Install dependencies
+npm install
+```
+
+---
+
+## Running the Application
+
+### Development Mode
+
+```bash
+# Start the development server with hot reload
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`.
+
+### Production Build
+
+```bash
+# Create optimized production build
+npm run build
+
+# Preview the production build locally
+npm run preview
+```
+
+### Other Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run lint` | Run ESLint on the codebase |
+| `npm run test` | Run unit tests with Vitest |
+| `npm run storybook` | Launch Storybook component explorer |
+| `npm run build-storybook` | Build static Storybook site |
+
+---
+
+## Log Analyzer Setup
 
 ### Prerequisites
 

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useMemo, useState, useCallback } from
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 

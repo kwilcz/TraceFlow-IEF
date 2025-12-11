@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, Layers, Settings2, CheckCircle2, Workflow } from "lucide-react";
+import { Eye, Stack as Layers, GearSix as Settings2, CheckCircle as CheckCircle2, FlowArrow as Workflow } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DetailsPanel } from "../details-panel";

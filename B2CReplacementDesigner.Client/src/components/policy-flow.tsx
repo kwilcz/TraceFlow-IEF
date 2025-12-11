@@ -2,7 +2,7 @@
 
 import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
 import {useTheme} from '@/components/theme-provider';
-import {LayoutTemplateIcon, Search, PanelRightClose, PanelRight} from "lucide-react";
+import { Layout, MagnifyingGlass, SidebarSimple } from "@phosphor-icons/react";
 import {ReactFlow, Background, Controls, ControlButton, Node, Edge} from '@xyflow/react';
 import {GroupNode, ConditionedNode, StartNode, EndNode, CommentNode, CombinedSignInAndSignUpNode, ClaimsExchangeNode, GetClaimsNode, NODE_TYPES} from './nodeTypes';
 import ConditionEdge from './edgeTypes/condition-edge';
@@ -132,10 +132,10 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
                 >
                     <Controls position="top-center" orientation="horizontal">
                         <ControlButton title="Search" onClick={toggleSearch}>
-                            <Search strokeWidth="1" absoluteStrokeWidth/>
+                            <MagnifyingGlass />
                         </ControlButton>
                         <ControlButton title="Reset Layout" onClick={applyLayout}>
-                            <LayoutTemplateIcon strokeWidth="1" absoluteStrokeWidth/>
+                            <Layout />
                         </ControlButton>
                         <ControlButton 
                             title={isSidebarOpen ? "Close Details" : "Open Details"} 
@@ -143,9 +143,9 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
                             className={isSidebarOpen ? "!bg-primary/20" : ""}
                         >
                             {isSidebarOpen ? (
-                                <PanelRightClose strokeWidth="1" absoluteStrokeWidth/>
+                                <SidebarSimple />
                             ) : (
-                                <PanelRight strokeWidth="1" absoluteStrokeWidth/>
+                                <SidebarSimple />
                             )}
                         </ControlButton>
                     </Controls>

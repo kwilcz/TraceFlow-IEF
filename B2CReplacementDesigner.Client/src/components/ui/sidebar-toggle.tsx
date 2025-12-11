@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react";
-import { ChevronLeftIcon } from "lucide-react";
+import { CaretLeft } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 
@@ -19,7 +19,7 @@ export function SidebarToggle({ isOpen, setIsOpen }: SidebarToggleProps) {
                 variant="outline"
                 size="icon"
             >
-                <ChevronLeftIcon className={`sidebar-toggle-icon ${isOpen === false ? 'closed' : 'open'}`} />
+                <CaretLeft className={`sidebar-toggle-icon ${isOpen === false ? 'closed' : 'open'}`} />
             </Button>
         </div>
     );

@@ -1,5 +1,5 @@
 import React from "react";
-import { BarChart3 } from "lucide-react";
+import { ChartBar as BarChart3 } from "@phosphor-icons/react";
 import { ClickableReference } from "../../node-details";
 import { useSidebarNavigation } from "@/hooks/use-sidebar-navigation";
 import { usePolicyStore } from "@/stores/policy-store";

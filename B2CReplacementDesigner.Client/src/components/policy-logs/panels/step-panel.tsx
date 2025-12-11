@@ -7,16 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Clock,
     Database,
-    ExternalLink,
+    ArrowSquareOut as ExternalLink,
     Eye,
-    Layers,
+    Stack as Layers,
     Play,
-    Server,
-    Settings2,
-    Workflow,
+    Desktop as Server,
+    GearSix as Settings2,
+    FlowArrow as Workflow,
     XCircle,
-    Zap,
-} from "lucide-react";
+    Lightning as Zap,
+} from "@phosphor-icons/react";
 import { DetailsPanel } from "../details-panel";
 import { TraceStep, computeClaimsDiff } from "@/types/trace";
 import { cn } from "@/lib/utils";

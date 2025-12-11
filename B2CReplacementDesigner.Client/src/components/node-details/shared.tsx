@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react";
 import { useSidebarNavigation } from "@/hooks/use-sidebar-navigation";
 import { usePolicyStore } from "@/stores/policy-store";
 import { cn } from "@/lib/utils";
@@ -111,7 +111,7 @@ const ClickableReference: React.FC<ClickableReferenceProps> = ({
                 {label && <span className="text-foreground">{label}: </span>}
                 {value}
             </span>
-            <ChevronRight className={`w-3 h-3 transition-colors flex-shrink-0 ${chevronColorClasses[color]}`} />
+            <CaretRight className={`w-3 h-3 transition-colors flex-shrink-0 ${chevronColorClasses[color]}`} />
         </button>
     );
 };

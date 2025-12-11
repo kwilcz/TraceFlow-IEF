@@ -5,7 +5,7 @@ import { usePolicyStore } from "@/stores/policy-store";
 import { Claim, DisplayControl } from "./types";
 import { getEntity } from "@/types/trust-framework-entities";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Plus, Minus, RefreshCw } from "lucide-react";
+import { ArrowRight, Plus, Minus, ArrowsClockwise as RefreshCw } from "@phosphor-icons/react";
 
 export const ClaimItem: React.FC<{
     claim: Claim;

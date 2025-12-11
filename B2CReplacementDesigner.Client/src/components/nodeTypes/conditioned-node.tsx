@@ -1,6 +1,6 @@
 ﻿import React from "react";
 import { Node, NodeProps, Position } from "@xyflow/react";
-import { Split } from "lucide-react";
+import { GitFork as Split } from "@phosphor-icons/react";
 import PolicyNode from "./components/policy-node";
 import type { ConditionedNodeData } from "@/types/nodes";
 import { ClaimItem } from "./node-claim-components";

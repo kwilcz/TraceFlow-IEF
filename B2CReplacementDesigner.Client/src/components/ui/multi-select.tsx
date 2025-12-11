@@ -1,12 +1,12 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import {
-	CheckIcon,
+	Check as CheckIcon,
 	XCircle,
-	ChevronDown,
-	XIcon,
-	WandSparkles,
-} from "lucide-react";
+	CaretDown as ChevronDown,
+	X as XIcon,
+	MagicWand as WandSparkles,
+} from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";

@@ -4,7 +4,8 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { TraceStep, DisplayControlAction } from "@/types/trace";
 import { DetailsPanel } from "../details-panel";
-import { Activity, Check, ArrowRight, FileCode, LucideIcon, Layers } from "lucide-react";
+import { Pulse as Activity, Check, ArrowRight, FileCode, Stack as Layers } from "@phosphor-icons/react";
+import type { Icon as IconType } from "@phosphor-icons/react";
 
 interface DisplayControlPanelProps {
     step: TraceStep;
@@ -15,7 +16,7 @@ interface DisplayControlPanelProps {
 /**
  * Gets the icon for the action type.
  */
-function getActionIcon(action: string): LucideIcon {
+function getActionIcon(action: string): IconType {
     const normalizedAction = action.toLowerCase();
     if (normalizedAction.includes("verify")) return Check;
     if (normalizedAction.includes("send")) return ArrowRight;

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Upload, Users, Workflow, Star, Bug } from 'lucide-react';
+import { ArrowRight, FileText, Upload, Users, FlowArrow as Workflow, Star, Bug } from '@phosphor-icons/react';
 
 export const Route = createFileRoute('/')({
   component: HomePage,

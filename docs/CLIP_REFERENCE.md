@@ -2,6 +2,8 @@
 
 This document describes the clip types emitted by Azure AD B2C's Journey Recorder and how they are parsed by the Log Analyzer.
 
+> **Note:** This is part of the TraceFlow-IEF Log Analyzer feature. For getting started, see [QUICK_START.md](./QUICK_START.md). For trace interpreters that consume these clips, see [TRACE_INTERPRETERS.md](./TRACE_INTERPRETERS.md).
+
 ## Table of Contents
 
 1. [Overview](#overview)

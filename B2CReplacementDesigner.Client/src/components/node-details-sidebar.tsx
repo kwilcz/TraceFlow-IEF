@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CaretLeft, CaretRight, X } from "@phosphor-icons/react";
 import { NodeDetailsContent } from "@/components/node-details";
 import { useSidebarNavigation } from "@/hooks/use-sidebar-navigation";
 
@@ -33,7 +33,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({ isOpen, onClose
                     <div className="px-4 pb-3 flex items-center gap-1 overflow-x-auto">
                         {history.map((item, index) => (
                             <React.Fragment key={index}>
-                                {index > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
+                                {index > 0 && <CaretRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
                                 <button
                                     onClick={() => navigateToHistoryItem(index)}
                                     className={`text-xs px-2 py-1 rounded transition-colors whitespace-nowrap ${
@@ -58,7 +58,7 @@ const NodeDetailsSidebar: React.FC<NodeDetailsSidebarProps> = ({ isOpen, onClose
                         onClick={goBack}
                         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        <ChevronLeft className="w-4 h-4" />
+                        <CaretLeft className="w-4 h-4" />
                         Back
                     </button>
                 </div>
