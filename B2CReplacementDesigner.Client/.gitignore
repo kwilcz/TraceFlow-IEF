@@ -9,9 +9,12 @@
 # testing
 /coverage
 
-# next.js
+# next.js (legacy)
 /.next/
 /out/
+
+# vite
+/dist
 
 # production
 /build
@@ -35,4 +38,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# storybook
 *storybook.log
+/storybook-static
+
+# obj folder (VS/MSBuild artifacts)
+/obj
+
+# TanStack Router auto-generated file
+/src/routeTree.gen.ts

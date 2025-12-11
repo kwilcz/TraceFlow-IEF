@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, {useState} from "react";
-import Link from "next/link";
+import {Link} from "@tanstack/react-router";
 import {ChevronDown, Dot} from "lucide-react";
 import {Button} from "@/components/ui/button";
 import {Collapsible, CollapsibleContent, CollapsibleTrigger} from "@/components/ui/collapsible";
@@ -67,7 +67,7 @@ function OpenSidebarMenu({Icon, label, active, submenus, isCollapsed, setIsColla
             <CollapsibleContent className="menu-collapse-content">
                 {submenus.map(({href, label, active}, index) => (
                     <Button key={index} variant={active ? "secondary" : "ghost"} className="submenu-item" asChild>
-                        <Link href={href}>
+                        <Link to={href}>
                             <span className="submenu-icon"><Dot size={18}/></span>
                             <p className="menu-item-label open">{label}</p>
                         </Link>
@@ -109,7 +109,7 @@ function ClosedSidebarMenu({Icon, label, active, submenus}: ClosedSidebarMenuPro
                 <DropdownMenuSeparator/>
                 {submenus.map(({href, label}, index) => (
                     <DropdownMenuItem key={index} asChild>
-                        <Link className="cursor-pointer" href={href}>
+                        <Link className="cursor-pointer" to={href}>
                             <p className="dropdown-item-label">{label}</p>
                         </Link>
                     </DropdownMenuItem>

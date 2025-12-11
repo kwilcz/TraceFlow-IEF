@@ -1,5 +1,3 @@
-"use client";
-
 import React, { createContext, useState, useCallback, ReactNode, useRef } from 'react';
 import type { AnyTrustFrameworkEntity, EntityType } from '@/types/trust-framework-entities';
 import type { Node } from '@xyflow/react';
