@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import {Handle, Node, NodeProps, Position} from "@xyflow/react";
-import {CirclePlus} from 'lucide-react'
+import { PlusCircle as CirclePlus } from '@phosphor-icons/react'
 import { useNodeHighlight, getNodeHighlightClasses } from '@hooks/use-node-highlight';
 
 export type StartNode = Node<

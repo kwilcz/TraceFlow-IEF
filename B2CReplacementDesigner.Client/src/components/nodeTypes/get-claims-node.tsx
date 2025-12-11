@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Node, NodeProps, Position } from "@xyflow/react";
-import { Link2, Shield, ArrowRightLeft, ListChecks, KeyRound } from "lucide-react";
+import { Link as LinkIcon, ShieldCheck as Shield, ArrowsLeftRight as ArrowRightLeft, ListChecks, Key as KeyRound } from "@phosphor-icons/react";
 import { PolicyNode } from "./components/policy-node";
 import {
     OrchestrationStepWithTechnicalProfile,
@@ -63,7 +63,7 @@ export default function GetClaimsNode(props: NodeProps<GetClaimsNode>) {
 
             <PolicyNode.Header className="gap-3">
                 <PolicyNode.Icon className="bg-sky-50 text-sky-700 border border-sky-200">
-                    <Link2 className="w-5 h-5" />
+                    <LinkIcon className="w-5 h-5" />
                 </PolicyNode.Icon>
                 <div className="min-w-0 space-y-1">
                     <PolicyNode.Title className="text-slate-900">{nodeTitle}</PolicyNode.Title>

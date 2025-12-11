@@ -1,5 +1,5 @@
 ﻿import { MenuGroup } from "@/types/menu";
-import { WorkflowIcon, SwatchBookIcon, SettingsIcon, FileSearchIcon } from "lucide-react";
+import { FlowArrow as WorkflowIcon, Palette as SwatchBookIcon, Gear as SettingsIcon, FileMagnifyingGlass as FileSearchIcon } from "@phosphor-icons/react";
 
 export function getMenuList(pathname: string): MenuGroup[] {
     return [

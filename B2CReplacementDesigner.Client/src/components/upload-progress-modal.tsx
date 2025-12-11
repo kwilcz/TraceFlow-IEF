@@ -1,6 +1,6 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Upload, AlertCircle, Loader2, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Upload, Warning as AlertCircle, SpinnerGap as Loader2, X, Warning as AlertTriangle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import type InternalError from '@/types/internal-error';
 

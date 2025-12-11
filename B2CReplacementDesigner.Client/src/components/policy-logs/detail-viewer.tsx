@@ -8,7 +8,7 @@ import { useLogAnalyzerContext } from "@/contexts/log-analyzer-context";
 import { createDetailedDateFormatter } from "@/lib/formatters/date-formatters";
 import { formatJsonPayload } from "@/lib/formatters/json-formatters";
 import type { LogRecord } from "@/types/logs";
-import { ChevronLeft, ChevronRight, Copy, Database, FileText } from "lucide-react";
+import { CaretLeft, CaretRight, Copy, Database, FileText } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { Highlight } from "prism-react-renderer";
@@ -87,7 +87,7 @@ const FlowLogNavigator = ({ flowLogs, selectedLog, onSelectLog, formatter }: Flo
                     disabled={!hasPrev}
                     className="gap-1"
                 >
-                    <ChevronLeft className="h-4 w-4" />
+                    <CaretLeft className="h-4 w-4" />
                     Previous
                 </Button>
                 <span className="text-sm text-muted-foreground">
@@ -101,7 +101,7 @@ const FlowLogNavigator = ({ flowLogs, selectedLog, onSelectLog, formatter }: Flo
                     className="gap-1"
                 >
                     Next
-                    <ChevronRight className="h-4 w-4" />
+                    <CaretRight className="h-4 w-4" />
                 </Button>
             </div>
             <ScrollArea className="w-full">

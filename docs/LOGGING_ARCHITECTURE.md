@@ -2,6 +2,8 @@
 
 This document provides comprehensive documentation for the B2C Policy Log Analyzer feature, which allows developers to query, visualize, and debug Azure AD B2C Journey Recorder logs from Application Insights.
 
+> **Note:** This is part of the TraceFlow-IEF application. For installation and getting started, see [QUICK_START.md](./QUICK_START.md). For overall architecture, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Table of Contents
 
 1. [Overview](#overview)

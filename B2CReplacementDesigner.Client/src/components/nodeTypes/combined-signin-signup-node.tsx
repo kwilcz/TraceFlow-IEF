@@ -1,6 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { Node, NodeProps, Position } from "@xyflow/react";
-import { UserIcon, Workflow, ArrowRight, LogIn, ShieldCheck } from "lucide-react";
+import { User as UserIcon, FlowArrow as Workflow, ArrowRight, SignIn as LogIn, ShieldCheck } from "@phosphor-icons/react";
 import { PolicyNode } from "./components/policy-node";
 import { OrchestrationStepWithTechnicalProfile } from "@/types/technical-profile";
 import { ClaimsList, DisplayClaimsList, TransformationsList } from "./node-claim-components";

@@ -19,18 +19,18 @@ import {
 import {
     Database,
     Clock,
-    Layers,
-    ChevronLeft,
-    ChevronRight,
+    Stack as Layers,
+    CaretLeft,
+    CaretRight,
     Copy,
     Check,
-    AlertTriangle,
-    Workflow,
-    Zap,
-    Settings2,
+    Warning as AlertTriangle,
+    FlowArrow as Workflow,
+    Lightning as Zap,
+    GearSix as Settings2,
     Info,
     ArrowRight,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 /**
@@ -138,7 +138,7 @@ export const StatebagInspector: React.FC = () => {
                             onClick={previousStep}
                             disabled={activeStepIndex === 0}
                         >
-                            <ChevronLeft className="w-4 h-4" />
+                            <CaretLeft className="w-4 h-4" />
                         </Button>
                         <span className="text-sm text-slate-400 min-w-[60px] text-center">
                             {activeStepIndex! + 1} / {traceSteps.length}
@@ -149,7 +149,7 @@ export const StatebagInspector: React.FC = () => {
                             onClick={nextStep}
                             disabled={activeStepIndex === traceSteps.length - 1}
                         >
-                            <ChevronRight className="w-4 h-4" />
+                            <CaretRight className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>

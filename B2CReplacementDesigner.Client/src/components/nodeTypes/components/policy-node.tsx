@@ -3,7 +3,7 @@ import { Handle, Node, NodeProps, Position } from "@xyflow/react";
 import { useNodeHighlight, getNodeHighlightClasses } from "@hooks/use-node-highlight";
 import { useTraceHighlight, getTraceHighlightClasses } from "@hooks/use-trace-highlight";
 import { cn } from "@lib/utils"; // assuming existing utility
-import { CheckCircle2, XCircle, SkipForward, Clock } from "lucide-react";
+import { CheckCircle as CheckCircle2, XCircle, SkipForward, Clock } from "@phosphor-icons/react";
 
 type BaseNode = Node<Record<string, unknown>, string>;
 

@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import {Node, NodeProps, NodeChange} from "@xyflow/react";
-import {XIcon} from 'lucide-react';
+import { X as XIcon } from '@phosphor-icons/react';
 import useReactFlowStore from "@hooks/use-react-flow-store";
 import { useNodeHighlight, getNodeHighlightClasses } from '@hooks/use-node-highlight';
 

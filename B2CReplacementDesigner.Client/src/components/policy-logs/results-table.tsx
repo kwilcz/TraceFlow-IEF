@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, type ChangeEvent, useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, Filter, Loader2, Network, XCircle } from "lucide-react";
+import { Warning as AlertCircle, CheckCircle as CheckCircle2, Clock, Funnel as Filter, SpinnerGap as Loader2, Graph as Network, XCircle } from "@phosphor-icons/react";
 import { useLogAnalyzerContext } from "@/contexts/log-analyzer-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

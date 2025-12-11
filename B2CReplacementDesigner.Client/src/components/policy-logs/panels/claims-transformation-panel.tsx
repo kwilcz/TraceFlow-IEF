@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Zap, ArrowRight, Settings2, CheckCircle2 } from "lucide-react";
+import { Lightning as Zap, ArrowRight, GearSix as Settings2, CheckCircle as CheckCircle2 } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DetailsPanel } from "../details-panel";

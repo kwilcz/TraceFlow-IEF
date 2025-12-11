@@ -1,155 +1,272 @@
-# B2C Replacement Designer
+# TraceFlow-IEF
 
-A web application for designing and managing Azure B2C trust framework policies.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.x-61dafb.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646cff.svg)](https://vite.dev/)
 
-## Project Structure
+**TraceFlow-IEF** is a powerful visualization and analysis tool for Azure AD B2C Identity Experience Framework (IEF) custom policies. Transform complex XML policies into interactive flow diagrams and debug authentication flows with ease.
 
-- **B2CReplacementDesigner.Server** - .NET 8 backend API
-- **B2CReplacementDesigner.Client** - Next.js frontend application
+## Features
+
+- **Policy Visualization** — Convert B2C IEF custom policies into interactive, zoomable flow diagrams
+- **Log Analysis** — Connect to Application Insights and trace user journey executions step-by-step
+- **Entity Extraction** — Automatically parse and display Claims, Technical Profiles, User Journeys, and more
+- **Dark/Light Theme** — Modern UI with system theme support
+- **Offline First** — All policy processing happens client-side; no data leaves your browser
+
+## Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | React 18 + TypeScript |
+| **Build Tool** | Vite 6 |
+| **Router** | TanStack Router |
+| **State** | Zustand |
+| **UI Components** | Radix UI Primitives |
+| **Styling** | Tailwind CSS |
+| **Flow Visualization** | React Flow (@xyflow/react) |
+| **Icons** | Phosphor Icons |
+| **Testing** | Vitest + React Testing Library |
+| **Component Dev** | Storybook |
 
 ## Getting Started
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- [Node.js 20+](https://nodejs.org/en/)
-- [npm](https://www.npmjs.com/get-npm) or [yarn](https://yarnpkg.com/)
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Node.js** | 20.x or higher | [Download](https://nodejs.org/) |
+| **npm** | 10.x or higher | Included with Node.js |
+| **Git** | Latest | [Download](https://git-scm.com/) |
 
-### Running the Backend
+### Installation
 
-Navigate to the backend project:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/traceflow-ief.git
+   cd traceflow-ief
+   ```
 
-```bash
-cd B2CReplacementDesigner.Server
-```
+2. **Install dependencies**
+   ```bash
+   cd B2CReplacementDesigner.Client
+   npm install
+   ```
 
-Run the project:
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-```bash
-dotnet run
-```
+4. **Open the application**
+   
+   Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
-The API will be available at:
-
-- **HTTPS:** `https://localhost:7285`
-- **Swagger UI:** [`https://localhost:7285/swagger`](https://localhost:7285/swagger)
-
-### Running the Frontend
-
-Navigate to the frontend project:
-
-```bash
-cd B2CReplacementDesigner.Client
-```
-
-Install dependencies:
+### Build for Production
 
 ```bash
-npm install
+npm run build
 ```
 
-Start the development server:
+The production build will be output to the `dist/` directory. This is a static SPA that can be deployed to any static hosting service.
 
-```bash
-npm run dev
+## Project Structure
+
+```
+B2CReplacementDesigner.Client/
+├── index.html              # Vite entry point
+├── vite.config.ts          # Vite configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── tsconfig.json           # TypeScript configuration
+├── public/                 # Static assets
+│   └── favicon.ico
+├── src/
+│   ├── main.tsx            # React entry point
+│   ├── routes/             # TanStack Router file-based routes
+│   │   ├── __root.tsx      # Root layout with providers
+│   │   ├── index.tsx       # Home page
+│   │   ├── b2c/
+│   │   │   ├── policy-template.tsx
+│   │   │   ├── analyze-logs.tsx
+│   │   │   └── claims.tsx
+│   │   ├── entra.tsx
+│   │   └── settings.tsx
+│   ├── components/         # React components
+│   │   ├── ui/             # Radix UI primitives
+│   │   ├── layout/         # Layout components
+│   │   ├── menu/           # Navigation menu
+│   │   ├── nodeTypes/      # React Flow node types
+│   │   └── policy-logs/    # Log analyzer components
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utility libraries
+│   │   ├── policyParser/   # XML policy parsing
+│   │   └── trace/          # Log trace processing
+│   ├── stores/             # Zustand stores
+│   ├── types/              # TypeScript type definitions
+│   └── styles/             # CSS stylesheets
+└── docs/                   # Documentation
 ```
 
-The application will be available at:
+## Available Scripts
 
-- `http://localhost:3000`
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server at localhost:3000 |
+| `npm run build` | TypeScript check + production build |
+| `npm run preview` | Preview production build locally |
+| `npm run test` | Run Vitest tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run storybook` | Start Storybook at localhost:6006 |
+| `npm run build-storybook` | Build Storybook for deployment |
+| `npm run lint` | Run ESLint |
 
-## Starting the Application
+## Configuration
 
-1. Start the backend API.
-2. Start the frontend development server.
-3. (Optional) Start Storybook for component development.
+### Environment Variables
+
+Create a `.env.local` file in the `B2CReplacementDesigner.Client` directory:
+
+```env
+# API Configuration (optional - defaults shown)
+VITE_API_BASE_URL=https://localhost:7285/api
+
+# Feature Flags (optional)
+VITE_ENABLE_DEVTOOLS=true
+```
+
+> **Note:** The application processes policies entirely client-side. The backend API is optional and only used for specific features.
+
+## Usage
+
+### Policy Visualization
+
+1. Navigate to **B2C → Policy Template**
+2. Upload your B2C custom policy XML files (base, extension, and relying party)
+3. The tool will:
+   - Parse the XML and resolve inheritance
+   - Extract entities (Claims, Technical Profiles, User Journeys)
+   - Generate an interactive flow diagram
+4. Use mouse wheel to zoom, drag to pan, click nodes for details
+
+### Log Analysis
+
+1. Navigate to **B2C → Analyze Logs**
+2. Enter your Application Insights credentials:
+   - **Application ID**: Found in Azure Portal → Application Insights → API Access
+   - **API Key**: Create one with read permissions
+3. Set the timespan (e.g., `PT24H` for last 24 hours)
+4. Click **Fetch Logs**
+5. Select a user flow to see the step-by-step trace
+
+### Configuring B2C for Journey Recording
+
+Add this to your B2C policy's `TrustFrameworkExtensions.xml`:
+
+```xml
+<RelyingParty>
+  <UserJourneyBehaviors>
+    <JourneyInsights 
+      TelemetryEngine="ApplicationInsights" 
+      InstrumentationKey="YOUR_INSTRUMENTATION_KEY" 
+      DeveloperMode="true" 
+      ClientEnabled="true" 
+      ServerEnabled="true" 
+      TelemetryVersion="1.0.0" />
+  </UserJourneyBehaviors>
+</RelyingParty>
+```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Quick Start Guide](docs/QUICK_START.md) | Hands-on guide for the Log Analyzer |
+| [Logging Architecture](docs/LOGGING_ARCHITECTURE.md) | How log parsing and trace stitching works |
+| [Trace Interpreters](docs/TRACE_INTERPRETERS.md) | Guide to adding new log event interpreters |
+| [Migration Plan](docs/MIGRATION_PLAN.md) | Technical migration documentation |
 
 ## Development
 
-### Frontend Development with Storybook
-
-Storybook is used for developing and testing UI components in isolation.
-
-Start Storybook:
+### Component Development with Storybook
 
 ```bash
 npm run storybook
 ```
 
-Storybook will be available at:
+Storybook runs at [http://localhost:6006](http://localhost:6006) and provides an isolated environment for developing and testing UI components.
 
-- `http://localhost:6006`
-
-### Creating New Stories
-
-Add story files next to your components with `.stories.tsx` extension.
-
-**Basic story template:**
-
-```typescript
-import type { Meta, StoryObj } from "@storybook/react";
-import { YourComponent } from "./YourComponent";
-
-const meta: Meta<typeof YourComponent> = {
-    component: YourComponent,
-};
-
-export default meta;
-type Story = StoryObj<typeof YourComponent>;
-
-export const Primary: Story = {
-    args: {
-        // component props
-    },
-};
-```
-
-Build Storybook for deployment:
+### Running Tests
 
 ```bash
-npm run build-storybook
+# Run all tests
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# With coverage
+npm run test:coverage
 ```
 
-## Environment Variables
+### Code Style
 
-### Backend (.NET)
+The project uses:
+- **ESLint** for linting
+- **Prettier** for formatting (via ESLint integration)
+- **TypeScript** strict mode
 
-- `ASPNETCORE_ENVIRONMENT`: `Development` or `Production`
-- `ALLOWED_ORIGINS`: Comma-separated list of allowed CORS origins
+Run linting:
+```bash
+npm run lint
+```
 
-### Frontend (Next.js)
+## Deployment
 
-- `NEXT_PUBLIC_API_BASE_URL`: Backend API URL. Defaulted to `http://localhost:7285`
+### Static Hosting (Recommended)
 
+TraceFlow-IEF is a pure SPA that can be deployed to any static hosting service:
 
-## Available Scripts
+| Platform | Configuration |
+|----------|--------------|
+| **Azure Static Web Apps** | Use `staticwebapp.config.json` for SPA routing |
+| **Netlify** | Add `_redirects` file: `/* /index.html 200` |
+| **Vercel** | Automatic SPA detection |
+| **GitHub Pages** | Use 404.html redirect |
+| **AWS S3 + CloudFront** | Configure error document to index.html |
 
-### Backend
+### Azure Static Web Apps
 
-- `dotnet run` - Run the application.
-- `dotnet build` - Build the application.
-- `dotnet test` - Run tests.
+Create `staticwebapp.config.json` in the build output:
 
-### Frontend
+```json
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*", "/*.ico", "/*.svg"]
+  }
+}
+```
 
-- `npm run dev` - Start development server.
-- `npm run build` - Build for production.
-- `npm run start` - Start production server.
-- `npm run lint` - Run ESLint.
-- `npm run storybook` - Start Storybook.
-- `npm run build-storybook` - Build Storybook.
+## Contributing
 
-## CI/CD
+Contributions are welcome! Please read our contributing guidelines before submitting a PR.
 
-The project uses GitHub Actions for continuous integration and deployment:
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-- Automated builds on push to the `main` branch.
-- Deployment to Azure Web Apps.
-- Environment-specific configurations.
+## License
 
-## Additional Resources
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Azure B2C Documentation](https://learn.microsoft.com/en-us/azure/active-directory-b2c/)
-- [Storybook Documentation](https://storybook.js.org/docs)
-- [ReactFlow Documentation](https://reactflow.dev/docs)
+## Acknowledgments
+
+- [Azure AD B2C Documentation](https://learn.microsoft.com/en-us/azure/active-directory-b2c/)
+- [React Flow](https://reactflow.dev/) for the flow visualization library
+- [Radix UI](https://www.radix-ui.com/) for accessible UI primitives
+- [TanStack](https://tanstack.com/) for the router
+- [Phosphor Icons](https://phosphoricons.com/) for the icon set

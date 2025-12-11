@@ -1,7 +1,7 @@
 ﻿import React, {useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {toast} from 'sonner';
-import {FolderUpIcon} from 'lucide-react'
+import { FolderOpen as FolderUpIcon } from '@phosphor-icons/react'
 import {useUploadProgress} from '@/hooks/use-upload-progress';
 import UploadProgressModal from '@/components/upload-progress-modal';
 import type { PolicyData } from '@/lib/policyParser';

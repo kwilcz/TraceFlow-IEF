@@ -3,7 +3,7 @@ import React, {useEffect, useMemo} from "react";
 import {Node, NodeProps, Position, useViewport, useNodes, useUpdateNodeInternals} from "@xyflow/react";
 import useReactFlowStore from "@hooks/use-react-flow-store";
 import {useNodeHighlight, getNodeHighlightClasses} from "@hooks/use-node-highlight";
-import {ChevronDown, ChevronUp, ExpandIcon} from "lucide-react";
+import { CaretDown, CaretUp, ArrowsOut as ExpandIcon } from "@phosphor-icons/react";
 import PolicyNode from "./components/policy-node";
 import {cn} from "@lib/utils";
 import {GROUP_NODE_COLLAPSED_HEIGHT, GROUP_NODE_HEADER_HEIGHT} from "@/constants/node-layout";
@@ -133,9 +133,9 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
                             title={props.data.isCollapsed ? "Expand group" : "Collapse group"}
                         >
                             {props.data.isCollapsed ? (
-                                <ChevronDown className="w-4 h-4" />
+                                <CaretDown className="w-4 h-4" />
                             ) : (
-                                <ChevronUp className="w-4 h-4" />
+                                <CaretUp className="w-4 h-4" />
                             )}
                         </PolicyNode.ActionButton>
                     </PolicyNode.Header>

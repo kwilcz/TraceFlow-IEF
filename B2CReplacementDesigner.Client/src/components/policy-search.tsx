@@ -1,5 +1,5 @@
 import React, { useRef, useImperativeHandle, forwardRef } from 'react';
-import { Search, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { MagnifyingGlass as Search, X, CaretUp as ChevronUp, CaretDown as ChevronDown } from '@phosphor-icons/react';
 import { usePolicySearch } from '@hooks/use-policy-search';
 import { cn } from '@/lib/utils';
 

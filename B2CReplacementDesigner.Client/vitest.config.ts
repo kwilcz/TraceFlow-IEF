@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.ts'],
     pool: 'vmThreads',
+    maxConcurrency: 5,
+    fileParallelism: false,
   },
   resolve: {
     alias: {

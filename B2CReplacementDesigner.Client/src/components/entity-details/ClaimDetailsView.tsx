@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ClaimTypeEntity } from '@/types/trust-framework-entities';
 import { Badge } from '@/components/ui/badge';
-import { Info } from 'lucide-react';
+import { Info } from '@phosphor-icons/react';
 
 interface ClaimDetailsViewProps {
     claim: ClaimTypeEntity;

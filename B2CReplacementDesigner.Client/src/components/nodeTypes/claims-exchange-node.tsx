@@ -2,7 +2,7 @@
 import { Node, NodeProps, Position } from "@xyflow/react";
 import { TechnicalProfile } from "@/types/technical-profile";
 import { getProviderBadgeColor } from "@/types/technical-profile";
-import { ArrowLeft, ArrowRight, Workflow, BarChart3, Save, Sparkles, SaveAll } from "lucide-react";
+import { ArrowLeft, ArrowRight, FlowArrow as Workflow, ChartBar as BarChart3, FloppyDisk as Save, Sparkle as Sparkles, FloppyDisk as SaveAll } from "@phosphor-icons/react";
 import PolicyNode from "./components/policy-node";
 import { ClaimsList, DisplayClaimsList, DisplayClaimsSection, TransformationsList } from "./node-claim-components";
 import { usePolicyStore } from "@/stores/policy-store";

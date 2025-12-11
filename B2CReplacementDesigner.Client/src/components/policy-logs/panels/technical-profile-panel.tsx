@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Workflow, Settings2, Zap, ExternalLink } from "lucide-react";
+import { FlowArrow as Workflow, GearSix as Settings2, Lightning as Zap, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DetailsPanel } from "../details-panel";

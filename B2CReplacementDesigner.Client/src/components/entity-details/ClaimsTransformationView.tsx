@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ClaimsTransformationEntity } from '@/types/trust-framework-entities';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Settings, Database } from 'lucide-react';
+import { ArrowRight, Gear as Settings, Database } from '@phosphor-icons/react';
 import { ClaimItem } from '../nodeTypes/node-claim-components';
 
 interface ClaimsTransformationViewProps {

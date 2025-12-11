@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
-import {Check, ChevronRight, Circle} from "lucide-react"
+import { Check, CaretRight, Circle } from "@phosphor-icons/react"
 
 import {cn} from "@/lib/utils"
 
@@ -36,7 +36,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
         {...props}
     >
         {children}
-        <ChevronRight className="dropdown-menu-chevron"/>
+        <CaretRight className="dropdown-menu-chevron"/>
     </DropdownMenuPrimitive.SubTrigger>
 ))
 DropdownMenuSubTrigger.displayName =

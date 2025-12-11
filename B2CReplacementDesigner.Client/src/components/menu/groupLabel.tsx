@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { EllipsisIcon } from "lucide-react";
+import { DotsThree as EllipsisIcon } from "@phosphor-icons/react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 interface GroupLabelProps {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { MAX_VISIBLE_CLAIMS } from "./types";
 
@@ -75,13 +75,13 @@ const ReferenceListToggle: React.FC<ReferenceListToggleProps> = ({
 
     const defaultCollapsed = (
         <>
-            <ChevronDown className="w-2.5 h-2.5" />+{hiddenCount} more
+            <CaretDown className="w-2.5 h-2.5" />+{hiddenCount} more
         </>
     );
 
     const defaultExpanded = (
         <>
-            <ChevronUp className="w-2.5 h-2.5" />Show less
+            <CaretUp className="w-2.5 h-2.5" />Show less
         </>
     );
 

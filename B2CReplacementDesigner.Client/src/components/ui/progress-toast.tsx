@@ -1,6 +1,6 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Upload, AlertCircle, Loader2, Settings } from 'lucide-react';
+import { CheckCircle, Upload, Warning as AlertCircle, SpinnerGap as Loader2, Gear as Settings } from '@phosphor-icons/react';
 
 interface UploadProgressToastProps {
   progress: number;

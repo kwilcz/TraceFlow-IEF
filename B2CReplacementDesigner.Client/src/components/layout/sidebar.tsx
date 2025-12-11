@@ -2,7 +2,7 @@
 
 import React from "react";
 import {Link} from "@tanstack/react-router";
-import { HouseIcon } from "lucide-react";
+import { House } from "@phosphor-icons/react";
 
 import { useStore } from "@/hooks/use-store";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ export function Sidebar() {
         <div className="sidebar-content">
           <Button variant="link" asChild className={`sidebar-brand ${sidebar.isOpen ? 'open' : 'closed'}`}>
             <Link to="/" className="sidebar-brand-link">
-              <HouseIcon className="sidebar-brand-icon" />
+              <House className="sidebar-brand-icon" />
               <h1 className={`sidebar-brand-text ${sidebar.isOpen ? 'open' : 'closed'}`}>
                 MIP B2C UI
               </h1>

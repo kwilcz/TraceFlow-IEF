@@ -1,6 +1,6 @@
 
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
-import {ChevronDownIcon} from 'lucide-react';
+import { CaretDown as ChevronDownIcon } from '@phosphor-icons/react';
 import {useState} from 'react';
 
 const Collapsible = CollapsiblePrimitive.Root

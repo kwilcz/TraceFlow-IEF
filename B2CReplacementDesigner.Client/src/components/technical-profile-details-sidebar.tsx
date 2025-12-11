@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React from 'react';
-import { X, FileCode, GitBranch, ArrowRightLeft, Key, Database } from 'lucide-react';
+import { X, FileCode, GitBranch, ArrowsLeftRight as ArrowRightLeft, Key, Database } from '@phosphor-icons/react';
 import { TechnicalProfile } from '@/types/technical-profile';
 import { ProviderBadge } from '@/components/provider-badge';
 import { Button } from '@/components/ui/button';
