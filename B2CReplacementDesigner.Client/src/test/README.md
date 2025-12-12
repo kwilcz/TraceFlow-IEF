@@ -1,7 +1,7 @@
 # Frontend Testing Guide
 
 This project uses **Vitest** with **React Testing Library** (RTL) for unit and integration tests.
-The top-level `src/test` folder acts as the test toolkit, mirroring the fixture/helper pattern you may know from our .NET solutions.
+The top-level `src/test` folder acts as the test toolkit, providing fixtures and helpers for comprehensive test coverage.
 
 ## Folder layout
 

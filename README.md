@@ -129,14 +129,11 @@ B2CReplacementDesigner.Client/
 Create a `.env.local` file in the `B2CReplacementDesigner.Client` directory:
 
 ```env
-# API Configuration (optional - defaults shown)
-VITE_API_BASE_URL=https://localhost:7285/api
-
 # Feature Flags (optional)
 VITE_ENABLE_DEVTOOLS=true
 ```
 
-> **Note:** The application processes policies entirely client-side. The backend API is optional and only used for specific features.
+> **Note:** All processing happens client-side in the browser. No backend server is required.
 
 ## Usage
 
@@ -183,9 +180,9 @@ Add this to your B2C policy's `TrustFrameworkExtensions.xml`:
 | Document | Description |
 |----------|-------------|
 | [Quick Start Guide](docs/QUICK_START.md) | Hands-on guide for the Log Analyzer |
+| [Architecture](docs/ARCHITECTURE.md) | System architecture and data flow |
 | [Logging Architecture](docs/LOGGING_ARCHITECTURE.md) | How log parsing and trace stitching works |
 | [Trace Interpreters](docs/TRACE_INTERPRETERS.md) | Guide to adding new log event interpreters |
-| [Migration Plan](docs/MIGRATION_PLAN.md) | Technical migration documentation |
 
 ## Development
 
