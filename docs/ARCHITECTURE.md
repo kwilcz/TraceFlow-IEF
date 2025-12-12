@@ -4,30 +4,24 @@ This document describes the technical architecture of TraceFlow-IEF.
 
 ## Overview
 
-TraceFlow-IEF is a **pure client-side Single Page Application (SPA)** built with React and TypeScript. All data processing, including XML policy parsing and log trace analysis, happens entirely in the browser.
+TraceFlow-IEF is a **Single Page Application (SPA)** built with React and TypeScript. It processes B2C custom policy XML files and analyzes Application Insights logs.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                           Browser                               │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │                    TraceFlow-IEF SPA                       │ │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │ │
-│  │  │   React     │  │   Policy     │  │   Log Trace      │  │ │
-│  │  │   Router    │  │   Parser     │  │   Processor      │  │ │
-│  │  └──────┬──────┘  └──────┬───────┘  └────────┬─────────┘  │ │
-│  │         │                │                    │            │ │
-│  │  ┌──────▼──────────────────────────────────▼─────────────┐ │ │
-│  │  │                  Zustand State Store                    │ │ │
-│  │  └─────────────────────────────────────────────────────────┘ │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│                              │                                   │
-│                              │ HTTPS (fetch)                     │
-│                              ▼                                   │
-│              ┌──────────────────────────────┐                    │
-│              │    Application Insights API   │                   │
-│              │    (Read-only, user-initiated)│                   │
-│              └──────────────────────────────┘                    │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Browser["Browser"]
+        subgraph SPA["TraceFlow-IEF SPA"]
+            Router["React Router"]
+            Parser["Policy Parser"]
+            Trace["Log Trace Processor"]
+            Store["Zustand State Store"]
+            
+            Router --> Store
+            Parser --> Store
+            Trace --> Store
+        end
+        
+        SPA -->|"HTTPS fetch"| API["Application Insights API<br/>(Read-only, user-initiated)"]
+    end
 ```
 
 ## Core Modules
@@ -50,27 +44,80 @@ The root layout (`__root.tsx`) wraps all routes with providers:
 - `SidebarNavigationProvider` - Sidebar state and navigation history
 - `TooltipProvider` - Global tooltip configuration
 
-### 2. Policy Parser (`src/lib/policyParser/`)
+### 2. Policy Processing Architecture
 
-Client-side XML parsing engine for B2C custom policies.
+TraceFlow-IEF has a two-stage policy processing pipeline:
 
-**Key Responsibilities:**
-- Parse policy XML files using `fast-xml-parser`
-- Resolve policy inheritance chains
-- Extract entities (Claims, Technical Profiles, User Journeys)
-- Build flow graph for visualization
-
-**Data Flow:**
+```mermaid
+flowchart TD
+    subgraph Stage1["Stage 1: Upload & Consolidation"]
+        Files["User uploads<br/>XML policy files"] --> Processor["PolicyProcessor"]
+        Processor --> Validate["Validate each file"]
+        Validate --> Sort["Sort by inheritance<br/>(Base → Extensions)"]
+        Sort --> Merge["Merge into single<br/>consolidated XML"]
+        Merge --> Entities["Extract entities"]
+    end
+    
+    subgraph Stage2["Stage 2: Parse & Visualize"]
+        ConsolidatedXML["Consolidated XML"] --> Parser["PolicyParserService"]
+        Parser --> ExtractTPs["Extract Technical Profiles"]
+        Parser --> ExtractJourneys["Extract User Journeys"]
+        ExtractTPs --> Store["Zustand Store"]
+        ExtractJourneys --> Store
+        Store --> ReactFlow["React Flow<br/>renders graph"]
+    end
+    
+    Entities --> ConsolidatedXML
 ```
-XML Files → Parser → PolicyService → Zustand Store → React Flow
-     │                      │
-     │                      ├── ClaimTypes
-     │                      ├── TechnicalProfiles
-     │                      ├── UserJourneys
-     │                      ├── SubJourneys
-     │                      └── ClaimsTransformations
-     │
-     └── (No network requests - all client-side)
+
+#### Stage 1: PolicyProcessor (`src/lib/policyProcessor/`)
+
+Handles file upload, validation, and XML inheritance merging.
+
+**Key Components:**
+
+| File | Responsibility |
+|------|----------------|
+| `policy-processor.ts` | Orchestrates the processing pipeline |
+| `policy-validator.ts` | Validates policy structure (required elements, attributes) |
+| `policy-consolidator.ts` | Merges multiple policies into single XML using inheritance rules |
+| `extractors/entity-extractor.ts` | Extracts claim types, transformations, providers |
+
+**Inheritance Resolution:**
+
+B2C policies use XML inheritance (BasePolicy references). The processor:
+1. Reads all uploaded files
+2. Validates each file's structure
+3. Builds inheritance graph (which policy extends which)
+4. Topologically sorts policies (base policies first)
+5. Merges XML elements from base to extension
+6. Produces single consolidated policy XML
+
+#### Stage 2: PolicyParserService (`src/lib/policyParser/`)
+
+Parses the consolidated XML and builds the visualization graph.
+
+**Key Components:**
+
+| File | Responsibility |
+|------|----------------|
+| `policy-parser-service.ts` | Entry point - coordinates extraction |
+| `xml-parser-service.ts` | Raw XML parsing using fast-xml-parser |
+| `technical-profile-parser.ts` | Extracts and resolves Technical Profiles |
+| `extractors/user-journey-extractor.ts` | Extracts User Journey steps |
+| `extractors/orchestration-steps-extractor.ts` | Extracts orchestration step details |
+
+**Output Data:**
+
+```mermaid
+flowchart LR
+    Parser["PolicyParserService"] --> PolicyData["PolicyData"]
+    PolicyData --> Subgraphs["subgraphs<br/>(UserJourney graphs)"]
+    PolicyData --> TPs["technicalProfiles<br/>(Map of TPs)"]
+    PolicyData --> Errors["errors<br/>(Set of InternalError)"]
+    
+    Subgraphs --> Nodes["nodes[]<br/>(React Flow nodes)"]
+    Subgraphs --> Edges["edges[]<br/>(React Flow edges)"]
 ```
 
 ### 3. Log Trace Processor (`src/lib/trace/`)
@@ -78,17 +125,17 @@ XML Files → Parser → PolicyService → Zustand Store → React Flow
 Processes Application Insights telemetry data to reconstruct user journeys.
 
 **Architecture:**
-```
-┌────────────────────────────────────────────────────────┐
-│                  Trace Processor                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  Log Fetcher │→│ Log Stitcher  │→│ Interpreters │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│         │                 │                  │          │
-│         ▼                 ▼                  ▼          │
-│   App Insights      Correlation ID     Event-specific   │
-│       API           grouping           parsing          │
-└────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart LR
+    subgraph TraceProcessor["Trace Processor"]
+        Fetcher["Log Fetcher"] --> Stitcher["Log Stitcher"]
+        Stitcher --> Interpreters["Interpreters"]
+    end
+    
+    Fetcher -.-> API["App Insights API"]
+    Stitcher -.-> Correlation["Correlation ID grouping"]
+    Interpreters -.-> Events["Event-specific parsing"]
 ```
 
 **Interpreter Registry:**
@@ -133,29 +180,15 @@ export const useSidebarToggle = create<SidebarStore>()(
 
 Component architecture based on **Radix UI** primitives:
 
-```
-src/components/
-├── ui/                    # Base UI primitives (Radix wrappers)
-│   ├── button.tsx
-│   ├── card.tsx
-│   ├── dialog.tsx
-│   └── ...
-├── layout/               # Layout components
-│   ├── main-layout.tsx
-│   ├── sidebar.tsx
-│   └── content-layout.tsx
-├── menu/                 # Navigation components
-│   ├── menu.tsx
-│   └── menuItem.tsx
-├── nodeTypes/            # React Flow custom nodes
-│   ├── group-node.tsx
-│   ├── claims-exchange-node.tsx
-│   └── ...
-└── policy-logs/          # Log analyzer components
-    ├── index.tsx
-    ├── settings-card.tsx
-    └── trace-timeline.tsx
-```
+**Component Structure:**
+
+| Directory | Purpose | Examples |
+|-----------|---------|----------|
+| `ui/` | Base UI primitives (Radix wrappers) | `button.tsx`, `card.tsx`, `dialog.tsx` |
+| `layout/` | Layout components | `main-layout.tsx`, `sidebar.tsx`, `content-layout.tsx` |
+| `menu/` | Navigation components | `menu.tsx`, `menuItem.tsx` |
+| `nodeTypes/` | React Flow custom nodes | `group-node.tsx`, `claims-exchange-node.tsx` |
+| `policy-logs/` | Log analyzer components | `index.tsx`, `settings-card.tsx`, `trace-timeline.tsx` |
 
 ### 6. Flow Visualization
 
@@ -183,16 +216,25 @@ Built on **@xyflow/react** (React Flow):
 sequenceDiagram
     participant User
     participant UI as Upload UI
-    participant Parser as Policy Parser
+    participant API as PolicyApiService
+    participant Processor as PolicyProcessor
+    participant Parser as PolicyParserService
     participant Store as Zustand Store
     participant Flow as React Flow
 
     User->>UI: Select XML files
-    UI->>Parser: Parse files
-    Parser->>Parser: Resolve inheritance
-    Parser->>Parser: Extract entities
-    Parser->>Store: Update policy store
-    Store->>Flow: Generate nodes/edges
+    UI->>API: consolidatePolicies(files)
+    API->>Processor: processFiles(files)
+    Processor->>Processor: Read & validate each file
+    Processor->>Processor: Sort by inheritance (base→extension)
+    Processor->>Processor: Merge XML (consolidate)
+    Processor-->>API: consolidatedXml + entities
+    API-->>UI: PolicyUploadResponse
+    UI->>Parser: parsePolicyXml(consolidatedXml)
+    Parser->>Parser: Extract TechnicalProfiles
+    Parser->>Parser: Extract UserJourneys
+    Parser-->>Store: PolicyData (subgraphs, TPs, errors)
+    Store->>Flow: Render nodes/edges
     Flow->>User: Display flow diagram
 ```
 
@@ -242,32 +284,30 @@ Zustand stores use the `persist` middleware to save state to localStorage:
 
 ## Security Model
 
-### Client-Side Processing
+### Data Privacy
 
-- **No server-side processing** - All XML parsing happens in the browser
-- **No data exfiltration** - Policy files never leave the user's machine
-- **User-controlled API calls** - App Insights queries are explicitly initiated
+- **Local processing** - XML policy files are processed locally and not uploaded
+- **User-controlled API calls** - App Insights queries are explicitly initiated by the user
 
 ### Application Insights Integration
 
-- Credentials are stored locally and never sent to any third-party
-- API calls go directly from browser to Azure Application Insights
+- Credentials are stored locally
+- API calls go directly to Azure Application Insights
 - Read-only access (query only, no modifications)
 
 ## Testing Strategy
 
 ### Unit Tests (Vitest)
 
-```
-src/
-├── lib/
-│   └── trace/
-│       └── __tests__/     # Trace processor tests
-├── test/
-│   ├── components/        # Component tests
-│   ├── hooks/             # Hook tests
-│   └── lib/               # Library tests
-```
+**Test Directory Structure:**
+
+| Path | Purpose |
+|------|---------|
+| `src/lib/trace/__tests__/` | Trace processor tests |
+| `src/test/components/` | Component tests |
+| `src/test/hooks/` | Hook tests |
+| `src/test/lib/` | Library tests |
+| `src/test/lib/policyProcessor/` | Policy processor tests |
 
 **Coverage Areas:**
 - Policy parsing edge cases
