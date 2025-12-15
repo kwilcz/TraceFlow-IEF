@@ -30,7 +30,7 @@ git clone https://github.com/your-org/TraceFlow-IEF.git
 cd TraceFlow-IEF
 
 # Navigate to client folder
-cd B2CReplacementDesigner.Client
+cd client
 
 # Install dependencies
 npm install

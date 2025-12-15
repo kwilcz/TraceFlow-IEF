@@ -50,7 +50,7 @@
 
 2. **Install dependencies**
    ```bash
-   cd B2CReplacementDesigner.Client
+   cd client
    npm install
    ```
 
@@ -74,7 +74,7 @@ The production build will be output to the `dist/` directory. This is a static S
 ## Project Structure
 
 ```
-B2CReplacementDesigner.Client/
+client/
 ├── index.html              # Vite entry point
 ├── vite.config.ts          # Vite configuration
 ├── tailwind.config.ts      # Tailwind CSS configuration
@@ -126,7 +126,7 @@ B2CReplacementDesigner.Client/
 
 ### Environment Variables
 
-Create a `.env.local` file in the `B2CReplacementDesigner.Client` directory:
+Create a `.env.local` file in the `client` directory:
 
 ```env
 # Feature Flags (optional)
