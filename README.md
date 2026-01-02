@@ -64,8 +64,6 @@ The production build will be output to the `dist/` directory. This is a static S
 | `npm run test` | Run Vitest tests |
 | `npm run test:watch` | Run tests in watch mode |
 | `npm run test:coverage` | Run tests with coverage report |
-| `npm run storybook` | Start Storybook at localhost:6006 |
-| `npm run build-storybook` | Build Storybook for deployment |
 | `npm run lint` | Run ESLint |
 
 ## Documentation
@@ -78,14 +76,6 @@ The production build will be output to the `dist/` directory. This is a static S
 | [Trace Interpreters](docs/TRACE_INTERPRETERS.md) | Guide to adding new log event interpreters |
 
 ## Development
-
-### Component Development with Storybook
-
-```bash
-npm run storybook
-```
-
-Storybook runs at [http://localhost:6006](http://localhost:6006) and provides an isolated environment for developing and testing UI components.
 
 ### Running Tests
 

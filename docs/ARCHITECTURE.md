@@ -327,20 +327,6 @@ test('renders group node with label', () => {
 });
 ```
 
-### Visual Testing (Storybook)
-
-Components are developed in isolation with Storybook stories:
-```typescript
-// button.stories.tsx
-export const Primary: Story = {
-  args: { variant: 'default', children: 'Button' }
-};
-
-export const Destructive: Story = {
-  args: { variant: 'destructive', children: 'Delete' }
-};
-```
-
 ## Browser Support
 
 | Browser | Minimum Version |
