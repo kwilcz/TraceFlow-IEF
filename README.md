@@ -1,6 +1,5 @@
 # TraceFlow-IEF
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.x-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646cff.svg)](https://vite.dev/)
@@ -12,23 +11,7 @@
 - **Policy Visualization** — Convert B2C IEF custom policies into interactive, zoomable flow diagrams
 - **Log Analysis** — Connect to Application Insights and trace user journey executions step-by-step
 - **Entity Extraction** — Automatically parse and display Claims, Technical Profiles, User Journeys, and more
-- **Dark/Light Theme** — Modern UI with system theme support
 - **Offline First** — All policy processing happens client-side; no data leaves your browser
-
-## Tech Stack
-
-| Category | Technology |
-|----------|------------|
-| **Framework** | React 18 + TypeScript |
-| **Build Tool** | Vite 6 |
-| **Router** | TanStack Router |
-| **State** | Zustand |
-| **UI Components** | Radix UI Primitives |
-| **Styling** | Tailwind CSS |
-| **Flow Visualization** | React Flow (@xyflow/react) |
-| **Icons** | Phosphor Icons |
-| **Testing** | Vitest + React Testing Library |
-| **Component Dev** | Storybook |
 
 ## Getting Started
 
@@ -36,7 +19,7 @@
 
 | Requirement | Version | Notes |
 |-------------|---------|-------|
-| **Node.js** | 20.x or higher | [Download](https://nodejs.org/) |
+| **Node.js** | 22.x or higher | [Download](https://nodejs.org/) |
 | **npm** | 10.x or higher | Included with Node.js |
 | **Git** | Latest | [Download](https://git-scm.com/) |
 
@@ -71,43 +54,6 @@ npm run build
 
 The production build will be output to the `dist/` directory. This is a static SPA that can be deployed to any static hosting service.
 
-## Project Structure
-
-```
-client/
-├── index.html              # Vite entry point
-├── vite.config.ts          # Vite configuration
-├── tailwind.config.ts      # Tailwind CSS configuration
-├── tsconfig.json           # TypeScript configuration
-├── public/                 # Static assets
-│   └── favicon.ico
-├── src/
-│   ├── main.tsx            # React entry point
-│   ├── routes/             # TanStack Router file-based routes
-│   │   ├── __root.tsx      # Root layout with providers
-│   │   ├── index.tsx       # Home page
-│   │   ├── b2c/
-│   │   │   ├── policy-template.tsx
-│   │   │   ├── analyze-logs.tsx
-│   │   │   └── claims.tsx
-│   │   ├── entra.tsx
-│   │   └── settings.tsx
-│   ├── components/         # React components
-│   │   ├── ui/             # Radix UI primitives
-│   │   ├── layout/         # Layout components
-│   │   ├── menu/           # Navigation menu
-│   │   ├── nodeTypes/      # React Flow node types
-│   │   └── policy-logs/    # Log analyzer components
-│   ├── hooks/              # Custom React hooks
-│   ├── lib/                # Utility libraries
-│   │   ├── policyParser/   # XML policy parsing
-│   │   └── trace/          # Log trace processing
-│   ├── stores/             # Zustand stores
-│   ├── types/              # TypeScript type definitions
-│   └── styles/             # CSS stylesheets
-└── docs/                   # Documentation
-```
-
 ## Available Scripts
 
 | Command | Description |
@@ -121,59 +67,6 @@ client/
 | `npm run storybook` | Start Storybook at localhost:6006 |
 | `npm run build-storybook` | Build Storybook for deployment |
 | `npm run lint` | Run ESLint |
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env.local` file in the `client` directory:
-
-```env
-# Feature Flags (optional)
-VITE_ENABLE_DEVTOOLS=true
-```
-
-> **Note:** All processing happens client-side in the browser. No backend server is required.
-
-## Usage
-
-### Policy Visualization
-
-1. Navigate to **B2C → Policy Template**
-2. Upload your B2C custom policy XML files (base, extension, and relying party)
-3. The tool will:
-   - Parse the XML and resolve inheritance
-   - Extract entities (Claims, Technical Profiles, User Journeys)
-   - Generate an interactive flow diagram
-4. Use mouse wheel to zoom, drag to pan, click nodes for details
-
-### Log Analysis
-
-1. Navigate to **B2C → Analyze Logs**
-2. Enter your Application Insights credentials:
-   - **Application ID**: Found in Azure Portal → Application Insights → API Access
-   - **API Key**: Create one with read permissions
-3. Set the timespan (e.g., `PT24H` for last 24 hours)
-4. Click **Fetch Logs**
-5. Select a user flow to see the step-by-step trace
-
-### Configuring B2C for Journey Recording
-
-Add this to your B2C policy's `TrustFrameworkExtensions.xml`:
-
-```xml
-<RelyingParty>
-  <UserJourneyBehaviors>
-    <JourneyInsights 
-      TelemetryEngine="ApplicationInsights" 
-      InstrumentationKey="YOUR_INSTRUMENTATION_KEY" 
-      DeveloperMode="true" 
-      ClientEnabled="true" 
-      ServerEnabled="true" 
-      TelemetryVersion="1.0.0" />
-  </UserJourneyBehaviors>
-</RelyingParty>
-```
 
 ## Documentation
 
@@ -218,47 +111,6 @@ Run linting:
 ```bash
 npm run lint
 ```
-
-## Deployment
-
-### Static Hosting (Recommended)
-
-TraceFlow-IEF is a pure SPA that can be deployed to any static hosting service:
-
-| Platform | Configuration |
-|----------|--------------|
-| **Azure Static Web Apps** | Use `staticwebapp.config.json` for SPA routing |
-| **Netlify** | Add `_redirects` file: `/* /index.html 200` |
-| **Vercel** | Automatic SPA detection |
-| **GitHub Pages** | Use 404.html redirect |
-| **AWS S3 + CloudFront** | Configure error document to index.html |
-
-### Azure Static Web Apps
-
-Create `staticwebapp.config.json` in the build output:
-
-```json
-{
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.ico", "/*.svg"]
-  }
-}
-```
-
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting a PR.
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
