@@ -1,20 +1,20 @@
 ﻿"use client";
 
-import React, {useEffect, useMemo, useState, useRef, useCallback} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {useTheme} from '@/components/theme-provider';
-import { Layout, MagnifyingGlass, SidebarSimple } from "@phosphor-icons/react";
+import {LayoutIcon, MagnifyingGlassIcon, SidebarSimpleIcon} from "@phosphor-icons/react";
 import {ReactFlow, Background, Controls, ControlButton, Node, Edge} from '@xyflow/react';
-import {GroupNode, ConditionedNode, StartNode, EndNode, CommentNode, CombinedSignInAndSignUpNode, ClaimsExchangeNode, GetClaimsNode, NODE_TYPES} from './nodeTypes';
-import ConditionEdge from './edgeTypes/condition-edge';
 import {useReactFlowState} from "@hooks/use-react-flow-state";
 import {useLayout} from '@/hooks/use-layout';
 import FlowContextMenu from '@components/flow-context-menu';
 import FlowMiniMap from '@components/flow-minimap';
 import FloatingPolicySearch from '@components/floating-policy-search';
 import NodeDetailsSidebar from '@components/node-details-sidebar';
-import { PolicySearchRef } from '@components/policy-search';
-import { usePolicySearch } from '@hooks/use-policy-search';
-import { useSidebarNavigation } from '@hooks/use-sidebar-navigation';
+import {PolicySearchRef} from '@components/policy-search';
+import {usePolicySearch} from '@hooks/use-policy-search';
+import {useSidebarNavigation} from '@hooks/use-sidebar-navigation';
+import { POLICY_EDGE_TYPES } from '@/components/flow/policy-edge-types';
+import { POLICY_NODE_TYPES } from '@/components/flow/policy-node-types';
 
 const edgeOptions = {
     animated: true,
@@ -24,13 +24,13 @@ const edgeOptions = {
     }
 };
 
-interface ContentProps {
+interface PolicyFlowProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     graph: { nodes: Node<any>[]; edges: Edge<any>[] };
-    id: string;
+    id?: string;
 }
 
-const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
+const PolicyFlow: React.FC<PolicyFlowProps> = ({ graph }) => {
     const {nodes: rfNodes, edges: rfEdges, setNodes, setEdges, onNodesChange, onEdgesChange} =
         useReactFlowState(graph.nodes, graph.edges);
 
@@ -39,8 +39,9 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false);
     const searchRef = useRef<PolicySearchRef>(null);
-    const { clearSearch } = usePolicySearch();
-    const { navigateToNode, isSidebarOpen, closeSidebar, toggleSidebar } = useSidebarNavigation();
+    const {clearSearch} = usePolicySearch();
+
+    const {navigateToNode, isSidebarOpen, closeSidebar, toggleSidebar} = useSidebarNavigation();
 
     const closeSearch = useCallback(() => {
         setIsSearchVisible(false);
@@ -55,28 +56,13 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
         navigateToNode(node);
     }, [navigateToNode]);
 
-    const nodeTypes = useMemo(() => ({
-        [NODE_TYPES.GROUP]: GroupNode,
-        [NODE_TYPES.CONDITIONED]: ConditionedNode,
-        [NODE_TYPES.START]: StartNode,
-        [NODE_TYPES.END]: EndNode,
-        [NODE_TYPES.COMMENT]: CommentNode,
-        [NODE_TYPES.COMBINED_SIGNIN_SIGNUP]: CombinedSignInAndSignUpNode,
-        [NODE_TYPES.CLAIMS_EXCHANGE]: ClaimsExchangeNode,
-        [NODE_TYPES.GET_CLAIMS]: GetClaimsNode,
-    }), []);
-
-    const edgeTypes = useMemo(() => ({
-        'condition-edge': ConditionEdge
-    }), []);
-
     useEffect(() => {
         if (!rfNodes || !rfEdges) return;
 
         setNodes(graph.nodes);
         setEdges(graph.edges);
-    // Nodes & edges cannot be added to deps, only graph!
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // Nodes & edges cannot be added to deps, only graph!
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [graph]);
 
     // Handle keyboard shortcuts
@@ -103,9 +89,9 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
         };
     }, [isSearchVisible, closeSearch]);
 
-    const showContextMenu = (event: MouseEvent | React. MouseEvent<Element, MouseEvent>) => {
+    const showContextMenu = (event: MouseEvent | React.MouseEvent<Element, MouseEvent>) => {
         event.preventDefault();
-        setContextMenu({ x: event.clientX, y: event.clientY });
+        setContextMenu({x: event.clientX, y: event.clientY});
     };
 
     const hideContextMenu = () => setContextMenu(null);
@@ -119,44 +105,46 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onNodeClick={handleNodeClick}
-                    nodeTypes={nodeTypes}
-                    edgeTypes={edgeTypes}
+                    nodeTypes={POLICY_NODE_TYPES}
+                    edgeTypes={POLICY_EDGE_TYPES}
                     defaultEdgeOptions={edgeOptions}
                     elevateNodesOnSelect={false}
-                    nodesDraggable={true}
+                    nodesDraggable={false}
                     nodesConnectable={false}
-                    elementsSelectable={true}
+                    elementsSelectable
                     minZoom={0.25}
                     colorMode={resolvedTheme}
                     onPaneContextMenu={showContextMenu}
+                    panOnDrag
+                    preventScrolling
                 >
-                    <Controls position="top-center" orientation="horizontal">
-                        <ControlButton title="Search" onClick={toggleSearch}>
-                            <MagnifyingGlass />
-                        </ControlButton>
-                        <ControlButton title="Reset Layout" onClick={applyLayout}>
-                            <Layout />
-                        </ControlButton>
-                        <ControlButton 
-                            title={isSidebarOpen ? "Close Details" : "Open Details"} 
-                            onClick={toggleSidebar}
-                            className={isSidebarOpen ? "!bg-primary/20" : ""}
-                        >
-                            {isSidebarOpen ? (
-                                <SidebarSimple />
-                            ) : (
-                                <SidebarSimple />
-                            )}
-                        </ControlButton>
-                    </Controls>
-                    <FlowMiniMap />
+                    <>
+                        <Controls position="top-center" orientation="horizontal">
+
+                            <ControlButton title="Search" onClick={toggleSearch}>
+                                <MagnifyingGlassIcon/>
+                            </ControlButton>
+                            <ControlButton title="Reset Layout" onClick={applyLayout}>
+                                <LayoutIcon/>
+                            </ControlButton>
+                            <ControlButton
+                                title={isSidebarOpen ? "Close Details" : "Open Details"}
+                                onClick={toggleSidebar}
+                                className={isSidebarOpen ? "!bg-primary/20" : ""}
+                            >
+                                <SidebarSimpleIcon/>
+                            </ControlButton>
+
+                        </Controls>
+                        <FlowMiniMap/>
+                    </>
                     <Background/>
-                    
+
                     {isSearchVisible && (
-                        <FloatingPolicySearch 
+                        <FloatingPolicySearch
                             ref={searchRef}
-                            isVisible={isSearchVisible} 
-                            onClose={closeSearch} 
+                            isVisible={isSearchVisible}
+                            onClose={closeSearch}
                         />
                     )}
 
@@ -169,7 +157,7 @@ const PolicyFlow: React.FC<ContentProps> = ({graph}) => {
                     />
                 )}
             </div>
-            <NodeDetailsSidebar 
+            <NodeDetailsSidebar
                 isOpen={isSidebarOpen}
                 onClose={closeSidebar}
             />

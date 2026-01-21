@@ -13,6 +13,7 @@ export type ClaimsExchangeNode = Node<
         label: string;
         claimsExchanges: string[];
         technicalProfiles?: TechnicalProfile[];
+        providerName?: string;
         stepOrder?: number;
         details?: { stepOrder?: number };
     },
@@ -29,8 +30,18 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
         ? getEntity(entities, 'TechnicalProfile', primaryProfileId) as TechnicalProfileEntity | undefined
         : undefined);
 
+    const fallbackProfile = useMemo(() => {
+        if (!data.technicalProfiles || data.technicalProfiles.length === 0) return undefined;
+        if (primaryProfileId) {
+            return data.technicalProfiles.find((p) => p.id === primaryProfileId) ?? data.technicalProfiles[0];
+        }
+        return data.technicalProfiles[0];
+    }, [data.technicalProfiles, primaryProfileId]);
+
+    const displayProfile = primaryProfile ?? fallbackProfile;
+
     // Extract data for display
-    const providerName = primaryProfile?.providerName || "Unknown";
+    const providerName = displayProfile?.providerName || data.providerName || "Unknown";
     const providerColor = getProviderBadgeColor(providerName);
 
     const inheritanceChain = useMemo(() => {
@@ -73,10 +84,10 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
     const stepLabel = data.stepOrder ? `Step ${data.stepOrder}` : "ClaimsExchange";
 
     // Use DisplayName for title, fall back to label
-    const nodeTitle = primaryProfile?.displayName || data.label;
+    const nodeTitle = displayProfile?.displayName || data.label;
 
     // Debug logging
-    if (!primaryProfile && data.claimsExchanges?.length > 0) {
+    if (!primaryProfile && !fallbackProfile && data.claimsExchanges?.length > 0) {
         console.log("ClaimsExchangeNode missing profile data:", {
             nodeId: props.id,
             label: data.label,
@@ -99,7 +110,7 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                 <div className="min-w-0">
                     <PolicyNode.Title>{nodeTitle}</PolicyNode.Title>
                     <PolicyNode.SubTitle>
-                        {stepLabel}: {primaryProfile?.id ?? ""}
+                        {stepLabel}: {displayProfile?.id ?? primaryProfileId ?? ""}
                     </PolicyNode.SubTitle>
                     <PolicyNode.Badge className={`${providerColor} w-fit`}>{providerName}</PolicyNode.Badge>
                 </div>

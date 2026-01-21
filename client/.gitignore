@@ -43,3 +43,4 @@ next-env.d.ts
 
 # TanStack Router auto-generated file
 /src/routeTree.gen.ts
+.tanstack/

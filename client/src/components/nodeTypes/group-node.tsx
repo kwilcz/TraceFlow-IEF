@@ -97,7 +97,7 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
     } as const;
 
     const nodeClassName = cn(
-        "p-[18px] rounded border-[2px] shadow-lg transition-all duration-150",
+        "p-[18px] rounded border-[2px] shadow-lg transition-all duration-150 w-full",
         props.data.isCollapsed ? "h-auto" : "h-full",
         nodeColor,
         highlightClasses

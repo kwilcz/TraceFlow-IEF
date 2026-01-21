@@ -1,165 +1,68 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ContentLayout } from '@/components/layout/content-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Upload, Users, FlowArrow as Workflow, Star, Bug } from '@phosphor-icons/react';
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
+import HeroPolicyFlow from "@/components/hero/hero-policy-flow";
+import { heroSampleGraph } from "@/lib/hero/hero-sample-graph";
+import { Button } from "@/components/ui/button";
+import { KeyIcon } from "@phosphor-icons/react";
+
+export const Route = createFileRoute("/")({
+    component: HomePage,
 });
 
-function HomePage() {
-  const features = [
-    {
-      icon: <Upload className="w-6 h-6" />,
-      title: 'Policy Upload and Interpretation',
-      description: 'Seamlessly upload and display B2C policies',
-    },
-    {
-      icon: <Workflow className="w-6 h-6" />,
-      title: 'Interactive Visualization',
-      description: 'Transform complex policies into clear, interactive journey diagrams',
-    },
-    {
-      icon: <FileText className="w-6 h-6" />,
-      title: 'Easy Documentation',
-      description:
-        'Generate detailed diagram images with comments for your solution design documents',
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: 'Enhanced User Experience',
-      description: 'Enjoy an intuitive interface designed for easy policy interpretation',
-    },
-  ];
-
-  const changelogs = [
-    {
-      version: '1.0.0',
-      date: 'September 2024',
-      changes: ['Initial solution deployment'],
-      type: 'feature',
-    },
-    {
-      version: '1.1.0',
-      date: 'November 2024',
-      changes: [
-        'Notes can bow added to the policy flow using context menu (RMB)',
-        'Added expand & collapse functionality to SubJourneys',
-        'Updated HomePage with changelog and updated visuals',
-        'Changed menu bar to be thinner and more compact',
-      ],
-      type: 'feature',
-    },
-    {
-      version: '1.1.1',
-      date: 'November 2024',
-      changes: [
-        'Fixed a bug where Edges were covered by group nodes',
-        'Fixed an issue where node updates were incorrectly processed',
-      ],
-      type: 'bug',
-    },
-    {
-      version: '1.2.0',
-      date: 'November 2024',
-      changes: [
-        'New custom nodes have been introduced for the following orchestration steps: ' +
-          '<ul><li>CombinedSignInAndSignUp</li><li>ClaimsExchange</li></ul>',
-        'Claims Exchange nodes are expanding on hover to ease readability',
-      ],
-      type: 'feature',
-    },
-    {
-      version: '1.3.0',
-      date: 'September 2025',
-      changes: [
-        'Update to policy upload process to improve user experience.<br/>' +
-          '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Now a modal is displayed with full progress instead of a simple processing message.',
-      ],
-      type: 'feature',
-    },
-  ].sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
-
-  return (
-    <ContentLayout title="Home">
-      <div className="space-y-6 flex flex-col">
-        <Card className="lg:rounded-lg rounded-none lg:border border-0">
-          <CardContent className="pt-8">
-            <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Visualize Your Customer Journey Policies
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6">
-                Transform complex B2C policies into interactive, step-by-step diagrams for better
-                understanding and optimization of your customer journey.
-              </p>
-              <div className="flex items-center space-x-4">
-                <Link to="/b2c/policy-template">
-                  <Button>
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Button variant="outline">Learn More</Button>
-              </div>
+function HeroSection() {
+    return (
+        <section className="relative min-h-screen overflow-hidden">
+            <div className="absolute inset-0">
+                <HeroPolicyFlow graph={heroSampleGraph} className="bg-transparent" />
             </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {features.map((feature, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start space-x-4">
-                  <div className="p-2 bg-secondary/20 rounded-lg">{feature.icon}</div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </div>
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-start xl:items-center">
+                <div className="w-full pt-20">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <div className="flex flex-col text-center xl:text-left pointer-events-auto w-full xl:max-w-xl bg-muted/40 backdrop-blur-sm rounded-xl px-4 sm:px-6 py-6 sm:py-7 border border-white/10">
+                            <h1 className="text-6xl xl:text-8xl font-bold tracking-tighter leading-[0.9] mb-6 reveal-up reveal-delay-1 text-ink">
+                                Stop Guessing.
+                                <br />
+                                Start <span className="text-primary">Visualizing.</span>
+                            </h1>
+
+                            <p className="text-xl max-w-[44rem] self-center xl:self-start text-gray-600 mb-5 leading-relaxed reveal-up reveal-delay-2 font-medium">
+                                The first fully client-side debugger for Azure B2C. Turn thousands of lines of XML
+                                spaghetti into a pristine, navigable node graph.
+                            </p>
+
+                            <div className="text-left flex flex-col xl:items-start items-center xl:justify-start justify-center">
+                                <div className="lg:space-x-4">
+                                    <Link to="/b2c/policy-template">
+                                        <Button size="lg" className="justify-center xl:w-auto w-full max-w-[44rem]">
+                                            Preview policy code visually
+                                        </Button>
+                                    </Link>
+                                    <Link to="/b2c/analyze-logs">
+                                        <Button
+                                            size="lg"
+                                            variant="outline"
+                                            className="justify-center xl:w-auto w-full max-w-[44rem] mt-4"
+                                        >
+                                            Debug your own policies
+                                        </Button>
+                                    </Link>
+                                </div>
+                                <p className="mt-4 text-sm text-gray-500 font-mono flex items-center xl:justify-start justify-center">
+                                    <KeyIcon className="text-gray-500 mr-1" /> 100% Client-Side Processing. No data
+                                    leaves your browser.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+            </div>
 
-        <Card className="flex-grow lg:rounded-lg rounded-none lg:border border-0 border-y">
-          <CardHeader>
-            <CardTitle>Changelog</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="min-h-80 pr-4">
-              <div className="ml-4 relative border-l-2 border-border">
-                {changelogs.map((log, index) => (
-                  <div key={index} className="relative pl-8 pb-8 last:pb-0">
-                    <div className="absolute -left-[15px] top-0 bg-background p-1 rounded-full border-2 border-border">
-                      {log.type === 'feature' ? (
-                        <Star className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Bug className="w-4 h-4 text-destructive" />
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-semibold">Version {log.version}</h3>
-                      <Badge variant={log.type === 'feature' ? 'default' : 'destructive'}>
-                        {log.type}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{log.date}</span>
-                    </div>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {log.changes.map((change, changeIndex) => (
-                        <li key={changeIndex} dangerouslySetInnerHTML={{ __html: change }} />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-    </ContentLayout>
-  );
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-background pointer-events-none" />
+        </section>
+    );
+}
+
+function HomePage() {
+    return <HeroSection></HeroSection>;
 }
