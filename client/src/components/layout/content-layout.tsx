@@ -1,5 +1,4 @@
 ﻿import { Navbar } from "@/components/layout/navbar";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 interface ContentLayoutProps {
     children?: React.ReactNode;

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { TraceStep, computeClaimsDiff } from "@/types/trace";
 import {
     Clock,
-    Database,
+    ClockIcon,
+    DesktopIcon,
     ArrowSquareOut as ExternalLink,
     Eye,
     Stack as Layers,
@@ -17,16 +19,16 @@ import {
     XCircle,
     Lightning as Zap,
 } from "@phosphor-icons/react";
+import { DatabaseIcon, GlobeIcon, LayersIcon, PlayIcon, WorkflowIcon } from "lucide-react";
+import React, { useMemo } from "react";
 import { DetailsPanel } from "../details-panel";
-import { TraceStep, computeClaimsDiff } from "@/types/trace";
-import { cn } from "@/lib/utils";
 
 /**
  * Display duration in a human-readable format with color coding.
  */
 const DurationBadge: React.FC<{ durationMs?: number }> = ({ durationMs }) => {
     if (durationMs === undefined) return null;
-    
+
     const formatDuration = (ms: number) => {
         if (ms < 1000) return `${ms}ms`;
         return `${(ms / 1000).toFixed(2)}s`;
@@ -74,9 +76,7 @@ const StepStatusBadge: React.FC<{ result: string | undefined }> = ({ result }) =
 const ErrorDetails: React.FC<{ message: string; hResult?: string }> = ({ message, hResult }) => (
     <div className="space-y-1">
         <p className="text-sm text-red-600 dark:text-red-400 break-words">{message}</p>
-        {hResult && (
-            <p className="text-xs text-muted-foreground font-mono">HRESULT: {hResult}</p>
-        )}
+        {hResult && <p className="text-xs text-muted-foreground font-mono">HRESULT: {hResult}</p>}
     </div>
 );
 
@@ -89,20 +89,19 @@ const ClaimRow: React.FC<{
     diffType?: "added" | "modified" | "removed";
     oldValue?: string;
 }> = ({ name, value, diffType, oldValue }) => {
-    const bgClass = diffType === "added"
-        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-        : diffType === "modified"
-            ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
-            : diffType === "removed"
+    const bgClass =
+        diffType === "added"
+            ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+            : diffType === "modified"
+              ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
+              : diffType === "removed"
                 ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
                 : "bg-muted/30 border-transparent";
 
     return (
         <div className={cn("p-2 rounded-md border", bgClass)}>
             <div className="flex items-start justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground break-all">
-                    {name}
-                </span>
+                <span className="text-xs font-medium text-muted-foreground break-all">{name}</span>
                 <DetailsPanel.CopyButton value={value} label="value" />
             </div>
             <div className="text-sm break-all mt-0.5">
@@ -156,11 +155,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                         </DetailsPanel.Title>
                         <StepStatusBadge result={step.result} />
                     </DetailsPanel.TitleRow>
-                    {mainTp && (
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
-                            {mainTp}
-                        </p>
-                    )}
+                    {mainTp && <p className="text-sm text-muted-foreground mt-1 truncate">{mainTp}</p>}
                 </DetailsPanel.HeaderContent>
                 <DetailsPanel.HeaderActions>
                     <DurationBadge durationMs={step.duration} />
@@ -168,14 +163,14 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
             </DetailsPanel.Header>
 
             {/* Quick info - below header but before content */}
-            <div className="px-4 pb-3 border-b flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <div className="px-4 p-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
+                    <ClockIcon className="w-3 h-3" />
                     {formatTimestamp(step.timestamp)}
                 </div>
                 {step.isInteractiveStep && (
                     <Badge variant="outline" className="text-xs text-purple-700 border-purple-500 dark:text-purple-400">
-                        <Play className="w-3 h-3 mr-1" />
+                        <PlayIcon className="w-3 h-3 mr-1" />
                         Interactive
                     </Badge>
                 )}
@@ -186,11 +181,13 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                 )}
                 {step.uiSettings?.pageType && (
                     <Badge variant="outline" className="text-xs">
+                        <DesktopIcon className="w-3 h-3 mr-1" />
                         {step.uiSettings.pageType}
                     </Badge>
                 )}
                 {step.uiSettings?.language && (
                     <Badge variant="outline" className="text-xs">
+                        <GlobeIcon className="w-3 h-3 mr-1" />
                         {step.uiSettings.language}
                     </Badge>
                 )}
@@ -198,7 +195,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
 
             {/* Error details */}
             {step.errorMessage && (
-                <div className="p-4 border-b">
+                <div className="p-4">
                     <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-1">
                         <XCircle className="w-3.5 h-3.5" />
                         Error
@@ -208,32 +205,21 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
             )}
 
             {/* Tabbed content */}
-            <Tabs defaultValue="claims" className="flex-1 flex flex-col min-h-0">
-                <div className="border-b px-4">
-                    <TabsList className="h-10 bg-transparent gap-2 p-0">
-                        <TabsTrigger
-                            value="claims"
-                            className="data-[state=active]:bg-accent px-3"
-                        >
-                            <Layers className="w-4 h-4 mr-1" />
-                            Claims ({Object.keys(step.claimsSnapshot).length})
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="components"
-                            className="data-[state=active]:bg-accent px-3"
-                        >
-                            <Workflow className="w-4 h-4 mr-1" />
-                            Components
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="statebag"
-                            className="data-[state=active]:bg-accent px-3"
-                        >
-                            <Database className="w-4 h-4 mr-1" />
-                            Statebag
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+            <Tabs defaultValue="claims" className="flex-1 flex flex-col">
+                <TabsList className="w-full rounded-none">
+                    <TabsTrigger value="claims" className="data-[state=active]:bg-accent py-2">
+                        <LayersIcon className="w-4 h-4 mr-1" />
+                        Claims ({Object.keys(step.claimsSnapshot).length})
+                    </TabsTrigger>
+                    <TabsTrigger value="components" className="data-[state=active]:bg-accent px-3 py-2">
+                        <WorkflowIcon className="w-4 h-4 mr-1" />
+                        Components
+                    </TabsTrigger>
+                    <TabsTrigger value="statebag" className="data-[state=active]:bg-accent px-3 py-2">
+                        <DatabaseIcon className="w-4 h-4 mr-1" />
+                        Statebag
+                    </TabsTrigger>
+                </TabsList>
 
                 <TabsContent value="claims" className="flex-1 m-0 overflow-hidden">
                     <ScrollArea className="h-full">
@@ -245,7 +231,13 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                         <ClaimRow key={key} name={key} value={value} diffType="added" />
                                     ))}
                                     {Object.entries(claimsDiff.modified).map(([key, { oldValue, newValue }]) => (
-                                        <ClaimRow key={key} name={key} value={newValue} diffType="modified" oldValue={oldValue} />
+                                        <ClaimRow
+                                            key={key}
+                                            name={key}
+                                            value={newValue}
+                                            diffType="modified"
+                                            oldValue={oldValue}
+                                        />
                                     ))}
                                 </>
                             )}
@@ -319,42 +311,41 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                             {(step.displayControls.length > 0 || step.displayControlActions.length > 0) && (
                                 <ComponentSection
                                     title="Display Controls"
-                                    count={step.displayControlActions.length > 0 ? step.displayControlActions.length : step.displayControls.length}
+                                    count={
+                                        step.displayControlActions.length > 0
+                                            ? step.displayControlActions.length
+                                            : step.displayControls.length
+                                    }
                                     icon={<Settings2 className="w-3 h-3" />}
                                 >
                                     <div className="space-y-2">
                                         {/* Show detailed actions if available */}
-                                        {step.displayControlActions.length > 0 ? (
-                                            step.displayControlActions.map((dcAction, idx) => (
-                                                <DisplayControlActionCard
-                                                    key={`${dcAction.displayControlId}-${dcAction.action}-${idx}`}
-                                                    dcAction={dcAction}
-                                                />
-                                            ))
-                                        ) : (
-                                            /* Fallback to simple display controls list */
-                                            step.displayControls.map((dc) => (
-                                                <div
-                                                    key={dc}
-                                                    className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md border border-orange-200 dark:border-orange-800"
-                                                >
-                                                    <span className="text-sm text-orange-700 dark:text-orange-300 truncate">
-                                                        {dc}
-                                                    </span>
-                                                    <DetailsPanel.CopyButton value={dc} label="DC ID" />
-                                                </div>
-                                            ))
-                                        )}
+                                        {step.displayControlActions.length > 0
+                                            ? step.displayControlActions.map((dcAction, idx) => (
+                                                  <DisplayControlActionCard
+                                                      key={`${dcAction.displayControlId}-${dcAction.action}-${idx}`}
+                                                      dcAction={dcAction}
+                                                  />
+                                              ))
+                                            : /* Fallback to simple display controls list */
+                                              step.displayControls.map((dc) => (
+                                                  <div
+                                                      key={dc}
+                                                      className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded-md border border-orange-200 dark:border-orange-800"
+                                                  >
+                                                      <span className="text-sm text-orange-700 dark:text-orange-300 truncate">
+                                                          {dc}
+                                                      </span>
+                                                      <DetailsPanel.CopyButton value={dc} label="DC ID" />
+                                                  </div>
+                                              ))}
                                     </div>
                                 </ComponentSection>
                             )}
 
                             {/* Selectable Options */}
                             {step.selectableOptions.length > 0 && (
-                                <ComponentSection 
-                                    title="Selectable Options" 
-                                    icon={<Eye className="w-3 h-3" />}
-                                >
+                                <ComponentSection title="Selectable Options" icon={<Eye className="w-3 h-3" />}>
                                     <div className="flex flex-wrap gap-1.5">
                                         {step.selectableOptions.map((opt) => (
                                             <Badge key={opt} variant="outline" className="text-xs">
@@ -367,10 +358,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
 
                             {/* Backend API Calls */}
                             {step.backendApiCalls && step.backendApiCalls.length > 0 && (
-                                <ComponentSection 
-                                    title="Backend API Calls" 
-                                    icon={<Server className="w-3 h-3" />}
-                                >
+                                <ComponentSection title="Backend API Calls" icon={<Server className="w-3 h-3" />}>
                                     <div className="space-y-2">
                                         {step.backendApiCalls.map((call, idx) => (
                                             <div key={idx} className="p-2 bg-muted rounded-md text-xs">
@@ -412,7 +400,13 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                         <ClaimRow key={key} name={key} value={value} diffType="added" />
                                     ))}
                                     {Object.entries(statebagDiff.modified).map(([key, { oldValue, newValue }]) => (
-                                        <ClaimRow key={key} name={key} value={newValue} diffType="modified" oldValue={oldValue} />
+                                        <ClaimRow
+                                            key={key}
+                                            name={key}
+                                            value={newValue}
+                                            diffType="modified"
+                                            oldValue={oldValue}
+                                        />
                                     ))}
                                 </>
                             )}
@@ -487,7 +481,7 @@ function DisplayControlActionCard({ dcAction }: DisplayControlActionCardProps) {
                                 "text-[10px] px-1 py-0",
                                 dcAction.resultCode === "200"
                                     ? "text-green-600 border-green-400"
-                                    : "text-red-600 border-red-400"
+                                    : "text-red-600 border-red-400",
                             )}
                         >
                             {dcAction.resultCode}

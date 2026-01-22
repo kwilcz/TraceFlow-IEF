@@ -1,57 +1,161 @@
-@import "@xyflow/react/dist/style.css";
-@import "./nodes-base.css";
-@import "./ui-components-base.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer theme, base, components, utilities;
 
-:root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+
+@import '@xyflow/react/dist/style.css' layer(base);
+@import './nodes-base.css' layer(base);
+@import './ui-components-base.css';
+
+@source '../**/*.{js,ts,jsx,tsx,mdx}';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --backdrop-blur-xs: 2px;
+
+    --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+    --background-image-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops));
+
+    --width-128: 32rem;
+    --width-176: 44rem;
+    --width-208: 52rem;
+
+    --height-128: 32rem;
+    --height-160: 40rem;
+    --height-176: 44rem;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
+
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
+
+    --color-popover: hsl(var(--popover));
+    --color-popover-foreground: hsl(var(--popover-foreground));
+
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
+
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
+
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
+
+    --color-destructive: hsl(var(--destructive));
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
+
+    --color-chart-1: hsl(var(--chart-1));
+    --color-chart-2: hsl(var(--chart-2));
+    --color-chart-3: hsl(var(--chart-3));
+    --color-chart-4: hsl(var(--chart-4));
+    --color-chart-5: hsl(var(--chart-5));
+
+    --color-nodes-claimsexchange: hsl(var(--nodes-claims-exchange));
+    --color-nodes-combinedsigninup: hsl(var(--nodes-combined-signinup));
+
+    --color-nodes-group: hsl(var(--nodes-group));
+    --color-nodes-group-border: hsl(var(--nodes-group-border));
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-} */
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-.-z-1 {
-    z-index: -1;
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentcolor);
+    }
 }
 
-.origin-0 {
-    transform-origin: 0%;
-}
+@layer utilities {
+    :root {
+        --foreground-rgb: 0, 0, 0;
+        --background-start-rgb: 214, 219, 220;
+        --background-end-rgb: 255, 255, 255;
+    }
 
-input:focus ~ label,
-input:not(:placeholder-shown) ~ label,
-textarea:focus ~ label,
-textarea:not(:placeholder-shown) ~ label,
-select:focus ~ label,
-select:not([value=""]):valid ~ label {
-    /* @apply transform; scale-75; -translate-y-6; */
-    --tw-translate-x: 0;
-    --tw-translate-y: 0;
-    --tw-rotate: 0;
-    --tw-skew-x: 0;
-    --tw-skew-y: 0;
-    transform: translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate))
-        skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-    --tw-scale-x: 0.75;
-    --tw-scale-y: 0.75;
-    --tw-translate-y: -1.5rem;
-}
+    .bg-grid-pattern {
+        background-image: linear-gradient(to right, var(--grid-line-color, currentColor) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--grid-line-color, currentColor) 1px, transparent 1px);
+        background-size: var(--grid-size, 40px) var(--grid-size, 40px);
+    }
 
-input:focus ~ label,
-select:focus ~ label {
-    /* @apply text-black; left-0; */
-    --tw-text-opacity: 1;
-    color: rgba(0, 0, 0, var(--tw-text-opacity));
-    left: 0px;
+    .-z-1 {
+        z-index: -1;
+    }
+
+    .origin-0 {
+        transform-origin: 0%;
+    }
+
+    input:focus ~ label,
+    input:not(:placeholder-shown) ~ label,
+    textarea:focus ~ label,
+    textarea:not(:placeholder-shown) ~ label,
+    select:focus ~ label,
+    select:not([value=""]):valid ~ label {
+        /* @apply transform; scale-75; -translate-y-6; */
+        --tw-translate-x: 0;
+        --tw-translate-y: 0;
+        --tw-rotate: 0;
+        --tw-skew-x: 0;
+        --tw-skew-y: 0;
+        transform: translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate))
+            skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+        --tw-scale-x: 0.75;
+        --tw-scale-y: 0.75;
+        --tw-translate-y: -1.5rem;
+    }
+
+    input:focus ~ label,
+    select:focus ~ label {
+        /* @apply text-black; left-0; */
+        --tw-text-opacity: 1;
+        color: rgba(0, 0, 0, var(--tw-text-opacity));
+        left: 0px;
+    }
+
+    .btn-primary {
+        @apply flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3;
+    }
+
+    .form-input-base {
+        @apply pt-3 pb-2 block w-full px-0 mt-0 bg-transparent border-0 border-b-2 appearance-none focus:outline-hidden focus:ring-0 focus:border-black border-gray-200;
+    }
+
+    .label-input-base {
+        @apply absolute duration-300 top-3 text-gray-500;
+    }
+
+    .collapsible-content {
+        @apply overflow-hidden
+    data-[state=open]:animate-in data-[state=closed]:animate-out
+    data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
+    data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
+    data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2
+    data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
+    }
 }
 
 @layer components {
@@ -62,27 +166,6 @@ select:focus ~ label {
 
     li {
         @apply ml-6 list-disc;
-    }
-
-    .btn-primary {
-        @apply flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3;
-    }
-
-    .form-input-base {
-        @apply pt-3 pb-2 block w-full px-0 mt-0 bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 focus:border-black border-gray-200;
-    }
-
-    .label-input-base {
-        @apply absolute duration-300 top-3 -z-1 origin-0 text-gray-500;
-    }
-
-    .collapsible-content {
-        @apply overflow-hidden
-    data-[state=open]:animate-in data-[state=closed]:animate-out
-    data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0
-    data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95
-    data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2
-    data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
     }
 }
 
@@ -175,16 +258,16 @@ select:focus ~ label {
         --xy-controls-button-background-color-hover: hsl(var(--accent));
 
         .react-flow__attribution {
-            @apply rounded-md backdrop-blur bg-background/30;
+            @apply rounded-md backdrop-blur-sm bg-background/30;
         }
 
         .react-flow__minimap-svg {
-            @apply rounded-lg backdrop-blur;
+            @apply rounded-lg backdrop-blur-sm;
         }
     }
 
     .flow-minimap {
-        @apply rounded-xl border bg-background/80 backdrop-blur shadow-xl ring-1 ring-black/5;
+        @apply rounded-xl border bg-background/80 backdrop-blur-sm shadow-xl ring-1 ring-black/5;
         min-width: 11rem;
     }
 
@@ -202,14 +285,14 @@ select:focus ~ label {
     }
 
     .flow-minimap__node text {
-        font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family:
+            "Inter",
+            "Segoe UI",
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            sans-serif;
         letter-spacing: 0.02em;
-    }
-}
-
-@layer debug {
-    :root {
-        --background: hsl(0 0% 100%);
     }
 }
 
@@ -237,7 +320,7 @@ select:focus ~ label {
 }
 
 .react-flow__edge-text {
-    @apply font-mono text-lg text-foreground backdrop-blur m-4 bg-background;
+    @apply font-mono text-lg text-foreground backdrop-blur-sm m-4 bg-background;
 }
 
 /* Ensure edge labels render above everything */

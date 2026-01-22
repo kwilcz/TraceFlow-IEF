@@ -251,10 +251,10 @@ export const LogCredentialsForm = () => {
                 </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
-                <Tabs defaultValue="api" className="mt-2 w-full">
-                    <TabsList>
+                <Tabs defaultValue="api" className="mt-2">
+                    <TabsList className="w-full">
                         <TabsTrigger value="api">Application Insights API</TabsTrigger>
-                        <TabsTrigger value="raw" disabled className="text-muted-foreground/70">
+                        <TabsTrigger value="raw" disabled>
                             Raw File
                         </TabsTrigger>
                     </TabsList>

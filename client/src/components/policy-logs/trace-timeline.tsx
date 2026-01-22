@@ -1,62 +1,54 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useLogStore } from "@/stores/log-store";
-import { computeClaimsDiff, type TraceStep } from "@/types/trace";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useLogStore } from "@/stores/log-store";
+import { type TraceStep } from "@/types/trace";
 import {
-    CaretRight,
-    CaretDown,
     Pulse as Activity,
-    Stack as Layers,
-    Database,
-    GitBranch,
-    Play,
-    FlowArrow as Workflow,
-    Lightning as Zap,
-    GearSix as Settings2,
-    ArrowSquareOut as ExternalLink,
-    Desktop as Server,
-    Clock,
-    MagnifyingGlass as Search,
-    CaretLeft,
     ArrowRight,
-    Eye,
-    CheckCircle as CheckCircle2,
-    XCircle,
-    SkipForward,
-    Warning as AlertTriangle,
-    Copy,
+    CaretDown,
+    CaretLeft,
+    CaretLeftIcon,
+    CaretRight,
+    CaretRightIcon,
     Check,
-    Hash,
+    CheckCircle as CheckCircle2,
+    Clock,
+    Copy,
+    Eye,
     TreeView as FolderTree,
+    GitBranch,
+    Hash,
     List,
+    Play,
+    MagnifyingGlass as Search,
+    GearSix as Settings2,
+    SkipForward,
+    FlowArrow as Workflow,
+    XCircle,
+    Lightning as Zap
 } from "@phosphor-icons/react";
-import { Input } from "@/components/ui/input";
+import { HashIcon } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
+    ClaimsTransformationPanel,
+    DisplayControlPanel,
+    HrdPanel,
     StepPanel,
     TechnicalProfilePanel,
-    ClaimsTransformationPanel,
-    HrdPanel,
-    DisplayControlPanel,
 } from "./panels";
-import { toast } from "sonner";
 
 // ============================================================================
 // Shared Components with Theme-Safe Styling
@@ -1252,8 +1244,8 @@ export const TraceTimeline: React.FC = () => {
                         {/* Correlation ID */}
                         {correlationId && (
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-md border">
-                                <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-xs font-mono text-muted-foreground max-w-[200px] truncate">
+                                <HashIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className="text-xs font-mono text-muted-foreground max-w-72 truncate">
                                     {correlationId}
                                 </span>
                                 <CopyButton value={correlationId} label="Correlation ID" />
@@ -1266,7 +1258,7 @@ export const TraceTimeline: React.FC = () => {
                             onClick={() => handleSelect({ type: "step", stepIndex: Math.max(0, (selection?.stepIndex ?? 0) - 1) })}
                             disabled={!selection || selection.stepIndex === 0}
                         >
-                            <CaretLeft className="w-4 h-4" />
+                            <CaretLeftIcon className="w-4 h-4" />
                         </Button>
                         <span className="text-sm text-muted-foreground min-w-[60px] text-center">
                             {(selection?.stepIndex ?? 0) + 1} / {traceSteps.length}
@@ -1277,7 +1269,7 @@ export const TraceTimeline: React.FC = () => {
                             onClick={() => handleSelect({ type: "step", stepIndex: Math.min(traceSteps.length - 1, (selection?.stepIndex ?? 0) + 1) })}
                             disabled={!selection || selection.stepIndex === traceSteps.length - 1}
                         >
-                            <CaretRight className="w-4 h-4" />
+                            <CaretRightIcon className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
@@ -1299,7 +1291,7 @@ export const TraceTimeline: React.FC = () => {
                                     onClick={() => setSidebarCollapsed(false)}
                                     className="mb-2"
                                 >
-                                    <CaretRight className="w-4 h-4" />
+                                    <CaretRightIcon className="w-4 h-4" />
                                 </Button>
                                 <ScrollArea className="flex-1">
                                     <div className="space-y-1 px-1">

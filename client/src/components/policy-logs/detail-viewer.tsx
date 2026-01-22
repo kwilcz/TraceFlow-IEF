@@ -17,8 +17,7 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 type GetTokenProps = (input: { token: Token; key?: string | number }) => HTMLAttributes<HTMLElement>;
-import { Tooltip, TooltipTrigger } from "../ui/tooltip";
-import { TooltipContent } from "@radix-ui/react-tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DetailViewerHeaderProps {
     selectedLog: LogRecord | null;
