@@ -5,50 +5,34 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useLogStore } from "@/stores/log-store";
 import { type TraceStep } from "@/types/trace";
 import {
-    Pulse as Activity,
-    ArrowRight,
-    CaretDown,
-    CaretLeft,
+    ArrowRightIcon,
+    CaretDownIcon,
     CaretLeftIcon,
-    CaretRight,
     CaretRightIcon,
-    Check,
-    CheckCircle as CheckCircle2,
-    Clock,
-    Copy,
-    Eye,
-    TreeView as FolderTree,
-    GitBranch,
-    Hash,
-    List,
-    Play,
-    MagnifyingGlass as Search,
-    GearSix as Settings2,
-    SkipForward,
-    FlowArrow as Workflow,
-    XCircle,
-    Lightning as Zap
+    CheckCircleIcon,
+    ClockIcon,
+    CursorClickIcon,
+    EyeIcon,
+    FlowArrowIcon,
+    HashIcon,
+    LightningIcon,
+    ListBulletsIcon,
+    MagnifyingGlassIcon,
+    MonitorPlayIcon,
+    PulseIcon,
+    SkipForwardCircleIcon,
+    TreeStructureIcon,
+    TreeViewIcon,
+    XCircleIcon
 } from "@phosphor-icons/react";
-import { HashIcon } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-    ClaimsTransformationPanel,
-    DisplayControlPanel,
-    HrdPanel,
-    StepPanel,
-    TechnicalProfilePanel,
-} from "./panels";
+import { ClaimsTransformationPanel, DisplayControlPanel, HrdPanel, StepPanel, TechnicalProfilePanel } from "./panels";
 
 // ============================================================================
 // Shared Components with Theme-Safe Styling
@@ -70,15 +54,15 @@ const StepStatusIcon: React.FC<{
 
     switch (result) {
         case "Success":
-            return <CheckCircle2 className={cn(cls, "text-emerald-600 dark:text-emerald-400")} />;
+            return <CheckCircleIcon className={cn(cls, "text-emerald-600 dark:text-emerald-400")} />;
         case "Error":
-            return <XCircle className={cn(cls, "text-red-600 dark:text-red-400")} />;
+            return <XCircleIcon className={cn(cls, "text-red-600 dark:text-red-400")} />;
         case "Skipped":
-            return <SkipForward className={cn(cls, "text-amber-600 dark:text-amber-400")} />;
+            return <SkipForwardCircleIcon className={cn(cls, "text-amber-600 dark:text-amber-400")} />;
         case "PendingInput":
-            return <Clock className={cn(cls, "text-blue-600 dark:text-blue-400")} />;
+            return <ClockIcon className={cn(cls, "text-blue-600 dark:text-blue-400")} />;
         default:
-            return <Clock className={cn(cls, "text-muted-foreground")} />;
+            return <ClockIcon className={cn(cls, "text-muted-foreground")} />;
     }
 };
 
@@ -87,10 +71,13 @@ const StepStatusIcon: React.FC<{
  */
 const StepStatusBadge: React.FC<{ result: TraceStep["result"] }> = ({ result }) => {
     const variants: Record<TraceStep["result"], string> = {
-        Success: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
+        Success:
+            "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
         Error: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700",
-        Skipped: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700",
-        PendingInput: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700",
+        Skipped:
+            "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700",
+        PendingInput:
+            "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700",
     };
 
     return (
@@ -123,10 +110,10 @@ const DurationBadge: React.FC<{ durationMs?: number }> = ({ durationMs }) => {
                 "text-xs font-mono gap-1",
                 isError && "text-red-600 border-red-400 dark:text-red-400 dark:border-red-600",
                 isWarning && !isError && "text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-600",
-                !isWarning && "text-muted-foreground border-border"
+                !isWarning && "text-muted-foreground border-border",
             )}
         >
-            <Clock className="w-3 h-3" />
+            <ClockIcon className="w-3 h-3" />
             {formatDuration(durationMs)}
         </Badge>
     );
@@ -154,12 +141,7 @@ const CopyButton: React.FC<{ value: string; label?: string }> = ({ value, label 
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCopy}
-                        className="h-6 w-6 p-0 hover:bg-accent"
-                    >
+                    <Button variant="ghost" size="sm" onClick={handleCopy} className="h-6 w-6 p-0 hover:bg-accent">
                         {copied ? (
                             <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         ) : (
@@ -219,7 +201,16 @@ interface Selection {
 interface TreeNode {
     id: string;
     label: string;
-    type: "subjourney" | "step" | "technicalProfile" | "transformation" | "hrd" | "selectedOption" | "displayControl" | "dcTechnicalProfile" | "dcTransformation";
+    type:
+        | "subjourney"
+        | "step"
+        | "technicalProfile"
+        | "transformation"
+        | "hrd"
+        | "selectedOption"
+        | "displayControl"
+        | "dcTechnicalProfile"
+        | "dcTransformation";
     children?: TreeNode[];
     step?: TraceStep;
     stepIndex?: number;
@@ -251,7 +242,7 @@ interface TreeNode {
 function buildTreeStructure(traceSteps: TraceStep[]): TreeNode[] {
     // Group by SubJourney
     const subJourneyMap = new Map<string, TraceStep[]>();
-    
+
     for (const step of traceSteps) {
         const journeyId = step.journeyContextId || "MainJourney";
         if (!subJourneyMap.has(journeyId)) {
@@ -265,8 +256,8 @@ function buildTreeStructure(traceSteps: TraceStep[]): TreeNode[] {
 
     for (const [journeyId, steps] of entries) {
         // Check if this is the main journey or a subjourney
-        const isMainJourney = journeyId === "MainJourney" || steps.every(s => !s.subJourneyId);
-        
+        const isMainJourney = journeyId === "MainJourney" || steps.every((s) => !s.subJourneyId);
+
         if (entries.length === 1 && isMainJourney) {
             // Single journey - don't wrap in journey node, just show steps directly
             for (const step of steps) {
@@ -280,9 +271,9 @@ function buildTreeStructure(traceSteps: TraceStep[]): TreeNode[] {
                 type: "subjourney",
                 metadata: {
                     tpCount: steps.reduce((sum, s) => sum + s.technicalProfiles.length, 0),
-                    result: steps.some(s => s.result === "Error") ? "Error" : "Success",
+                    result: steps.some((s) => s.result === "Error") ? "Error" : "Success",
                 },
-                children: steps.map(s => buildStepNode(s, s.sequenceNumber)),
+                children: steps.map((s) => buildStepNode(s, s.sequenceNumber)),
             };
             tree.push(journeyNode);
         }
@@ -303,8 +294,9 @@ function buildTreeStructure(traceSteps: TraceStep[]): TreeNode[] {
 function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
     const children: TreeNode[] = [];
     // Only show HRD node for actual HomeRealmDiscovery steps, not self-asserted or other interactive steps
-    const isHrdStep = step.isInteractiveStep && 
-        step.selectableOptions.length > 1 && 
+    const isHrdStep =
+        step.isInteractiveStep &&
+        step.selectableOptions.length > 1 &&
         step.actionHandler?.includes("HomeRealmDiscovery");
     const hasHrdSelection = isHrdStep;
 
@@ -333,25 +325,25 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
     // Find the "main" SelfAsserted TP for this step (if any)
     // This is the TP that contains DisplayControls
     const mainSelfAssertedTp = step.technicalProfileDetails?.find(
-        (tp) => tp.providerType === "SelfAssertedAttributeProvider"
+        (tp) => tp.providerType === "SelfAssertedAttributeProvider",
     );
 
     // Build DC nodes
     const dcNodes: TreeNode[] = [];
     for (const dcAction of step.displayControlActions) {
-        const dcLabel = dcAction.action 
-            ? `${dcAction.displayControlId} → ${dcAction.action}` 
+        const dcLabel = dcAction.action
+            ? `${dcAction.displayControlId} → ${dcAction.action}`
             : dcAction.displayControlId;
-        
+
         const dcChildren: TreeNode[] = [];
-        
+
         // Add nested technical profiles under this DC action
         if (dcAction.technicalProfiles && dcAction.technicalProfiles.length > 0) {
             for (const tp of dcAction.technicalProfiles) {
                 displayControlTpIds.add(tp.technicalProfileId);
-                
+
                 const tpChildren: TreeNode[] = [];
-                
+
                 // Add nested claims transformations under this TP
                 if (tp.claimsTransformations && tp.claimsTransformations.length > 0) {
                     for (const ct of tp.claimsTransformations) {
@@ -367,7 +359,7 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
                         });
                     }
                 }
-                
+
                 dcChildren.push({
                     id: `dc-tp-${step.sequenceNumber}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}`,
                     label: tp.technicalProfileId,
@@ -428,17 +420,18 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
 
     // Determine the "primary" TP for this step (for nesting orphan CTs)
     // If there's only one TP (excluding validation TPs), orphan CTs should nest under it
-    const visibleTps = step.technicalProfiles.filter(tp => 
-        !(hasHrdSelection && tp === step.selectedOption) &&
-        !displayControlTpIds.has(tp) &&
-        !validationTpIds.has(tp)
+    const visibleTps = step.technicalProfiles.filter(
+        (tp) =>
+            !(hasHrdSelection && tp === step.selectedOption) &&
+            !displayControlTpIds.has(tp) &&
+            !validationTpIds.has(tp),
     );
     const hasSinglePrimaryTp = visibleTps.length === 1;
     const singlePrimaryTpId = hasSinglePrimaryTp ? visibleTps[0] : null;
 
     // Calculate orphan CTs (not under DC or already assigned to a TP)
-    const orphanCts = step.claimsTransformations.filter(ct => 
-        !displayControlCtIds.has(ct) && !ctsWithParentTp.has(ct)
+    const orphanCts = step.claimsTransformations.filter(
+        (ct) => !displayControlCtIds.has(ct) && !ctsWithParentTp.has(ct),
     );
 
     // Add technical profiles as children
@@ -447,29 +440,29 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
         // Skip if this TP is already shown as the selected option or under a DisplayControl
         if (hasHrdSelection && tp === step.selectedOption) continue;
         if (displayControlTpIds.has(tp)) continue;
-        
+
         // Skip validation TPs - they'll be nested under the main TP
         if (validationTpIds.has(tp)) continue;
-        
+
         // Check if this is the main SelfAsserted TP
         const isMainSelfAsserted = mainSelfAssertedTp && mainSelfAssertedTp.id === tp;
-        
+
         // Check if this TP has nested CTs
         const nestedCts = tpToCts.get(tp);
         const tpChildren: TreeNode[] = [];
-        
+
         // If this is the main SelfAsserted TP, nest DCs under it
         if (isMainSelfAsserted && dcNodes.length > 0) {
             tpChildren.push(...dcNodes);
         }
-        
+
         // If this is the main SelfAsserted TP, nest validation TPs under it
         if (isMainSelfAsserted && step.validationTechnicalProfiles && step.validationTechnicalProfiles.length > 0) {
             for (const vtpId of step.validationTechnicalProfiles) {
                 // Get nested CTs for this validation TP
                 const vtpNestedCts = tpToCts.get(vtpId);
                 const vtpChildren: TreeNode[] = [];
-                
+
                 if (vtpNestedCts && vtpNestedCts.length > 0) {
                     for (const ctId of vtpNestedCts) {
                         vtpChildren.push({
@@ -483,7 +476,7 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
                         });
                     }
                 }
-                
+
                 tpChildren.push({
                     id: `vtp-${step.sequenceNumber}-${vtpId}`,
                     label: vtpId,
@@ -493,7 +486,7 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
                 });
             }
         }
-        
+
         // Add nested CTs
         if (nestedCts && nestedCts.length > 0) {
             for (const ctId of nestedCts) {
@@ -524,7 +517,7 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
                 });
             }
         }
-        
+
         children.push({
             id: `tp-${step.sequenceNumber}-${tp}`,
             label: tp,
@@ -538,13 +531,13 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
     if (!mainSelfAssertedTp && dcNodes.length > 0) {
         children.push(...dcNodes);
     }
-    
+
     // Add validation TPs at step level if there's no main SelfAsserted TP
     if (!mainSelfAssertedTp && step.validationTechnicalProfiles && step.validationTechnicalProfiles.length > 0) {
         for (const vtpId of step.validationTechnicalProfiles) {
             // Skip if already shown under DC
             if (displayControlTpIds.has(vtpId)) continue;
-            
+
             children.push({
                 id: `vtp-${step.sequenceNumber}-${vtpId}`,
                 label: vtpId,
@@ -554,14 +547,14 @@ function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
         }
     }
 
-    // Add claims transformations as children (but not if already shown under DisplayControl, 
+    // Add claims transformations as children (but not if already shown under DisplayControl,
     // under a TP from technicalProfileDetails, or nested under the single primary TP)
     for (const ct of step.claimsTransformations) {
         if (displayControlCtIds.has(ct)) continue;
         if (ctsWithParentTp.has(ct)) continue;
         // Skip if we already nested orphan CTs under the single primary TP
         if (singlePrimaryTpId && orphanCts.includes(ct)) continue;
-        
+
         children.push({
             id: `ct-${step.sequenceNumber}-${ct}`,
             label: ct,
@@ -605,7 +598,7 @@ const TreeNodeComponent: React.FC<{
 }> = ({ node, depth, selection, onSelect, expandedNodes, toggleExpanded }) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedNodes.has(node.id);
-    
+
     // Determine if this node is selected
     const isSelected = useMemo(() => {
         if (!selection) return false;
@@ -613,23 +606,29 @@ const TreeNodeComponent: React.FC<{
             return selection.type === "step" && selection.stepIndex === node.stepIndex;
         }
         if (node.type === "technicalProfile" || node.type === "selectedOption" || node.type === "dcTechnicalProfile") {
-            return selection.type === "technicalProfile" && 
-                   selection.stepIndex === node.stepIndex && 
-                   selection.itemId === node.label;
+            return (
+                selection.type === "technicalProfile" &&
+                selection.stepIndex === node.stepIndex &&
+                selection.itemId === node.label
+            );
         }
         if (node.type === "transformation" || node.type === "dcTransformation") {
-            return selection.type === "transformation" && 
-                   selection.stepIndex === node.stepIndex && 
-                   selection.itemId === node.label;
+            return (
+                selection.type === "transformation" &&
+                selection.stepIndex === node.stepIndex &&
+                selection.itemId === node.label
+            );
         }
         if (node.type === "hrd") {
             return selection.type === "hrd" && selection.stepIndex === node.stepIndex;
         }
         if (node.type === "displayControl") {
-            return selection.type === "displayControl" && 
-                   selection.stepIndex === node.stepIndex && 
-                   selection.metadata?.displayControlId === node.metadata?.displayControlId &&
-                   selection.metadata?.action === node.metadata?.action;
+            return (
+                selection.type === "displayControl" &&
+                selection.stepIndex === node.stepIndex &&
+                selection.metadata?.displayControlId === node.metadata?.displayControlId &&
+                selection.metadata?.action === node.metadata?.action
+            );
         }
         return false;
     }, [selection, node]);
@@ -652,20 +651,28 @@ const TreeNodeComponent: React.FC<{
                 // Step is NOT selected: select it and show details panel
                 onSelect({ type: "step", stepIndex: node.stepIndex });
             }
-        } else if ((node.type === "technicalProfile" || node.type === "selectedOption" || node.type === "dcTechnicalProfile") && node.stepIndex !== undefined) {
+        } else if (
+            (node.type === "technicalProfile" ||
+                node.type === "selectedOption" ||
+                node.type === "dcTechnicalProfile") &&
+            node.stepIndex !== undefined
+        ) {
             onSelect({ type: "technicalProfile", stepIndex: node.stepIndex, itemId: node.label });
-        } else if ((node.type === "transformation" || node.type === "dcTransformation") && node.stepIndex !== undefined) {
+        } else if (
+            (node.type === "transformation" || node.type === "dcTransformation") &&
+            node.stepIndex !== undefined
+        ) {
             onSelect({ type: "transformation", stepIndex: node.stepIndex, itemId: node.label });
         } else if (node.type === "hrd" && node.stepIndex !== undefined) {
             onSelect({ type: "hrd", stepIndex: node.stepIndex });
         } else if (node.type === "displayControl" && node.stepIndex !== undefined) {
-            onSelect({ 
-                type: "displayControl", 
+            onSelect({
+                type: "displayControl",
                 stepIndex: node.stepIndex,
                 metadata: {
                     displayControlId: node.metadata?.displayControlId,
                     action: node.metadata?.action,
-                }
+                },
             });
             if (hasChildren && !isExpanded) {
                 toggleExpanded(node.id);
@@ -679,29 +686,29 @@ const TreeNodeComponent: React.FC<{
     const getIcon = () => {
         switch (node.type) {
             case "subjourney":
-                return <GitBranch className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+                return <TreeStructureIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
             case "step":
                 return node.metadata?.result ? (
                     <StepStatusIcon result={node.metadata.result} size="sm" />
                 ) : (
-                    <Hash className="w-4 h-4 text-muted-foreground" />
+                    <HashIcon className="w-4 h-4 text-muted-foreground" />
                 );
             case "technicalProfile":
-                return <Workflow className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />;
+                return <FlowArrowIcon className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />;
             case "dcTechnicalProfile":
-                return <Workflow className="w-3.5 h-3.5 text-violet-500 dark:text-violet-300" />;
+                return <FlowArrowIcon className="w-3.5 h-3.5 text-violet-500 dark:text-violet-300" />;
             case "transformation":
-                return <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />;
+                return <LightningIcon className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />;
             case "dcTransformation":
-                return <Zap className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-300" />;
+                return <LightningIcon className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-300" />;
             case "hrd":
-                return <Eye className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />;
+                return <EyeIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />;
             case "selectedOption":
-                return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />;
+                return <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />;
             case "displayControl":
-                return <Settings2 className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />;
+                return <MonitorPlayIcon className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />;
             default:
-                return <Hash className="w-4 h-4 text-muted-foreground" />;
+                return <HashIcon className="w-4 h-4 text-muted-foreground" />;
         }
     };
 
@@ -735,7 +742,7 @@ const TreeNodeComponent: React.FC<{
                     "flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors text-sm",
                     "hover:bg-accent/50",
                     isSelected && "bg-primary/10 ring-1 ring-primary",
-                    getNodeStyles()
+                    getNodeStyles(),
                 )}
                 style={{ paddingLeft: `${8 + depth * 16}px` }}
             >
@@ -743,12 +750,12 @@ const TreeNodeComponent: React.FC<{
                 {hasChildren ? (
                     <button
                         onClick={handleChevronClick}
-                        className="w-4 h-4 flex items-center justify-center flex-shrink-0 hover:bg-accent rounded"
+                        className="w-4 h-4 flex items-center justify-center shrink-0 hover:bg-accent rounded"
                     >
                         {isExpanded ? (
-                            <CaretDown className="w-3.5 h-3.5 text-muted-foreground" />
+                            <CaretDownIcon className="w-3.5 h-3.5 text-muted-foreground" />
                         ) : (
-                            <CaretRight className="w-3.5 h-3.5 text-muted-foreground" />
+                            <CaretRightIcon className="w-3.5 h-3.5 text-muted-foreground" />
                         )}
                     </button>
                 ) : (
@@ -759,27 +766,34 @@ const TreeNodeComponent: React.FC<{
                 {getIcon()}
 
                 {/* Label - show full text */}
-                <span className={cn(
-                    "flex-1 min-w-0",
-                    node.type === "subjourney" && "font-medium truncate",
-                    node.type === "step" && "font-medium text-foreground",
-                    (node.type === "technicalProfile" || node.type === "transformation" || node.type === "selectedOption" || node.type === "displayControl" || node.type === "dcTechnicalProfile" || node.type === "dcTransformation") && "text-xs break-all",
-                    node.type === "hrd" && "font-medium text-xs"
-                )}
-                title={node.label}
+                <span
+                    className={cn(
+                        "flex-1 min-w-0",
+                        node.type === "subjourney" && "font-medium truncate",
+                        node.type === "step" && "font-medium text-foreground",
+                        (node.type === "technicalProfile" ||
+                            node.type === "transformation" ||
+                            node.type === "selectedOption" ||
+                            node.type === "displayControl" ||
+                            node.type === "dcTechnicalProfile" ||
+                            node.type === "dcTransformation") &&
+                            "text-xs break-all",
+                        node.type === "hrd" && "font-medium text-xs",
+                    )}
+                    title={node.label}
                 >
                     {node.label}
                 </span>
 
                 {/* Display control action badge */}
                 {node.type === "displayControl" && node.metadata?.resultCode && (
-                    <Badge 
-                        variant="outline" 
+                    <Badge
+                        variant="outline"
                         className={cn(
                             "text-[10px] px-1 py-0",
-                            node.metadata.resultCode === "200" 
-                                ? "text-green-600 border-green-400" 
-                                : "text-red-600 border-red-400"
+                            node.metadata.resultCode === "200"
+                                ? "text-green-600 border-green-400"
+                                : "text-red-600 border-red-400",
                         )}
                     >
                         {node.metadata.resultCode}
@@ -788,17 +802,26 @@ const TreeNodeComponent: React.FC<{
 
                 {/* Metadata badges */}
                 {node.type === "step" && node.metadata?.isHrdStep && (
-                    <Badge variant="outline" className="text-[10px] px-1 py-0 text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-600">
+                    <Badge
+                        variant="outline"
+                        className="text-[10px] px-1 py-0 text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-600"
+                    >
                         HRD
                     </Badge>
                 )}
                 {node.type === "step" && node.metadata?.result === "Error" && (
-                    <Badge variant="outline" className="text-[10px] px-1 py-0 text-red-600 border-red-400 dark:text-red-400 dark:border-red-600">
+                    <Badge
+                        variant="outline"
+                        className="text-[10px] px-1 py-0 text-red-600 border-red-400 dark:text-red-400 dark:border-red-600"
+                    >
                         ERR
                     </Badge>
                 )}
                 {node.type === "hrd" && node.metadata?.selectableOptions && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-600">
+                    <Badge
+                        variant="outline"
+                        className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-400 dark:text-amber-400 dark:border-amber-600"
+                    >
                         {node.metadata.selectableOptions.length} options
                     </Badge>
                 )}
@@ -858,7 +881,7 @@ const TreeSidebar: React.FC<{
                 step.technicalProfiles.some((tp) => tp.toLowerCase().includes(lowerFilter)) ||
                 step.claimsTransformations.some((ct) => ct.toLowerCase().includes(lowerFilter)) ||
                 step.graphNodeId.toLowerCase().includes(lowerFilter) ||
-                `step ${step.stepOrder}`.toLowerCase().includes(lowerFilter)
+                `step ${step.stepOrder}`.toLowerCase().includes(lowerFilter),
         );
     }, [traceSteps, filter]);
 
@@ -894,9 +917,7 @@ const TreeSidebar: React.FC<{
         <div className="flex flex-col h-full bg-background">
             {/* Header with view toggle */}
             <div className="p-2 border-b flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">
-                    Journey Tree
-                </span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase">Journey Tree</span>
                 <div className="flex items-center gap-1">
                     <TooltipProvider>
                         <Tooltip>
@@ -907,7 +928,7 @@ const TreeSidebar: React.FC<{
                                     className="h-6 w-6 p-0"
                                     onClick={() => setViewMode("tree")}
                                 >
-                                    <FolderTree className="w-3.5 h-3.5" />
+                                    <TreeViewIcon className="w-3.5 h-3.5" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>Tree View</TooltipContent>
@@ -922,7 +943,7 @@ const TreeSidebar: React.FC<{
                                     className="h-6 w-6 p-0"
                                     onClick={() => setViewMode("flat")}
                                 >
-                                    <List className="w-3.5 h-3.5" />
+                                    <ListBulletsIcon className="w-3.5 h-3.5" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>Flat List</TooltipContent>
@@ -934,7 +955,7 @@ const TreeSidebar: React.FC<{
             {/* Search */}
             <div className="p-2 border-b">
                 <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                         placeholder="Filter..."
                         value={filter}
@@ -959,49 +980,45 @@ const TreeSidebar: React.FC<{
             {/* Tree content */}
             <ScrollArea className="flex-1">
                 <div className="p-2">
-                    {viewMode === "tree" && !filter ? (
-                        // Tree view
-                        treeData.map((node) => (
-                            <TreeNodeComponent
-                                key={node.id}
-                                node={node}
-                                depth={0}
-                                selection={selection}
-                                onSelect={onSelect}
-                                expandedNodes={expandedNodes}
-                                toggleExpanded={toggleExpanded}
-                            />
-                        ))
-                    ) : (
-                        // Flat/filtered view
-                        filteredSteps.map((step) => (
-                            <div
-                                key={step.sequenceNumber}
-                                onClick={() => onSelect({ type: "step", stepIndex: step.sequenceNumber })}
-                                className={cn(
-                                    "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-sm",
-                                    "hover:bg-accent/50",
-                                    selection?.type === "step" && selection.stepIndex === step.sequenceNumber && "bg-primary/10 ring-1 ring-primary"
-                                )}
-                            >
-                                <StepStatusIcon result={step.result} size="sm" />
-                                <span className="font-mono text-xs text-muted-foreground w-5">
-                                    {step.sequenceNumber + 1}
-                                </span>
-                                <span className="flex-1 truncate font-medium">
-                                    Step {step.stepOrder}
-                                </span>
-                                {step.isInteractiveStep && (
-                                    <Play className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                                )}
-                            </div>
-                        ))
-                    )}
+                    {viewMode === "tree" && !filter
+                        ? // Tree view
+                          treeData.map((node) => (
+                              <TreeNodeComponent
+                                  key={node.id}
+                                  node={node}
+                                  depth={0}
+                                  selection={selection}
+                                  onSelect={onSelect}
+                                  expandedNodes={expandedNodes}
+                                  toggleExpanded={toggleExpanded}
+                              />
+                          ))
+                        : // Flat/filtered view
+                          filteredSteps.map((step) => (
+                              <div
+                                  key={step.sequenceNumber}
+                                  onClick={() => onSelect({ type: "step", stepIndex: step.sequenceNumber })}
+                                  className={cn(
+                                      "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-sm",
+                                      "hover:bg-accent/50",
+                                      selection?.type === "step" &&
+                                          selection.stepIndex === step.sequenceNumber &&
+                                          "bg-primary/10 ring-1 ring-primary",
+                                  )}
+                              >
+                                  <StepStatusIcon result={step.result} size="sm" />
+                                  <span className="font-mono text-xs text-muted-foreground w-5">
+                                      {step.sequenceNumber + 1}
+                                  </span>
+                                  <span className="flex-1 truncate font-medium">Step {step.stepOrder}</span>
+                                  {step.isInteractiveStep && (
+                                      <CursorClickIcon className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                  )}
+                              </div>
+                          ))}
 
                     {filter && filteredSteps.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            No steps match "{filter}"
-                        </p>
+                        <p className="text-sm text-muted-foreground text-center py-4">No steps match "{filter}"</p>
                     )}
                 </div>
             </ScrollArea>
@@ -1009,7 +1026,9 @@ const TreeSidebar: React.FC<{
             {/* Footer */}
             <div className="p-2 border-t text-xs text-muted-foreground">
                 {filter ? (
-                    <span>{filteredSteps.length} of {traceSteps.length} steps</span>
+                    <span>
+                        {filteredSteps.length} of {traceSteps.length} steps
+                    </span>
                 ) : (
                     <span>{traceSteps.length} steps total</span>
                 )}
@@ -1037,7 +1056,7 @@ const ClaimRow: React.FC<{
             "bg-card",
             diffType === "added" && "border-l-2 border-l-emerald-500 bg-emerald-50 dark:bg-emerald-900/20",
             diffType === "modified" && "border-l-2 border-l-amber-500 bg-amber-50 dark:bg-amber-900/20",
-            diffType === "removed" && "border-l-2 border-l-red-500 bg-red-50 dark:bg-red-900/20 opacity-60"
+            diffType === "removed" && "border-l-2 border-l-red-500 bg-red-50 dark:bg-red-900/20 opacity-60",
         )}
     >
         <div className="flex-1 min-w-0">
@@ -1050,7 +1069,7 @@ const ClaimRow: React.FC<{
                             "text-[10px]",
                             diffType === "added" && "text-emerald-700 border-emerald-500 dark:text-emerald-400",
                             diffType === "modified" && "text-amber-700 border-amber-500 dark:text-amber-400",
-                            diffType === "removed" && "text-red-700 border-red-500 dark:text-red-400"
+                            diffType === "removed" && "text-red-700 border-red-500 dark:text-red-400",
                         )}
                     >
                         {diffType.toUpperCase()}
@@ -1059,16 +1078,14 @@ const ClaimRow: React.FC<{
             </div>
             {diffType === "modified" && oldValue && (
                 <div className="flex items-center gap-1 mt-1 text-xs">
-                    <span className="text-red-600 dark:text-red-400 line-through font-mono truncate">
-                        {oldValue}
-                    </span>
-                    <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-red-600 dark:text-red-400 line-through font-mono truncate">{oldValue}</span>
+                    <ArrowRightIcon className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                 </div>
             )}
             <div
                 className={cn(
                     "font-mono text-xs break-all mt-1",
-                    diffType === "removed" ? "text-red-600 dark:text-red-400" : "text-muted-foreground"
+                    diffType === "removed" ? "text-red-600 dark:text-red-400" : "text-muted-foreground",
                 )}
             >
                 {value}
@@ -1084,7 +1101,7 @@ const ClaimRow: React.FC<{
 
 /**
  * Split Tree View Trace Timeline
- * 
+ *
  * A hierarchical tree view with:
  * - SubJourneys as top-level groups (when present)
  * - Orchestration steps nested under journeys
@@ -1092,7 +1109,16 @@ const ClaimRow: React.FC<{
  * - Full details panel for selected step, TP, or CT
  */
 export const TraceTimeline: React.FC = () => {
-    const { traceSteps, activeStepIndex, isTraceModeActive, setActiveStep, correlationId, traceErrors, logs, setSelectedLogOnly } = useLogStore();
+    const {
+        traceSteps,
+        activeStepIndex,
+        isTraceModeActive,
+        setActiveStep,
+        correlationId,
+        traceErrors,
+        logs,
+        setSelectedLogOnly,
+    } = useLogStore();
     const [filter, setFilter] = useState("");
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [selection, setSelection] = useState<Selection | null>(null);
@@ -1100,7 +1126,7 @@ export const TraceTimeline: React.FC = () => {
     // Sync selection with activeStepIndex from store (only for external changes)
     // This is a ref to track whether we initiated the change ourselves
     const isInternalChange = React.useRef(false);
-    
+
     React.useEffect(() => {
         // Skip if we just made an internal selection change
         if (isInternalChange.current) {
@@ -1128,7 +1154,7 @@ export const TraceTimeline: React.FC = () => {
         setSelection(newSelection);
         // Update store's activeStepIndex when selecting a step (or parent step of TP/CT)
         setActiveStep(newSelection.stepIndex);
-        
+
         // Sync the log viewer to the corresponding log for this step
         // Use setSelectedLogOnly to avoid regenerating trace
         const step = traceSteps[newSelection.stepIndex];
@@ -1153,7 +1179,7 @@ export const TraceTimeline: React.FC = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="flex items-center gap-2">
-                                <Workflow className="w-5 h-5 text-primary" />
+                                <FlowArrowIcon className="w-5 h-5 text-primary" />
                                 User Journey Trace
                             </CardTitle>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1193,9 +1219,7 @@ export const TraceTimeline: React.FC = () => {
             case "step":
                 return <StepPanel step={selectedStep} previousStep={previousStep} />;
             case "technicalProfile":
-                return selection.itemId ? (
-                    <TechnicalProfilePanel step={selectedStep} tpId={selection.itemId} />
-                ) : null;
+                return selection.itemId ? <TechnicalProfilePanel step={selectedStep} tpId={selection.itemId} /> : null;
             case "transformation":
                 return selection.itemId ? (
                     <ClaimsTransformationPanel step={selectedStep} ctId={selection.itemId} />
@@ -1206,8 +1230,8 @@ export const TraceTimeline: React.FC = () => {
                 const dcId = selection.metadata?.displayControlId;
                 if (typeof dcId === "string" && dcId) {
                     return (
-                        <DisplayControlPanel 
-                            step={selectedStep} 
+                        <DisplayControlPanel
+                            step={selectedStep}
                             displayControlId={dcId}
                             action={selection.metadata?.action as string | undefined}
                         />
@@ -1226,7 +1250,7 @@ export const TraceTimeline: React.FC = () => {
                 <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
-                            <Activity className="w-5 h-5 text-primary" />
+                            <PulseIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <CardTitle className="text-lg">User Journey Trace</CardTitle>
@@ -1255,7 +1279,9 @@ export const TraceTimeline: React.FC = () => {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleSelect({ type: "step", stepIndex: Math.max(0, (selection?.stepIndex ?? 0) - 1) })}
+                            onClick={() =>
+                                handleSelect({ type: "step", stepIndex: Math.max(0, (selection?.stepIndex ?? 0) - 1) })
+                            }
                             disabled={!selection || selection.stepIndex === 0}
                         >
                             <CaretLeftIcon className="w-4 h-4" />
@@ -1266,7 +1292,12 @@ export const TraceTimeline: React.FC = () => {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleSelect({ type: "step", stepIndex: Math.min(traceSteps.length - 1, (selection?.stepIndex ?? 0) + 1) })}
+                            onClick={() =>
+                                handleSelect({
+                                    type: "step",
+                                    stepIndex: Math.min(traceSteps.length - 1, (selection?.stepIndex ?? 0) + 1),
+                                })
+                            }
                             disabled={!selection || selection.stepIndex === traceSteps.length - 1}
                         >
                             <CaretRightIcon className="w-4 h-4" />
@@ -1277,12 +1308,7 @@ export const TraceTimeline: React.FC = () => {
             <CardContent className="p-0">
                 <div className="flex h-[550px]">
                     {/* Left sidebar */}
-                    <div
-                        className={cn(
-                            "border-r transition-all duration-200",
-                            sidebarCollapsed ? "w-12" : "w-80"
-                        )}
-                    >
+                    <div className={cn("border-r transition-all duration-200", sidebarCollapsed ? "w-12" : "w-80")}>
                         {sidebarCollapsed ? (
                             <div className="flex flex-col items-center py-2">
                                 <Button
@@ -1300,19 +1326,20 @@ export const TraceTimeline: React.FC = () => {
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <div
-                                                            onClick={() => handleSelect({ type: "step", stepIndex: idx })}
+                                                            onClick={() =>
+                                                                handleSelect({ type: "step", stepIndex: idx })
+                                                            }
                                                             className={cn(
                                                                 "w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all",
                                                                 "hover:bg-accent",
-                                                                selection?.stepIndex === idx && "bg-primary/10 ring-1 ring-primary"
+                                                                selection?.stepIndex === idx &&
+                                                                    "bg-primary/10 ring-1 ring-primary",
                                                             )}
                                                         >
                                                             <StepStatusIcon result={step.result} size="sm" />
                                                         </div>
                                                     </TooltipTrigger>
-                                                    <TooltipContent side="right">
-                                                        Step {step.stepOrder}
-                                                    </TooltipContent>
+                                                    <TooltipContent side="right">Step {step.stepOrder}</TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         ))}
@@ -1328,7 +1355,7 @@ export const TraceTimeline: React.FC = () => {
                                         onClick={() => setSidebarCollapsed(true)}
                                         className="h-6 w-6 p-0"
                                     >
-                                        <CaretLeft className="w-4 h-4" />
+                                        <CaretLeftIcon className="w-4 h-4" />
                                     </Button>
                                 </div>
                                 <TreeSidebar
@@ -1343,9 +1370,7 @@ export const TraceTimeline: React.FC = () => {
                     </div>
 
                     {/* Right details panel */}
-                    <div className="flex-1 min-w-0">
-                        {renderDetailsPanel()}
-                    </div>
+                    <div className="flex-1 min-w-0">{renderDetailsPanel()}</div>
                 </div>
             </CardContent>
         </Card>

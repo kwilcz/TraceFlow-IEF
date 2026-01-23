@@ -6,20 +6,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { TraceStep, computeClaimsDiff } from "@/types/trace";
 import {
-    Clock,
+    ArrowSquareOutIcon,
     ClockIcon,
+    DatabaseIcon,
     DesktopIcon,
-    ArrowSquareOut as ExternalLink,
-    Eye,
-    Stack as Layers,
-    Play,
-    Desktop as Server,
-    GearSix as Settings2,
-    FlowArrow as Workflow,
-    XCircle,
-    Lightning as Zap,
+    EyeIcon,
+    FlowArrowIcon,
+    GearSixIcon,
+    GlobeIcon,
+    LightningIcon,
+    MonitorPlayIcon,
+    StackIcon,
+    XCircleIcon,
 } from "@phosphor-icons/react";
-import { DatabaseIcon, GlobeIcon, LayersIcon, PlayIcon, WorkflowIcon } from "lucide-react";
 import React, { useMemo } from "react";
 import { DetailsPanel } from "../details-panel";
 
@@ -42,7 +41,7 @@ const DurationBadge: React.FC<{ durationMs?: number }> = ({ durationMs }) => {
 
     return (
         <Badge variant="outline" className={cn("text-xs font-mono", getColor(durationMs))}>
-            <Clock className="w-3 h-3 mr-1" />
+            <ClockIcon className="w-3 h-3 mr-1" />
             {formatDuration(durationMs)}
         </Badge>
     );
@@ -150,7 +149,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
             <DetailsPanel.Header>
                 <DetailsPanel.HeaderContent>
                     <DetailsPanel.TitleRow>
-                        <DetailsPanel.Title icon={<Layers className="w-5 h-5" />}>
+                        <DetailsPanel.Title icon={<StackIcon className="w-5 h-5" />}>
                             Step {step.stepOrder}
                         </DetailsPanel.Title>
                         <StepStatusBadge result={step.result} />
@@ -170,7 +169,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                 </div>
                 {step.isInteractiveStep && (
                     <Badge variant="outline" className="text-xs text-purple-700 border-purple-500 dark:text-purple-400">
-                        <PlayIcon className="w-3 h-3 mr-1" />
+                        <MonitorPlayIcon className="w-3 h-3 mr-1" />
                         Interactive
                     </Badge>
                 )}
@@ -197,7 +196,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
             {step.errorMessage && (
                 <div className="p-4">
                     <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-1">
-                        <XCircle className="w-3.5 h-3.5" />
+                        <XCircleIcon className="w-3.5 h-3.5" />
                         Error
                     </div>
                     <ErrorDetails message={step.errorMessage} hResult={step.errorHResult} />
@@ -208,11 +207,11 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
             <Tabs defaultValue="claims" className="flex-1 flex flex-col">
                 <TabsList className="w-full rounded-none">
                     <TabsTrigger value="claims" className="data-[state=active]:bg-accent py-2">
-                        <LayersIcon className="w-4 h-4 mr-1" />
+                        <StackIcon className="w-4 h-4 mr-1" />
                         Claims ({Object.keys(step.claimsSnapshot).length})
                     </TabsTrigger>
                     <TabsTrigger value="components" className="data-[state=active]:bg-accent px-3 py-2">
-                        <WorkflowIcon className="w-4 h-4 mr-1" />
+                        <FlowArrowIcon className="w-4 h-4 mr-1" />
                         Components
                     </TabsTrigger>
                     <TabsTrigger value="statebag" className="data-[state=active]:bg-accent px-3 py-2">
@@ -266,7 +265,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                 <ComponentSection
                                     title="Technical Profiles"
                                     count={step.technicalProfiles.length}
-                                    icon={<Workflow className="w-3 h-3" />}
+                                    icon={<FlowArrowIcon className="w-3 h-3" />}
                                 >
                                     <div className="space-y-1">
                                         {step.technicalProfiles.map((tp) => (
@@ -289,7 +288,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                 <ComponentSection
                                     title="Claims Transformations"
                                     count={step.claimsTransformations.length}
-                                    icon={<Zap className="w-3 h-3" />}
+                                    icon={<LightningIcon className="w-3 h-3" />}
                                 >
                                     <div className="space-y-1">
                                         {step.claimsTransformations.map((ct) => (
@@ -316,7 +315,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                             ? step.displayControlActions.length
                                             : step.displayControls.length
                                     }
-                                    icon={<Settings2 className="w-3 h-3" />}
+                                    icon={<GearSixIcon className="w-3 h-3" />}
                                 >
                                     <div className="space-y-2">
                                         {/* Show detailed actions if available */}
@@ -345,7 +344,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
 
                             {/* Selectable Options */}
                             {step.selectableOptions.length > 0 && (
-                                <ComponentSection title="Selectable Options" icon={<Eye className="w-3 h-3" />}>
+                                <ComponentSection title="Selectable Options" icon={<EyeIcon className="w-3 h-3" />}>
                                     <div className="flex flex-wrap gap-1.5">
                                         {step.selectableOptions.map((opt) => (
                                             <Badge key={opt} variant="outline" className="text-xs">
@@ -358,7 +357,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
 
                             {/* Backend API Calls */}
                             {step.backendApiCalls && step.backendApiCalls.length > 0 && (
-                                <ComponentSection title="Backend API Calls" icon={<Server className="w-3 h-3" />}>
+                                <ComponentSection title="Backend API Calls" icon={<DesktopIcon className="w-3 h-3" />}>
                                     <div className="space-y-2">
                                         {step.backendApiCalls.map((call, idx) => (
                                             <div key={idx} className="p-2 bg-muted rounded-md text-xs">
@@ -369,7 +368,7 @@ export function StepPanel({ step, previousStep }: StepPanelProps) {
                                                 )}
                                                 {call.requestUri && (
                                                     <div className="font-mono text-muted-foreground truncate flex items-center gap-1">
-                                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                                        <ArrowSquareOutIcon className="w-3 h-3 flex-shrink-0" />
                                                         {call.requestUri}
                                                     </div>
                                                 )}
