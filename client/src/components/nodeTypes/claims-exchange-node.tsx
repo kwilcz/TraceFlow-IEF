@@ -56,28 +56,32 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
     }, [primaryProfile]);
 
     const inputClaims = useMemo(() => {
-        return primaryProfile?.inputClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.inputClaims || [];
+    }, [displayProfile]);
 
     const outputClaims = useMemo(() => {
-        return primaryProfile?.outputClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.outputClaims || [];
+    }, [displayProfile]);
 
     const persistedClaims = useMemo(() => {
-        return primaryProfile?.persistedClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.persistedClaims || [];
+    }, [displayProfile]);
 
     const inputTransformations = useMemo(() => {
-        return primaryProfile?.inputClaimsTransformations || [];
-    }, [primaryProfile]);
+        return displayProfile?.inputClaimsTransformations || [];
+    }, [displayProfile]);
 
     const outputTransformations = useMemo(() => {
-        return primaryProfile?.outputClaimsTransformations || [];
-    }, [primaryProfile]);
+        return displayProfile?.outputClaimsTransformations || [];
+    }, [displayProfile]);
 
     const displayClaims = useMemo(() => {
-        return primaryProfile?.displayClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.displayClaims || [];
+    }, [displayProfile]);
+
+    const validationTechnicalProfiles = useMemo(() => {
+        return displayProfile?.validationTechnicalProfiles || [];
+    }, [displayProfile]);
 
     const highestHierarchyFile =
         primaryProfile?.inheritanceChain?.[primaryProfile.inheritanceChain.length - 1]?.policyId;
@@ -117,10 +121,10 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
             </PolicyNode.Header>
 
             {/* Details Content */}
-            {primaryProfile && (
+            {displayProfile && (
                 <PolicyNode.Content>
                     {/* Inheritance */}
-                    {primaryProfile.inheritanceChain.length > 1 && inheritanceChain && (
+                    {primaryProfile?.inheritanceChain?.length && primaryProfile.inheritanceChain.length > 1 && inheritanceChain && (
                         <PolicyNode.Section>
                             <div className="text-purple-300/80 font-semibold flex items-center gap-1 mb-1">
                                 <BarChart3 className="size-3" />

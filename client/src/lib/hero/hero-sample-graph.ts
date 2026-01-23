@@ -60,8 +60,45 @@ export const heroSampleGraph: { nodes: Node[]; edges: Edge[] } = {
                 technicalProfiles: [
                     {
                         id: "LocalAccountSignUpWithLogonEmail",
-                        displayName: "Local Account Sign-Up",
+                        displayName: "Email signup",
                         providerName: "SelfAssertedAttributeProvider",
+                        protocol: {
+                            name: "Proprietary",
+                            handler:
+                                "Web.TPEngine.Providers.SelfAssertedAttributeProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                        },
+                        metadata: [
+                            { key: "IpAddressClaimReferenceId", value: "IpAddress" },
+                            { key: "ContentDefinitionReferenceId", value: "api.localaccountsignup" },
+                        ],
+                        cryptographicKeys: [
+                            {
+                                id: "issuer_secret",
+                                storageReferenceId: "B2C_1A_TokenSigningKeyContainer",
+                            },
+                        ],
+                        inputClaims: [{ claimTypeReferenceId: "email" }],
+                        outputClaims: [
+                            { claimTypeReferenceId: "objectId" },
+                            {
+                                claimTypeReferenceId: "email",
+                                partnerClaimType: "Verified.Email",
+                                required: true,
+                            },
+                            { claimTypeReferenceId: "newPassword", required: true },
+                            { claimTypeReferenceId: "reenterPassword", required: true },
+                            {
+                                claimTypeReferenceId: "executed-SelfAsserted-Input",
+                                defaultValue: "true",
+                            },
+                            { claimTypeReferenceId: "authenticationSource" },
+                            { claimTypeReferenceId: "newUser" },
+                            { claimTypeReferenceId: "displayName" },
+                            { claimTypeReferenceId: "givenName" },
+                            { claimTypeReferenceId: "surName" },
+                        ],
+                        validationTechnicalProfiles: [{ referenceId: "AAD-UserWriteUsingLogonEmail" }],
+                        useTechnicalProfileForSessionManagement: "SM-AAD",
                     },
                 ],
             },
@@ -80,6 +117,19 @@ export const heroSampleGraph: { nodes: Node[]; edges: Edge[] } = {
                         id: "AAD-UserReadUsingObjectId",
                         displayName: "Read User (by objectId)",
                         providerName: "AzureActiveDirectoryProvider",
+                        metadata: [
+                            { key: "Operation", value: "Read" },
+                            { key: "RaiseErrorIfClaimsPrincipalDoesNotExist", value: "true" },
+                        ],
+                        inputClaims: [{ claimTypeReferenceId: "objectId", required: true }],
+                        outputClaims: [
+                            { claimTypeReferenceId: "signInNames.emailAddress" },
+                            { claimTypeReferenceId: "displayName" },
+                            { claimTypeReferenceId: "otherMails" },
+                            { claimTypeReferenceId: "givenName" },
+                            { claimTypeReferenceId: "surname" },
+                        ],
+                        includeTechnicalProfileReferenceId: "AAD-Common",
                     },
                 ],
             },
