@@ -11,7 +11,7 @@
     @apply group-has-disabled/field:opacity-50;
 
     /* Checked */
-    &[data-checked] &,
+    &[data-checked],
     &[aria-checked="true"] {
         @apply bg-primary text-primary-foreground border-primary;
         @apply dark:bg-primary;
@@ -30,7 +30,7 @@
         @apply dark:border-destructive/50 dark:ring-destructive/40;
 
         /* Invalid + Checked */
-        &[data-checked] &,
+        &[data-checked],
         &[aria-checked="true"] {
             @apply border-primary;
         }
