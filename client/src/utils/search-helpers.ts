@@ -1,5 +1,5 @@
 import { Node } from '@xyflow/react';
-import { TechnicalProfile, ClaimReference } from '@/types/technical-profile';
+import { ClaimReference, getProtocolHandlerShortName, PROTOCOL_NAME, TechnicalProfile } from '@/types/technical-profile';
 import { NODE_TYPES } from '@/components/nodeTypes';
 
 /**
@@ -42,8 +42,14 @@ export const createNodeContentExtractor = () => {
           node.data.technicalProfiles.forEach((profile: TechnicalProfile) => {
             if (profile.id) content.push(profile.id);
             if (profile.displayName) content.push(profile.displayName);
-            if (profile.providerName) content.push(profile.providerName);
             if (profile.description) content.push(profile.description);
+            if (profile.protocol?.name) {
+              content.push(profile.protocol.name);
+              if (profile.protocol.name === PROTOCOL_NAME.Proprietary) {
+                const handlerShortName = getProtocolHandlerShortName(profile.protocol.handler);
+                if (handlerShortName) content.push(handlerShortName);
+              }
+            }
 
             const addClaimReferences = (claims: ClaimReference[]) => {
               claims.forEach((claim) => {

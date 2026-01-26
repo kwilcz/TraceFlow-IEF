@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo } from "react";
 import { Handle, Node, NodeProps, Position } from "@xyflow/react";
 import { useNodeHighlight, getNodeHighlightClasses } from "@hooks/use-node-highlight";
 import { cn } from "@lib/utils"; // assuming existing utility
+import { Badge } from "@/components/ui/badge";
 
 type BaseNode = Node<Record<string, unknown>, string>;
 
@@ -38,10 +39,10 @@ export function PolicyNode(props: PolicyNodeProps) {
         props.elevation === "none"
             ? ""
             : props.elevation === "sm"
-            ? "shadow"
-            : props.elevation === "md"
-            ? "shadow-md"
-            : "shadow-lg";
+              ? "shadow"
+              : props.elevation === "md"
+                ? "shadow-md"
+                : "shadow-lg";
 
     const hoverClasses = "hover:shadow-xl";
 
@@ -56,7 +57,7 @@ export function PolicyNode(props: PolicyNodeProps) {
             selectClasses,
             searchHighlightClasses,
             props.pattern && "node-dot-pattern",
-            props.className
+            props.className,
         );
     }, [elevation, hoverClasses, selectClasses, searchHighlightClasses, props.pattern, props.className]);
 
@@ -68,14 +69,12 @@ export function PolicyNode(props: PolicyNodeProps) {
             selectClasses,
             isSelected: !!selected,
         }),
-        [props, searchHighlightClasses, hoverClasses, selectClasses, selected]
+        [props, searchHighlightClasses, hoverClasses, selectClasses, selected],
     );
 
     return (
         <PolicyNodeContext.Provider value={ctx}>
-            <div className={containerClasses}>
-                {props.children}
-            </div>
+            <div className={containerClasses}>{props.children}</div>
         </PolicyNodeContext.Provider>
     );
 }
@@ -115,7 +114,7 @@ Title.displayName = "PolicyNode.Title";
 const SectionTitle: React.FC<{ children: React.ReactNode; className?: string }> = React.memo(
     ({ children, className }) => (
         <div className={cn("font-bold text-md text-slate-100 truncate", className)}>{children}</div>
-    )
+    ),
 );
 SectionTitle.displayName = "PolicyNode.SectionTitle";
 
@@ -170,15 +169,15 @@ const NodeHandle: React.FC<HandleProps> = React.memo(
                 type={type}
                 id={id}
                 position={position}
-                className={cn("!w-3 !h-3", colorClass, className)}
+                className={cn("w-3! h-3!", colorClass, className)}
                 style={style}
             />
         );
-    }
+    },
 );
 NodeHandle.displayName = "PolicyNode.Handle";
 
-const Badge: React.FC<{
+const PolicyBadge: React.FC<{
     children: React.ReactNode;
     className?: string;
     tone?: "info" | "warn" | "danger" | "neutral";
@@ -191,19 +190,12 @@ const Badge: React.FC<{
         neutral: "bg-slate-700/60 text-slate-200",
     };
     return (
-        <span
-            className={cn(
-                "shadow px-2 py-0.5 rounded text-[10px] font-semibold",
-                sticky && "absolute -top-3 right-2",
-                toneMap[tone],
-                className
-            )}
-        >
+        <Badge className={cn("text-[10px] font-mono", sticky && "absolute -top-3 right-2", toneMap[tone], className)}>
             {children}
-        </span>
+        </Badge>
     );
 });
-Badge.displayName = "PolicyNode.Badge";
+PolicyBadge.displayName = "PolicyNode.Badge";
 
 const Section: React.FC<{ children: React.ReactNode; className?: string }> = React.memo(({ children, className }) => (
     <div className={cn("rounded p-2 bg-slate-800/30 space-y-1 shadow", className)}>{children}</div>
@@ -239,7 +231,7 @@ const ActionButton: React.FC<ActionButtonProps> = React.memo(({ onClick, childre
         onClick={onClick}
         className={cn(
             "w-6 h-6 rounded bg-slate-700/50 hover:bg-slate-600/70 text-slate-300 hover:text-slate-100 transition-colors flex items-center justify-center text-xs",
-            className
+            className,
         )}
         title={title}
     >
@@ -259,7 +251,7 @@ PolicyNode.Content = Content;
 PolicyNode.Footer = Footer;
 PolicyNode.Divider = Divider;
 PolicyNode.Handle = NodeHandle;
-PolicyNode.Badge = Badge;
+PolicyNode.Badge = PolicyBadge;
 PolicyNode.Section = Section;
 PolicyNode.Actions = Actions;
 PolicyNode.ActionButton = ActionButton;

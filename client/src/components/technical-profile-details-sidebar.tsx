@@ -3,7 +3,7 @@
 import React from 'react';
 import { X, FileCode, GitBranch, ArrowsLeftRight as ArrowRightLeft, Key, Database } from '@phosphor-icons/react';
 import { TechnicalProfile } from '@/types/technical-profile';
-import { ProviderBadge } from '@/components/provider-badge';
+import { ProtocolBadges } from '@/components/provider-badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -27,9 +27,7 @@ export function TechnicalProfileDetailsSidebar({ profile, onClose }: TechnicalPr
                                 <FileCode className="w-5 h-5" />
                                 <h2 className="text-lg font-semibold">{profile.displayName || profile.id}</h2>
                             </div>
-                            {profile.providerName && (
-                                <ProviderBadge providerName={profile.providerName} className="mb-2" />
-                            )}
+                            <ProtocolBadges protocol={profile.protocol} className="mb-2" />
                         </div>
                         <Button variant="ghost" size="sm" onClick={onClose}>
                             <X className="w-4 h-4" />

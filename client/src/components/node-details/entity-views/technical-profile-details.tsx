@@ -1,5 +1,5 @@
 import React from "react";
-import type { DisplayControl } from "@/types/technical-profile";
+import { getProtocolHandlerShortName, PROTOCOL_NAME, type DisplayControl } from "@/types/technical-profile";
 import type { TechnicalProfileEntity } from "@/types/trust-framework-entities";
 import { DisplayClaimsSection } from "@/components/nodeTypes/node-claim-components";
 import { DetailsCard } from "../details-card";
@@ -19,12 +19,18 @@ const TechnicalProfileDetails: React.FC<{ profile: TechnicalProfileEntity; class
     const inputTransformations = profile.inputClaimsTransformations;
     const outputTransformations = profile.outputClaimsTransformations;
 
+    const protocolDisplay = profile.protocolName
+        ? profile.protocolName === PROTOCOL_NAME.Proprietary
+            ? `${profile.protocolName} → ${getProtocolHandlerShortName(profile.protocolHandler) || 'Unknown'}`
+            : profile.protocolName
+        : undefined;
+
     return (
         <DetailsCard className={className}>
             <DetailsCard.Section title="Technical Profile">
                 <InfoItem label="ID" value={profile.id} />
                 <InfoItem label="Display Name" value={profile.displayName} />
-                <InfoItem label="Provider" value={profile.providerName} />
+                <InfoItem label="Protocol" value={protocolDisplay} />
                 {profile.sourceFile && <InfoItem label="Source File" value={profile.sourceFile} />}
             </DetailsCard.Section>
 

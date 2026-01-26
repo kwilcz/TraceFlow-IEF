@@ -1,5 +1,12 @@
 ﻿import { usePolicyStore } from "@/stores/policy-store";
-import { getProviderBadgeColor, TechnicalProfile } from "@/types/technical-profile";
+import {
+    getProtocolBadgeColor,
+    getProtocolHandlerBadgeColor,
+    getProtocolHandlerShortName,
+    PROTOCOL_NAME,
+    type Protocol,
+    type TechnicalProfile,
+} from "@/types/technical-profile";
 import { getEntity, TechnicalProfileEntity } from "@/types/trust-framework-entities";
 import {
     FlowArrowIcon,
@@ -13,13 +20,13 @@ import { Node, NodeProps, Position } from "@xyflow/react";
 import { useMemo } from "react";
 import PolicyNode from "./components/policy-node";
 import { ClaimsList, DisplayClaimsList, TransformationsList } from "./node-claim-components";
+import { Protocol } from '../../types/technical-profile';
 
 export type ClaimsExchangeNode = Node<
     {
         label: string;
         claimsExchanges: string[];
         technicalProfiles?: TechnicalProfile[];
-        providerName?: string;
         stepOrder?: number;
         details?: { stepOrder?: number };
     },
@@ -47,9 +54,24 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
 
     const displayProfile = primaryProfile ?? fallbackProfile;
 
-    // Extract data for display
-    const providerName = displayProfile?.providerName || data.providerName || "Unknown";
-    const providerColor = getProviderBadgeColor(providerName);
+    const displayProtocol: Protocol | undefined = useMemo(() => {
+        if (!displayProfile) return undefined;
+
+        if ('protocol' in displayProfile) {
+            return displayProfile.protocol;
+        }
+
+        return displayProfile.protocolName
+            ? { name: displayProfile.protocolName, handler: displayProfile.protocolHandler }
+            : undefined;
+    }, [displayProfile]);
+
+    const protocolColor = getProtocolBadgeColor(displayProtocol?.name);
+    const protocolHandlerShortName =
+        displayProtocol?.name === PROTOCOL_NAME.Proprietary
+            ? getProtocolHandlerShortName(displayProtocol.handler)
+            : undefined;
+    const protocolHandlerColor = getProtocolHandlerBadgeColor(protocolHandlerShortName);
 
     const inheritanceChain = useMemo(() => {
         if (!primaryProfile?.inheritanceChain) return null;
@@ -123,10 +145,20 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                     <PolicyNode.SubTitle>
                         {stepLabel}: {displayProfile?.id ?? primaryProfileId ?? ""}
                     </PolicyNode.SubTitle>
-                    <PolicyNode.Badge className={`${providerColor} w-fit`}>{providerName}</PolicyNode.Badge>
+
                 </div>
             </PolicyNode.Header>
-
+                    {displayProtocol?.name && (
+                        <div className="flex flex-wrap gap-2">
+                            <p className="text-slate-300 font-mono">Protocol:</p>
+                            <div className="flex flex-wrap gap-2">
+                            <PolicyNode.Badge className={`${protocolColor}`}>{displayProtocol.name}</PolicyNode.Badge>
+                            {displayProtocol.name === PROTOCOL_NAME.Proprietary && protocolHandlerShortName && (
+                                <PolicyNode.Badge className={`${protocolHandlerColor}`}>{protocolHandlerShortName}</PolicyNode.Badge>
+                            )}
+                            </div>
+                        </div>
+                    )}
             {/* Details Content */}
             {displayProfile && (
                 <PolicyNode.Content>

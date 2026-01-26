@@ -1,26 +1,36 @@
 import { Badge } from '@/components/ui/badge';
-import { getProviderBadgeColor } from '@/types/technical-profile';
+import type { Protocol } from '@/types/technical-profile';
+import {
+    getProtocolBadgeColor,
+    getProtocolHandlerBadgeColor,
+    getProtocolHandlerShortName,
+    PROTOCOL_NAME,
+} from '@/types/technical-profile';
 import { cn } from '@/lib/utils';
 
-interface ProviderBadgeProps {
-    providerName?: string;
+interface ProtocolBadgesProps {
+    protocol?: Protocol;
     className?: string;
 }
 
-export function ProviderBadge({ providerName, className }: ProviderBadgeProps) {
-    if (!providerName) return null;
+export function ProtocolBadges({ protocol, className }: ProtocolBadgesProps) {
+    if (!protocol?.name) return null;
 
-    const colorClass = getProviderBadgeColor(providerName);
+    const protocolColorClass = getProtocolBadgeColor(protocol.name);
+    const handlerShortName =
+        protocol.name === PROTOCOL_NAME.Proprietary ? getProtocolHandlerShortName(protocol.handler) : undefined;
+    const handlerColorClass = getProtocolHandlerBadgeColor(handlerShortName);
 
     return (
-        <Badge 
-            className={cn(
-                colorClass, 
-                "text-white font-semibold text-xs px-2 py-1",
-                className
+        <div className={cn('flex flex-wrap items-center gap-1', className)}>
+            <Badge className={cn(protocolColorClass, 'text-white font-semibold text-xs px-2 py-1')}>
+                {protocol.name}
+            </Badge>
+            {protocol.name === PROTOCOL_NAME.Proprietary && handlerShortName && (
+                <Badge className={cn(handlerColorClass, 'text-white font-semibold text-xs px-2 py-1')}>
+                    {handlerShortName}
+                </Badge>
             )}
-        >
-            {providerName}
-        </Badge>
+        </div>
     );
 }

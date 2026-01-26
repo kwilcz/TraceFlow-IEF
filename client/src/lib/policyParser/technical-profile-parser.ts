@@ -12,7 +12,6 @@ import {
     PersistedClaim,
     ClaimsTransformationReference,
     ValidationTechnicalProfileReference,
-    extractProviderName,
     Protocol,
     DisplayClaimReference
 } from '@/types/technical-profile';
@@ -71,14 +70,11 @@ function parseTechnicalProfile(tp: any, sourcePolicyId?: string, sourceFile?: st
         handler: tp.Protocol['@_Handler']
     } : undefined;
 
-    const providerName = extractProviderName(protocol?.handler);
-
     const profile: TechnicalProfile = {
         id,
         displayName: tp.DisplayName,
         description: tp.Description,
         protocol,
-        providerName,
         inputTokenFormat: tp.InputTokenFormat,
         outputTokenFormat: tp.OutputTokenFormat,
         metadata: parseMetadata(tp.Metadata),

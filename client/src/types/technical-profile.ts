@@ -6,15 +6,18 @@
 /**
  * Protocol names supported by B2C Technical Profiles
  */
-export type ProtocolName = 
-    | 'OAuth1'
-    | 'OAuth2'
-    | 'SAML2'
-    | 'OpenIdConnect'
-    | 'WsFed'
-    | 'WsTrust'
-    | 'Proprietary'
-    | 'None';
+export const PROTOCOL_NAME = {
+    OAuth1: 'OAuth1',
+    OAuth2: 'OAuth2',
+    SAML2: 'SAML2',
+    OpenIdConnect: 'OpenIdConnect',
+    WsFed: 'WsFed',
+    WsTrust: 'WsTrust',
+    Proprietary: 'Proprietary',
+    None: 'None',
+} as const;
+
+export type ProtocolName = typeof PROTOCOL_NAME[keyof typeof PROTOCOL_NAME];
 
 /**
  * Token formats
@@ -179,9 +182,6 @@ export interface TechnicalProfile {
     /** Protocol definition */
     protocol?: Protocol;
     
-    /** Provider name extracted from Handler (e.g., 'ClaimsTransformation', 'SelfAsserted', 'OAuth2') */
-    providerName?: string;
-    
     /** Input token format */
     inputTokenFormat?: TokenFormat;
     
@@ -260,39 +260,71 @@ export interface TechnicalProfile {
 }
 
 /**
- * Map of provider names to badge colors
- * Uses semi-transparent backgrounds to match the design mockup
+ * Badge colors for protocol pill
  */
-export const PROVIDER_BADGE_COLORS: Record<string, string> = {
-    'RestfulProvider': 'bg-purple-500/90',
-    'SelfAssertedAttributeProvider': 'bg-emerald-500',
-    'ClaimsTransformationProtocolProvider': 'bg-amber-700',
-    'AzureActiveDirectoryProvider': 'bg-indigo-500',
-    'OneTimePasswordProtocolProvider': 'bg-orange-500',
-    'REST': 'bg-red-500',
-    'JwtIssuer': 'bg-yellow-500',
-    'SessionManagement': 'bg-pink-500',
-    'AzureMfaProtocolProvider': 'bg-teal-500',
-    'default': 'bg-slate-500',
+export const PROTOCOL_BADGE_COLORS: Record<ProtocolName | 'default', string> = {
+    [PROTOCOL_NAME.OAuth1]: 'bg-sky-600',
+    [PROTOCOL_NAME.OAuth2]: 'bg-sky-700',
+    [PROTOCOL_NAME.SAML2]: 'bg-fuchsia-700',
+    [PROTOCOL_NAME.OpenIdConnect]: 'bg-blue-700',
+    [PROTOCOL_NAME.WsFed]: 'bg-violet-700',
+    [PROTOCOL_NAME.WsTrust]: 'bg-violet-800',
+    [PROTOCOL_NAME.Proprietary]: 'bg-slate-600',
+    [PROTOCOL_NAME.None]: 'bg-slate-500',
+    default: 'bg-slate-500',
 };
 
 /**
- * Extract provider name from handler string
- * Format: "Web.TPEngine.Providers.PROVIDER, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+ * Known protocol handler badge colors (shown only for Proprietary protocol).
+ * Keys are short names extracted from the handler string, e.g. "AzureActiveDirectoryProvider".
  */
-export function extractProviderName(handler?: string): string | undefined {
+export const PROTOCOL_HANDLER_BADGE_COLORS: Record<string, string> = {
+    RestfulProvider: 'bg-purple-500/90',
+    SelfAssertedAttributeProvider: 'bg-emerald-500',
+    AzureActiveDirectoryProvider: 'bg-indigo-500',
+    ClaimsTransformationProtocolProvider: 'bg-amber-700',
+    CaptchaProvider: 'bg-rose-600',
+    ConditionalAccessProtocolProvider: 'bg-cyan-700',
+    AzureMfaProtocolProvider: 'bg-teal-500',
+    DefaultSSOSessionProvider: 'bg-pink-500',
+    ExternalLoginSSOSessionProvider: 'bg-pink-600',
+    OAuthSSOSessionProvider: 'bg-pink-700',
+    NoopSSOSessionProvider: 'bg-pink-400',
+    default: 'bg-slate-500',
+};
+
+/**
+ * Extract protocol handler short name from handler string.
+ * Example:
+ * "Web.TPEngine.Providers.AzureActiveDirectoryProvider, Web.TPEngine, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+ * -> "AzureActiveDirectoryProvider"
+ */
+export function getProtocolHandlerShortName(handler?: string): string | undefined {
     if (!handler) return undefined;
-    
-    const match = handler.match(/Web\.TPEngine\.Providers\.([^,]+)/);
-    return match ? match[1] : undefined;
+
+    const match = handler.match(/Web\.TPEngine\.(?:Providers|SSO)\.([^,]+)/);
+    if (match?.[1]) return match[1];
+
+    const firstPart = handler.split(',')[0]?.trim();
+    if (!firstPart) return undefined;
+
+    return firstPart.split('.').pop();
 }
 
 /**
- * Get badge color for a provider
+ * Get badge color for a protocol.
  */
-export function getProviderBadgeColor(providerName?: string): string {
-    if (!providerName) return PROVIDER_BADGE_COLORS.default;
-    return PROVIDER_BADGE_COLORS[providerName] || PROVIDER_BADGE_COLORS.default;
+export function getProtocolBadgeColor(protocolName?: ProtocolName): string {
+    if (!protocolName) return PROTOCOL_BADGE_COLORS.default;
+    return PROTOCOL_BADGE_COLORS[protocolName] || PROTOCOL_BADGE_COLORS.default;
+}
+
+/**
+ * Get badge color for a protocol handler (short name).
+ */
+export function getProtocolHandlerBadgeColor(handlerShortName?: string): string {
+    if (!handlerShortName) return PROTOCOL_HANDLER_BADGE_COLORS.default;
+    return PROTOCOL_HANDLER_BADGE_COLORS[handlerShortName] || PROTOCOL_HANDLER_BADGE_COLORS.default;
 }
 
 /**

@@ -233,7 +233,6 @@ export class EntityExtractor {
     extractTechnicalProfile(
         /* eslint-disable @typescript-eslint/no-explicit-any */
         profile: any,
-        /* eslint-enable @typescript-eslint/no-explicit-any */
         context: ExtractionContext,
         entities: PolicyEntities,
         claimsProviderDisplayName?: string
@@ -254,7 +253,6 @@ export class EntityExtractor {
             description: profile.Description,
             protocolName: profile.Protocol?.['@_Name'],
             protocolHandler: profile.Protocol?.['@_Handler'],
-            providerName: profile.Provider?.['@_Name'],
             claimsProviderDisplayName,
             metadata: this.extractMetadata(profile.Metadata?.Item),
             inputClaimsTransformations: this.extractTransformationReferences(

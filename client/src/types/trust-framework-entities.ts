@@ -1,3 +1,5 @@
+import type { ProtocolName } from '@/types/technical-profile';
+
 /**
  * Comprehensive type definitions for all Azure AD B2C TrustFramework entities
  * Based on TrustFrameworkPolicy_0.3.0.0.xsd schema and backend models
@@ -130,9 +132,8 @@ export interface TechnicalProfileEntity extends TrustFrameworkEntity {
     entityType: 'TechnicalProfile';
     displayName?: string;
     description?: string;
-    protocolName?: string;
+    protocolName?: ProtocolName;
     protocolHandler?: string;
-    providerName?: string;
     claimsProviderDisplayName?: string;
     metadata: MetadataItemInfo[];
     inputClaimsTransformations: string[];
