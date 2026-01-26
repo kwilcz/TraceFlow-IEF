@@ -137,7 +137,7 @@ export const heroSampleGraph: { nodes: Node[]; edges: Edge[] } = {
         {
             id: "end",
             type: NODE_TYPES.END,
-            position: { x: 175, y: 900 },
+            position: { x: 175, y: 920 },
             data: {},
         },
     ],
