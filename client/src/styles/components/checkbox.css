@@ -1,7 +1,7 @@
 /* Main checkbox square */
 [data-slot="checkbox"] {
     @apply flex gap-3 outline-none relative shrink-0 size-4 items-center;
-    @apply justify-center border border-input rounded-md;
+    @apply justify-center border border-input rounded-sm;
 
     /* Larger hit target */
     @apply after:absolute after:-inset-x-3 after:-inset-y-2;
