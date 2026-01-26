@@ -28,14 +28,14 @@ function HeroSection() {
                             into a pristine, navigable node graph.
                         </p>
 
-                        <div className="flex flex-col lg:flex-row gap-3 ">
-                            <Link to="/b2c/policy-template">
-                                <Button size="xl" className="w-full lg:w-auto max-w-lg">
+                        <div className="flex flex-col gap-3 ">
+                            <Link to="/b2c/policy-template" tabIndex={-1}>
+                                <Button size="xl" className="w-full max-w-lg">
                                     Convert policy code to canvas
                                 </Button>
                             </Link>
-                            <Link to="/b2c/analyze-logs">
-                                <Button size="xl" variant="outline" className="w-full lg:w-auto max-w-lg">
+                            <Link to="/b2c/analyze-logs" tabIndex={-1}>
+                                <Button size="xl" variant="outline" className="w-full max-w-lg">
                                     Debug your own policies
                                 </Button>
                             </Link>
@@ -48,8 +48,8 @@ function HeroSection() {
                     </div>
                 </div>
 
-                {/* Flow Canvas - contained and will resize */}
-                <div className="min-h-0 min-w-0 overflow-hidden">
+                {/* Flow Canvas - purely decorative, completely non-interactive */}
+                <div className="min-h-0 min-w-0 overflow-hidden pointer-events-none" aria-hidden="true" inert>
                     <HeroPolicyFlow graph={heroSampleGraph} />
                 </div>
             </div>
