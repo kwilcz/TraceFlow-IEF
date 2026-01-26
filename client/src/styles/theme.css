@@ -1,0 +1,13 @@
+@theme inline {
+    --radius-field: var(--field-radius, var(--radius-xl));
+
+    /* Radius and default sizes - defaults can change by just changing the --radius */
+    --radius-xs: calc(var(--radius) * 0.25); /* 0.125rem (2px) */
+    --radius-sm: calc(var(--radius) * 0.5); /* 0.25rem (4px) */
+    --radius-md: calc(var(--radius) * 0.75); /* 0.375rem (6px) */
+    --radius-lg: calc(var(--radius) * 1); /* 0.5rem (8px) */
+    --radius-xl: calc(var(--radius) * 1.5); /* 0.75rem (12px) */
+    --radius-2xl: calc(var(--radius) * 2); /* 1rem (16px) */
+    --radius-3xl: calc(var(--radius) * 3); /* 1.5rem (24px) */
+    --radius-4xl: calc(var(--radius) * 4); /* 2rem (32px) */
+}

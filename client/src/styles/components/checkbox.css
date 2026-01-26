@@ -1,0 +1,48 @@
+/* Main checkbox square */
+[data-slot="checkbox"] {
+    @apply flex gap-3 outline-none relative shrink-0 size-4 items-center;
+    @apply justify-center border border-input rounded-md;
+
+    /* Larger hit target */
+    @apply after:absolute after:-inset-x-3 after:-inset-y-2;
+
+    /* Disabled */
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    @apply group-has-disabled/field:opacity-50;
+
+    /* Checked */
+    &[data-checked] &,
+    &[aria-checked="true"] {
+        @apply bg-primary text-primary-foreground border-primary;
+        @apply dark:bg-primary;
+    }
+
+    /* Focus */
+    &:focus-visible {
+        @apply border-ring;
+        @apply ring-[3px] ring-ring/50;
+    }
+
+    /* Invalid */
+    &[aria-invalid="true"] {
+        @apply border-destructive;
+        @apply ring-[3px] ring-destructive/20;
+        @apply dark:border-destructive/50 dark:ring-destructive/40;
+
+        /* Invalid + Checked */
+        &[data-checked] &,
+        &[aria-checked="true"] {
+            @apply border-primary;
+        }
+    }
+}
+
+/* Checkbox `tick` indicator */
+[data-slot="checkbox-indicator"] {
+    @apply grid place-content-center text-current;
+    @apply transition-none;
+
+    & > svg {
+        @apply size-2.5;
+    }
+}
