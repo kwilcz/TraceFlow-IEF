@@ -11,25 +11,25 @@ export const Route = createFileRoute("/")({
 
 function HeroSection() {
     return (
-        <section className="h-screen relative bg-grid-pattern text-primary/5">
+        <section className="h-[calc(100vh-var(--navbar-height,72px))] bg-grid-pattern text-primary/5">
             {/* Centered container */}
-            <div className="h-full max-w-7xl mx-auto grid grid-rows-[auto_1fr] lg:grid-cols-[540px_1fr] lg:grid-rows-1">
+            <div className="h-full max-w-[110rem] mx-auto px-4 lg:px-6 grid grid-rows-[2fr_3fr] lg:grid-cols-[620px_1fr] lg:grid-rows-1 items-center">
                 {/* Content Card - fixed width on desktop, full width on mobile */}
-                <div className="flex items-start lg:items-center p-4 lg:p-6">
+                <div className="flex items-center">
                     <div className="w-full backdrop-blur-3xl p-6 lg:p-10 rounded-xl text-center lg:text-left text-primary">
-                        <h1 className="text-5xl lg:text-7xl  font-bold mb-6">
+                        <h1 className="text-6xl lg:text-8xl font-bold mb-10">
                             Stop Guessing.
                             <br />
                             Start <span className="text-primary">Visualizing.</span>
                         </h1>
 
-                        <p className="text-lg lg:text-xl text-gray-600 leading-relaxed font-medium mb-6">
+                        <p className="text-lg lg:text-2xl text-gray-600 leading-relaxed font-medium mb-10">
                             The first fully client-side debugger for Azure B2C. Turn thousands of lines of XML spaghetti
                             into a pristine, navigable node graph.
                         </p>
 
                         <div className="flex flex-col gap-3 ">
-                            <Link to="/b2c/policy-template" tabIndex={-1}>
+                            <Link to="/b2c/policy-graph" tabIndex={-1}>
                                 <Button size="xl" className="w-full max-w-lg">
                                     Convert policy code to canvas
                                 </Button>
@@ -49,7 +49,7 @@ function HeroSection() {
                 </div>
 
                 {/* Flow Canvas - purely decorative, completely non-interactive */}
-                <div className="min-h-0 min-w-0 overflow-hidden pointer-events-none" aria-hidden="true" inert>
+                <div className="h-[calc(100%+4rem)] -my-8 w-full overflow-hidden pointer-events-none" aria-hidden="true" inert>
                     <HeroPolicyFlow graph={heroSampleGraph} />
                 </div>
             </div>

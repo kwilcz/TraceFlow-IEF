@@ -21,19 +21,17 @@ const TabbedPolicyFlow: React.FC = () => {
     };
 
     return (
-        // 136 -> 56px for header + 2*16px main padding + 2*24px parent padding
-        // 106 -> 56px for header + 2*16px main padding, no parent padding
-        <div className="flex flex-col min-h-fit lg:h-[calc(100dvh_-_136px)] h-[calc(100dvh_-_106px)]">
-            <div className={`flex flex-col ${policyData && 'flex-grow pb-2 mb-2'}`}>
+        // - 8 px due to padding of parent container
+        <div className="flex flex-col min-h-fit h-[calc(100vh-calc(var(--navbar-height,72px))-8px)]">
+            <div className={`flex flex-col ${policyData && 'grow pb-2 mb-2'}`}>
 
                 {policyData &&
-                    <Tabs value={activeTab!} onValueChange={setActiveTab}
-                          className="flex flex-col flex-grow w-full h-full">
-                        <TabsList className="mb-4 flex-wrap h-min">
+                    <Tabs value={activeTab!} onValueChange={setActiveTab} className="w-full h-full">
+                        <TabsList className="px-6 w-full">
                             {policyData &&
                                 Object.keys(policyData.subgraphs)
                                     .map((subgraphId) => (
-                                        <TabsTrigger key={subgraphId} value={subgraphId} className="grow">
+                                        <TabsTrigger key={subgraphId} value={subgraphId} className="grow p-2">
                                             {subgraphId}
                                         </TabsTrigger>
                                     ))}
