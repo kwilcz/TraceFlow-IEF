@@ -1,40 +1,23 @@
-﻿"use client"
+﻿"use client";
 
-import * as React from "react"
-import { Sun, Moon } from "@phosphor-icons/react"
-import { useTheme } from "@/components/theme-provider"
+import { useTheme } from "@/components/theme-provider";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 
-import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 export function ThemeToggle() {
-    const { setTheme } = useTheme()
+    const { theme, setTheme } = useTheme();
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Sun className="h-4 w-4 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                    Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
+        <Tabs value={theme} onValueChange={setTheme}>
+            <TabsList>
+                <TabsTrigger key="light" value="light">
+                    <SunIcon />
+                </TabsTrigger>
+                <TabsTrigger key="dark" value="dark">
+                    <MoonIcon />
+                </TabsTrigger>
+            </TabsList>
+        </Tabs>
+    );
 }
