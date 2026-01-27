@@ -32,8 +32,8 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
+    --color-surface: var(--theme-surface);
+    --color-surface-foreground: var(--theme-surface-foreground);
 
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
@@ -151,6 +151,15 @@
 }
 
 @layer base {
+    /* Force override default tailwindcss border color */
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--border) !important;
+    }
+
     :root,
     .light,
     [data-theme="light"] {
@@ -343,6 +352,7 @@
     /* https://reactflow.dev/learn/customization/theming */
     .react-flow {
         --xy-minimap-background-color: var(--background);
+        --xy-background-color: transparent;
         --xy-minimap-node-background-color: var(--muted-foreground);
         --xy-attribution-background-color: var(--background);
         --xy-controls-button-background-color: var(--background);

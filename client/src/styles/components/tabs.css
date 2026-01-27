@@ -17,13 +17,13 @@
 .tabs-list {
     @apply relative;
     @apply inline-flex;
-    @apply bg-muted/40;
+    @apply bg-muted;
     @apply p-1;
     @apply rounded-2xl;
 }
 
 .tabs-list[data-orientation="horizontal"] {
-    @apply w-full flex-row;
+    @apply flex-row min-w-fit;
 }
 
 .tabs-list[data-orientation="vertical"] {
@@ -121,11 +121,11 @@
     @apply ring-2 ring-ring/40;
 }
 
-/* Indicator */
+/* Indicator of active tab */
 
 .tabs-indicator {
     @apply absolute;
-    @apply bg-background;
+    @apply bg-surface;
     @apply shadow-sm;
     @apply rounded-xl;
 
