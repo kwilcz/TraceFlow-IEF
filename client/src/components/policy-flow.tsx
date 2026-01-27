@@ -98,7 +98,7 @@ const PolicyFlow: React.FC<PolicyFlowProps> = ({ graph }) => {
 
     return (
         <div className="h-full flex rounded-md shadow-inner border border-opacity-5 overflow-hidden">
-            <div className="flex-1 relative">
+            <div className="flex-1 relative bg-surface">
                 <ReactFlow
                     nodes={rfNodes}
                     edges={rfEdges}

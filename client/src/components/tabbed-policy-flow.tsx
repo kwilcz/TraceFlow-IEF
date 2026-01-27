@@ -27,11 +27,11 @@ const TabbedPolicyFlow: React.FC = () => {
 
                 {policyData &&
                     <Tabs value={activeTab!} onValueChange={setActiveTab} className="w-full h-full">
-                        <TabsList className="px-6 w-full">
+                        <TabsList className="mx-4">
                             {policyData &&
                                 Object.keys(policyData.subgraphs)
                                     .map((subgraphId) => (
-                                        <TabsTrigger key={subgraphId} value={subgraphId} className="grow p-2">
+                                        <TabsTrigger key={subgraphId} value={subgraphId} className="grow">
                                             {subgraphId}
                                         </TabsTrigger>
                                     ))}
