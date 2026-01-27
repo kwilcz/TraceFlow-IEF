@@ -50,7 +50,7 @@ export interface AnimationConfig {
 const multiSelectVariants = cva("m-1 transition-all duration-300 ease-in-out", {
 	variants: {
 		variant: {
-			default: "border-foreground/10 text-foreground bg-card hover:bg-card/80",
+			default: "border-foreground/10 text-foreground bg-surface hover:bg-surface/80",
 			secondary:
 				"border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80",
 			destructive:
