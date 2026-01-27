@@ -1,9 +1,9 @@
 @layer theme, base, components, utilities;
 
-@import 'tailwindcss';
-@import '@xyflow/react/dist/style.css' layer(base);
-@import './components/index.css' layer(components);
-@import './theme.css' layer(theme);
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css" layer(base);
+@import "./components/index.css" layer(components);
+@import "./theme.css" layer(theme);
 
 @plugin 'tailwindcss-animate';
 
@@ -28,56 +28,72 @@
     --height-160: 40rem;
     --height-176: 44rem;
 
-    --color-background: hsl(var(--background));
-    --color-foreground: hsl(var(--foreground));
+    /* Core colors - map directly to CSS variables */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
 
-    --color-card: hsl(var(--card));
-    --color-card-foreground: hsl(var(--card-foreground));
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
 
-    --color-popover: hsl(var(--popover));
-    --color-popover-foreground: hsl(var(--popover-foreground));
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
 
-    --color-primary: hsl(var(--primary));
-    --color-primary-foreground: hsl(var(--primary-foreground));
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
 
-    --color-secondary: hsl(var(--secondary));
-    --color-secondary-foreground: hsl(var(--secondary-foreground));
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
 
-    --color-muted: hsl(var(--muted));
-    --color-muted-foreground: hsl(var(--muted-foreground));
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
 
-    --color-accent: hsl(var(--accent));
-    --color-accent-foreground: hsl(var(--accent-foreground));
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
 
-    --color-destructive: hsl(var(--destructive));
-    --color-destructive-foreground: hsl(var(--destructive-foreground));
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
 
-    --color-border: hsl(var(--border));
-    --color-input: hsl(var(--input));
-    --color-ring: hsl(var(--ring));
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
 
-    --color-chart-1: hsl(var(--chart-1));
-    --color-chart-2: hsl(var(--chart-2));
-    --color-chart-3: hsl(var(--chart-3));
-    --color-chart-4: hsl(var(--chart-4));
-    --color-chart-5: hsl(var(--chart-5));
+    /* New semantic colors */
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-separator: var(--separator);
 
-    --color-nodes-claimsexchange: hsl(var(--nodes-claims-exchange));
-    --color-nodes-combinedsigninup: hsl(var(--nodes-combined-signinup));
+    /* Field tokens */
+    --color-field: var(--field-background);
+    --color-field-foreground: var(--field-foreground);
+    --color-field-placeholder: var(--field-placeholder);
 
-    --color-nodes-group: hsl(var(--nodes-group));
-    --color-nodes-group-border: hsl(var(--nodes-group-border));
+    /* Segment tokens */
+    --color-segment: var(--segment);
+    --color-segment-foreground: var(--segment-foreground);
+
+    /* Derived/hover colors */
+    --color-primary-hover: var(--primary-hover);
+    --color-secondary-hover: var(--secondary-hover);
+    --color-destructive-hover: var(--destructive-hover);
+    --color-destructive-soft: var(--destructive-soft);
+    --color-accent-soft: var(--theme-accent-soft);
+    --color-accent-soft-hover: var(--theme-accent-soft-hover);
+
+    /* Chart colors */
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    /* Node-specific colors */
+    --color-nodes-claimsexchange: var(--nodes-claims-exchange);
+    --color-nodes-combinedsigninup: var(--nodes-combined-signinup);
+    --color-nodes-group: var(--nodes-group);
+    --color-nodes-group-border: var(--nodes-group-border);
 }
-
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-
 
 @layer utilities {
     :root {
@@ -87,8 +103,9 @@
     }
 
     .bg-grid-pattern {
-        background-image: linear-gradient(to right, var(--grid-line-color, currentColor) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--grid-line-color, currentColor) 1px, transparent 1px);
+        background-image:
+            linear-gradient(to right, var(--grid-line-color, currentColor) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--grid-line-color, currentColor) 1px, transparent 1px);
         background-size: var(--grid-size, 40px) var(--grid-size, 40px);
     }
 
@@ -134,92 +151,203 @@
 }
 
 @layer base {
-    :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --nodes-combined-signinup: 0, 0%, 99.5%;
-        --nodes-claims-exchange: 200, 50%, 90%;
-        --nodes-group: 0 0% 95%;
-        --nodes-group-border: 215 25% 85%;
-        --flow-minimap-mask: hsl(var(--background) / 0.82);
-        --flow-minimap-mask-stroke: rgba(15, 23, 42, 0.25);
-        --flow-minimap-node-surface: hsl(var(--card));
-        --flow-minimap-node-outline: hsl(var(--border));
-        --flow-minimap-node-accent: hsl(var(--primary));
-        --flow-minimap-node-detail: hsl(var(--foreground) / 0.4);
-        --flow-minimap-group-stroke: hsl(var(--nodes-group-border));
-        --flow-minimap-group-accent: hsl(var(--nodes-group-border));
+    :root,
+    .light,
+    [data-theme="light"] {
+        /* ═══════════════════════════════════════════════════════════════════════
+           HeroUI Theme Colors - Light Mode
+           @see https://v3.heroui.com/docs/react/getting-started/theming
+           ═══════════════════════════════════════════════════════════════════════ */
+        --theme-accent: oklch(62.06% 0.1742 250.36);
+        --theme-accent-foreground: oklch(99.11% 0 0);
+        --theme-background: oklch(97.02% 0.0132 250.36);
+        --theme-border: oklch(90% 0.0132 250.36);
+        --theme-danger: oklch(65.32% 0.2389 25.32);
+        --theme-danger-foreground: oklch(99.11% 0 0);
+        --theme-default: oklch(94% 0.0132 250.36);
+        --theme-default-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-field-background: oklch(100% 0.0066 250.36);
+        --theme-field-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-field-placeholder: oklch(55.17% 0.0264 250.36);
+        --theme-focus: oklch(62.06% 0.1742 250.36);
+        --theme-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-muted: oklch(55.17% 0.0264 250.36);
+        --theme-overlay: oklch(100% 0.004 250.36);
+        --theme-overlay-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-scrollbar: oklch(87.1% 0.0132 250.36);
+        --theme-segment: oklch(100% 0.0132 250.36);
+        --theme-segment-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-separator: oklch(92% 0.0132 250.36);
+        --theme-success: oklch(73.29% 0.1986 150.39);
+        --theme-success-foreground: oklch(21.03% 0.0059 150.39);
+        --theme-surface: oklch(100% 0.0066 250.36);
+        --theme-surface-foreground: oklch(21.03% 0.0059 250.36);
+        --theme-warning: oklch(78.19% 0.1627 71.91);
+        --theme-warning-foreground: oklch(21.03% 0.0059 71.91);
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           Derived Colors (auto-calculated from theme tokens)
+           ═══════════════════════════════════════════════════════════════════════ */
+        --theme-accent-hover: color-mix(in oklch, var(--theme-accent) 85%, black);
+        --theme-accent-soft: color-mix(in oklch, var(--theme-accent) 15%, var(--theme-background));
+        --theme-accent-soft-hover: color-mix(in oklch, var(--theme-accent) 22%, var(--theme-background));
+        --theme-default-hover: color-mix(in oklch, var(--theme-default) 85%, black);
+        --theme-danger-hover: color-mix(in oklch, var(--theme-danger) 85%, black);
+        --theme-danger-soft: color-mix(in oklch, var(--theme-danger) 12%, var(--theme-background));
+        --theme-danger-soft-hover: color-mix(in oklch, var(--theme-danger) 18%, var(--theme-background));
+        --theme-success-hover: color-mix(in oklch, var(--theme-success) 85%, black);
+        --theme-success-soft: color-mix(in oklch, var(--theme-success) 15%, var(--theme-background));
+        --theme-warning-hover: color-mix(in oklch, var(--theme-warning) 85%, black);
+        --theme-warning-soft: color-mix(in oklch, var(--theme-warning) 15%, var(--theme-background));
+        --theme-surface-secondary: color-mix(in oklch, var(--theme-surface) 95%, var(--theme-foreground));
+        --theme-surface-tertiary: color-mix(in oklch, var(--theme-surface) 90%, var(--theme-foreground));
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           Application Tokens (map to HeroUI theme tokens)
+           These are used by components - they reference the theme tokens above
+           ═══════════════════════════════════════════════════════════════════════ */
+        --background: var(--theme-background);
+        --foreground: var(--theme-foreground);
+        --primary: var(--theme-accent);
+        --primary-foreground: var(--theme-accent-foreground);
+        --primary-hover: var(--theme-accent-hover);
+        --secondary: var(--theme-default);
+        --secondary-foreground: var(--theme-default-foreground);
+        --secondary-hover: var(--theme-default-hover);
+        --muted: var(--theme-default);
+        --muted-foreground: var(--theme-muted);
+        --accent: var(--theme-default);
+        --accent-foreground: var(--theme-default-foreground);
+        --destructive: var(--theme-danger);
+        --destructive-foreground: var(--theme-danger-foreground);
+        --destructive-hover: var(--theme-danger-hover);
+        --destructive-soft: var(--theme-danger-soft);
+        --card: var(--theme-surface);
+        --card-foreground: var(--theme-surface-foreground);
+        --popover: var(--theme-overlay);
+        --popover-foreground: var(--theme-overlay-foreground);
+        --border: var(--theme-border);
+        --input: var(--theme-field-background);
+        --ring: var(--theme-focus);
+        --separator: var(--theme-separator);
+
+        /* New semantic tokens */
+        --success: var(--theme-success);
+        --success-foreground: var(--theme-success-foreground);
+        --warning: var(--theme-warning);
+        --warning-foreground: var(--theme-warning-foreground);
+        --field-background: var(--theme-field-background);
+        --field-foreground: var(--theme-field-foreground);
+        --field-placeholder: var(--theme-field-placeholder);
+        --segment: var(--theme-segment);
+        --segment-foreground: var(--theme-segment-foreground);
+        --scrollbar: var(--theme-scrollbar);
+
+        /* Chart colors */
+        --chart-1: oklch(62% 0.19 25);
+        --chart-2: oklch(65% 0.15 173);
+        --chart-3: oklch(50% 0.1 250);
+        --chart-4: oklch(75% 0.15 85);
+        --chart-5: oklch(70% 0.18 30);
+
+        /* Node-specific tokens */
+        --nodes-combined-signinup: oklch(99.5% 0 0);
+        --nodes-claims-exchange: oklch(90% 0.05 220);
+        --nodes-group: oklch(95% 0 0);
+        --nodes-group-border: oklch(85% 0.02 250);
+
+        /* Flow minimap tokens */
+        --flow-minimap-mask: color-mix(in oklch, var(--background) 82%, transparent);
+        --flow-minimap-mask-stroke: oklch(20% 0.02 250 / 0.25);
+        --flow-minimap-node-surface: var(--card);
+        --flow-minimap-node-outline: var(--border);
+        --flow-minimap-node-accent: var(--primary);
+        --flow-minimap-node-detail: color-mix(in oklch, var(--foreground) 40%, transparent);
+        --flow-minimap-group-stroke: var(--nodes-group-border);
+        --flow-minimap-group-accent: var(--nodes-group-border);
     }
 
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 15%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 15%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 15%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 15%;
-        --input: 0 0% 15%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
-        --nodes-combined-signinup: 0, 0%, 8%;
-        --nodes-claims-exchange: 200, 45%, 30%;
-        --nodes-group: 0 0% 15%;
-        --nodes-group-border: 215 25% 35%;
-        --flow-minimap-mask: hsl(var(--background) / 0.6);
-        --flow-minimap-mask-stroke: rgba(255, 255, 255, 0.35);
-        --flow-minimap-node-surface: hsl(var(--card));
-        --flow-minimap-node-outline: hsl(var(--border));
-        --flow-minimap-node-accent: hsl(var(--primary));
-        --flow-minimap-node-detail: hsl(var(--foreground) / 0.6);
-        --flow-minimap-group-stroke: hsl(var(--nodes-group-border));
-        --flow-minimap-group-accent: hsl(var(--nodes-group-border));
+    .dark,
+    [data-theme="dark"] {
+        color-scheme: dark;
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           HeroUI Theme Colors - Dark Mode
+           @see https://v3.heroui.com/docs/react/getting-started/theming
+           ═══════════════════════════════════════════════════════════════════════ */
+        --theme-accent: oklch(62.06% 0.1742 250.36);
+        --theme-accent-foreground: oklch(99.11% 0 0);
+        --theme-background: oklch(12% 0.0132 250.36);
+        --theme-border: oklch(28% 0.0132 250.36);
+        --theme-danger: oklch(59.4% 0.2019 24.21);
+        --theme-danger-foreground: oklch(99.11% 0 0);
+        --theme-default: oklch(27.4% 0.0132 250.36);
+        --theme-default-foreground: oklch(99.11% 0 0);
+        --theme-field-background: oklch(21.03% 0.0264 250.36);
+        --theme-field-foreground: oklch(99.11% 0 0);
+        --theme-field-placeholder: oklch(70.5% 0.0264 250.36);
+        --theme-focus: oklch(62.06% 0.1742 250.36);
+        --theme-foreground: oklch(99.11% 0 0);
+        --theme-muted: oklch(70.5% 0.0264 250.36);
+        --theme-overlay: oklch(21.03% 0.0264 250.36);
+        --theme-overlay-foreground: oklch(99.11% 0 0);
+        --theme-scrollbar: oklch(70.5% 0.0132 250.36);
+        --theme-segment: oklch(39.64% 0.0132 250.36);
+        --theme-segment-foreground: oklch(99.11% 0 0);
+        --theme-separator: oklch(25% 0.0132 250.36);
+        --theme-success: oklch(73.29% 0.1986 150.39);
+        --theme-success-foreground: oklch(21.03% 0.0059 150.39);
+        --theme-surface: oklch(21.03% 0.0264 250.36);
+        --theme-surface-foreground: oklch(99.11% 0 0);
+        --theme-warning: oklch(82.03% 0.1425 75.92);
+        --theme-warning-foreground: oklch(21.03% 0.0059 75.92);
+
+        /* ═══════════════════════════════════════════════════════════════════════
+           Derived Colors (auto-calculated from theme tokens)
+           ═══════════════════════════════════════════════════════════════════════ */
+        --theme-accent-hover: color-mix(in oklch, var(--theme-accent) 80%, white);
+        --theme-accent-soft: color-mix(in oklch, var(--theme-accent) 20%, var(--theme-background));
+        --theme-accent-soft-hover: color-mix(in oklch, var(--theme-accent) 28%, var(--theme-background));
+        --theme-default-hover: color-mix(in oklch, var(--theme-default) 80%, white);
+        --theme-danger-hover: color-mix(in oklch, var(--theme-danger) 80%, white);
+        --theme-danger-soft: color-mix(in oklch, var(--theme-danger) 18%, var(--theme-background));
+        --theme-danger-soft-hover: color-mix(in oklch, var(--theme-danger) 25%, var(--theme-background));
+        --theme-success-hover: color-mix(in oklch, var(--theme-success) 80%, white);
+        --theme-success-soft: color-mix(in oklch, var(--theme-success) 20%, var(--theme-background));
+        --theme-warning-hover: color-mix(in oklch, var(--theme-warning) 80%, white);
+        --theme-warning-soft: color-mix(in oklch, var(--theme-warning) 20%, var(--theme-background));
+        --theme-surface-secondary: color-mix(in oklch, var(--theme-surface) 90%, var(--theme-foreground));
+        --theme-surface-tertiary: color-mix(in oklch, var(--theme-surface) 80%, var(--theme-foreground));
+
+        /* Application tokens automatically inherit from theme tokens */
+
+        /* Chart colors - adjusted for dark mode */
+        --chart-1: oklch(60% 0.18 250);
+        --chart-2: oklch(60% 0.15 160);
+        --chart-3: oklch(70% 0.16 50);
+        --chart-4: oklch(65% 0.16 300);
+        --chart-5: oklch(65% 0.18 350);
+
+        /* Node-specific tokens - dark mode */
+        --nodes-combined-signinup: oklch(8% 0 0);
+        --nodes-claims-exchange: oklch(30% 0.04 220);
+        --nodes-group: oklch(15% 0 0);
+        --nodes-group-border: oklch(35% 0.02 250);
+
+        /* Flow minimap tokens - dark mode */
+        --flow-minimap-mask: color-mix(in oklch, var(--background) 60%, transparent);
+        --flow-minimap-mask-stroke: oklch(100% 0 0 / 0.35);
+        --flow-minimap-node-detail: color-mix(in oklch, var(--foreground) 60%, transparent);
     }
 
     /* https://reactflow.dev/learn/customization/theming */
     .react-flow {
-        --xy-minimap-background-color: hsl(var(--background));
-        --xy-minimap-node-background-color: hsl(var(--muted-foreground));
-        --xy-attribution-background-color: hsl(var(--background));
-        --xy-controls-button-background-color: hsl(var(--background));
-        --xy-controls-button-border-color: hsl(var(--border));
-        --xy-controls-button-background-color-hover: hsl(var(--accent));
+        --xy-minimap-background-color: var(--background);
+        --xy-minimap-node-background-color: var(--muted-foreground);
+        --xy-attribution-background-color: var(--background);
+        --xy-controls-button-background-color: var(--background);
+        --xy-controls-button-border-color: var(--border);
+        --xy-controls-button-background-color-hover: var(--accent);
 
         .react-flow__attribution {
             @apply rounded-md backdrop-blur-sm bg-background/30;
@@ -249,12 +377,13 @@
     }
 
     .flow-minimap__node text {
-        font-family: "Inter",
-        "Segoe UI",
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        sans-serif;
+        font-family:
+            "Inter",
+            "Segoe UI",
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            sans-serif;
         letter-spacing: 0.02em;
     }
 }
@@ -272,10 +401,11 @@
 /* fixes reactflow bug with no border on last child element */
 .react-flow__controls-button:last-child {
     @apply border-b;
-    border-bottom: 1px solid var(
+    border-bottom: 1px solid
+        var(
             --xy-controls-button-border-color-props,
             var(--xy-controls-button-border-color, var(--xy-controls-button-border-color-default))
-    );
+        );
 }
 
 .react-flow__edge-textbg {

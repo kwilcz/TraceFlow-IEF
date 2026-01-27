@@ -17,13 +17,13 @@ function HeroSection() {
                 {/* Content Card - fixed width on desktop, full width on mobile */}
                 <div className="flex items-center">
                     <div className="w-full backdrop-blur-3xl p-6 lg:p-10 rounded-xl text-center lg:text-left text-primary">
-                        <h1 className="text-6xl lg:text-8xl font-bold mb-10">
+                        <h1 className="text-6xl text-foreground lg:text-8xl font-bold mb-10">
                             Stop Guessing.
                             <br />
                             Start <span className="text-primary">Visualizing.</span>
                         </h1>
 
-                        <p className="text-lg lg:text-2xl text-gray-600 leading-relaxed font-medium mb-10">
+                        <p className="text-lg lg:text-2xl text-muted-foreground leading-relaxed font-medium mb-10">
                             The first fully client-side debugger for Azure B2C. Turn thousands of lines of XML spaghetti
                             into a pristine, navigable node graph.
                         </p>
@@ -41,8 +41,8 @@ function HeroSection() {
                             </Link>
                         </div>
 
-                        <p className="mt-4 text-sm text-gray-500 font-mono flex items-center justify-center lg:justify-start">
-                            <KeyIcon className="text-gray-500 mr-1" />
+                        <p className="mt-4 text-sm text-muted-foreground font-mono flex items-center justify-center lg:justify-start">
+                            <KeyIcon className="mr-1" />
                             100% Client-Side Processing. No data leaves your browser.
                         </p>
                     </div>
