@@ -297,7 +297,7 @@ export const TechnicalProfileDetailsPanel: React.FC<TechnicalProfileDetailsPanel
                     <DetailsPanel.Section title={`Claims After This Step (${Object.keys(previousClaims).length})`}>
                         <DetailsPanel.ItemList>
                             {Object.entries(previousClaims).map(([key, value]) => (
-                                <div key={key} className="p-2 bg-card border rounded-md text-xs">
+                                <div key={key} className="p-2 bg-surface border rounded-md text-xs">
                                     <span className="font-medium text-foreground">{key}</span>
                                     <p className="font-mono text-muted-foreground truncate">{value}</p>
                                 </div>

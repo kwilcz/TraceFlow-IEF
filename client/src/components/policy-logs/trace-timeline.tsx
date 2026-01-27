@@ -1053,7 +1053,7 @@ const ClaimRow: React.FC<{
     <div
         className={cn(
             "flex items-start justify-between gap-2 p-2.5 rounded-md text-sm border",
-            "bg-card",
+            "bg-surface",
             diffType === "added" && "border-l-2 border-l-emerald-500 bg-emerald-50 dark:bg-emerald-900/20",
             diffType === "modified" && "border-l-2 border-l-amber-500 bg-amber-50 dark:bg-amber-900/20",
             diffType === "removed" && "border-l-2 border-l-red-500 bg-red-50 dark:bg-red-900/20 opacity-60",
