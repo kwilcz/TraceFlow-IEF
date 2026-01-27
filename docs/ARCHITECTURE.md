@@ -33,7 +33,7 @@ File-based routing powered by **TanStack Router**:
 | Route | Component | Description |
 |-------|-----------|-------------|
 | `/` | `index.tsx` | Home page with feature overview |
-| `/b2c/policy-template` | `policy-template.tsx` | Policy flow visualization |
+| `/b2c/policy-graph` | `policy-graph.tsx` | Policy flow visualization |
 | `/b2c/analyze-logs` | `analyze-logs.tsx` | Log analyzer interface |
 | `/b2c/claims` | `claims.tsx` | Claims management |
 | `/settings` | `settings.tsx` | Application settings |

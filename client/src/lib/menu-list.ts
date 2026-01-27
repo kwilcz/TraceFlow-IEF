@@ -8,9 +8,9 @@ export function getMenuList(pathname: string): MenuGroup[] {
             menus: [
                 {
                     label: "Policy Flow",
-                    href: "/b2c/policy-template",
+                    href: "/b2c/policy-graph",
                     icon: WorkflowIcon,
-                    active: pathname.includes("/b2c/policy-template"),
+                    active: pathname.includes("/b2c/policy-graph"),
                     submenus: []
                 },
                 {
