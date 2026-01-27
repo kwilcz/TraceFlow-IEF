@@ -38,6 +38,7 @@ export default defineConfig({
                         '@base-ui/react/collapsible',
                         '@base-ui/react/dialog',
                         '@base-ui/react/menu',
+                        '@base-ui/react/navigation-menu',
                         '@base-ui/react/popover',
                         '@base-ui/react/scroll-area',
                         '@base-ui/react/separator',
