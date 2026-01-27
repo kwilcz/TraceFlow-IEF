@@ -8,12 +8,10 @@ export const Route = createFileRoute('/settings')({
 
 function SettingsPage() {
   return (
-    <ContentLayout title="Settings">
       <Card>
         <CardContent className="pt-6">
           <CardTitle>placeholder</CardTitle>
         </CardContent>
       </Card>
-    </ContentLayout>
   );
 }
