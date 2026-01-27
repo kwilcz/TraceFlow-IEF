@@ -1,0 +1,347 @@
+/* TopNavbar Component Styles */
+
+/* CSS variable for navbar height - used by other components for spacing */
+:root {
+    --navbar-height: 56px;
+}
+
+@media (min-width: 768px) {
+    :root {
+        --navbar-height: 72px;
+    }
+}
+
+/* Outer container - sticky positioning */
+.top-navbar {
+    @apply sticky top-0 left-0 right-0 z-50;
+    @apply flex justify-center;
+    @apply py-2 md:py-3;
+    /* No horizontal padding on mobile/tablet */
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Add padding around floating navbar on desktop */
+@media (min-width: 1200px) {
+    .top-navbar {
+        @apply px-4;
+    }
+}
+
+/* Inner container - the actual navbar with glass effect */
+/* Uses base-ui NavigationMenu.Root which renders as <nav> */
+.top-navbar-inner {
+    @apply relative;
+    @apply w-full;
+    /* Full width until 1200px, then 75% width */
+    max-width: 100%;
+    @apply flex items-center justify-between gap-4;
+    @apply px-4 py-2 lg:py-3;
+    @apply bg-background/80 backdrop-blur-md;
+    /* No border on mobile/tablet, border + rounded on desktop */
+    @apply border-b;
+    @apply transition-all duration-300;
+}
+
+/* Desktop (>=1200px): 75% width with rounded corners */
+@media (min-width: 1200px) {
+    .top-navbar-inner {
+        max-width: 75vw;
+        @apply border border-border/50;
+        @apply rounded-2xl;
+    }
+}
+
+/* Logo styles */
+.top-navbar-logo {
+    @apply flex items-center gap-2;
+    @apply text-foreground hover:text-foreground/80;
+    @apply transition-colors duration-200;
+    @apply shrink-0;
+}
+
+.top-navbar-logo-icon {
+    @apply text-primary;
+    @apply w-6 h-6;
+    @apply flex items-center justify-center;
+}
+
+.top-navbar-logo-icon > svg {
+    @apply w-full h-full;
+}
+
+.top-navbar-logo-text {
+    @apply font-bold text-lg;
+    @apply hidden sm:inline;
+}
+
+/* Desktop navigation - centered */
+/* Uses base-ui NavigationMenu.List which renders as <ul> */
+.top-navbar-nav {
+    @apply hidden;
+    @apply items-center gap-0.5;
+    @apply list-none m-0 p-0;
+}
+
+/* Tablet (768px - 1199px): Show nav, but not centered (flows with content) */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .top-navbar-nav {
+        @apply flex;
+        /* Not absolutely positioned on tablet */
+        position: relative;
+        left: auto;
+        transform: none;
+    }
+}
+
+/* Desktop (>=1200px): Show nav centered */
+@media (min-width: 1200px) {
+    .top-navbar-nav {
+        @apply flex;
+        @apply absolute left-1/2 -translate-x-1/2;
+        @apply gap-1;
+    }
+}
+
+/* Remove list markers from all nav items */
+.top-navbar-nav li,
+.top-navbar-nav > * {
+    @apply list-none;
+}
+
+.top-navbar-nav li::marker {
+    content: none;
+}
+
+/* Navigation item */
+/* Uses base-ui NavigationMenu.Link which has native data-active attribute */
+.top-navbar-nav-item {
+    @apply relative;
+    @apply px-2 py-1.5;
+    @apply text-sm font-medium;
+    @apply rounded-lg;
+    @apply text-muted-foreground;
+    @apply hover:text-foreground hover:bg-accent;
+    @apply transition-colors duration-200;
+    @apply whitespace-nowrap;
+    @apply no-underline;
+}
+
+/* Larger padding on desktop */
+@media (min-width: 1200px) {
+    .top-navbar-nav-item {
+        @apply px-3 py-2;
+    }
+}
+
+.top-navbar-nav-item[data-active="true"] {
+    @apply text-primary bg-primary/10;
+}
+
+.top-navbar-nav-item[data-disabled] {
+    @apply opacity-50 cursor-not-allowed text-muted-foreground/70;
+}
+
+/* Dropdown trigger styles */
+.top-navbar-dropdown-trigger {
+    @apply flex items-center gap-1;
+    @apply px-3 py-2;
+    @apply text-sm font-medium;
+    @apply rounded-lg;
+    @apply text-muted-foreground;
+    @apply hover:text-foreground hover:bg-accent;
+    @apply transition-colors duration-200;
+    @apply cursor-pointer;
+    @apply bg-transparent border-none;
+}
+
+.top-navbar-dropdown-trigger[data-popup-open] {
+    @apply text-foreground bg-accent;
+}
+
+.top-navbar-dropdown-icon {
+    @apply w-3.5 h-3.5;
+    @apply transition-transform duration-200;
+}
+
+.top-navbar-dropdown-trigger[data-popup-open] .top-navbar-dropdown-icon {
+    @apply rotate-180;
+}
+
+/* Dropdown content */
+.top-navbar-dropdown-content {
+    @apply flex flex-col gap-1;
+    @apply p-2;
+    @apply min-w-48;
+}
+
+/* Positioner for dropdown popups */
+.top-navbar-positioner {
+    @apply z-50;
+}
+
+.top-navbar-positioner[data-closed] {
+    @apply pointer-events-none;
+}
+
+/* Popup container */
+.top-navbar-popup {
+    @apply bg-popover/95 backdrop-blur-md;
+    @apply border border-border/50;
+    @apply rounded-xl;
+    @apply shadow-lg;
+    @apply overflow-hidden;
+    @apply transition-all duration-200;
+    @apply origin-top;
+}
+
+.top-navbar-popup[data-starting-style],
+.top-navbar-popup[data-ending-style] {
+    @apply opacity-0 scale-95;
+}
+
+.top-navbar-popup[data-open] {
+    @apply opacity-100 scale-100;
+}
+
+/* Viewport for animated content switching */
+.top-navbar-viewport {
+    @apply overflow-hidden;
+}
+
+/* Actions container - right aligned, shown on tablet and desktop */
+.top-navbar-actions {
+    @apply hidden items-center gap-2;
+    @apply shrink-0;
+}
+
+/* Show actions on tablet and up (>=768px) */
+@media (min-width: 768px) {
+    .top-navbar-actions {
+        @apply flex;
+    }
+}
+
+/* Mobile actions wrapper - contains mobile actions + burger, only on mobile (<768px) */
+.top-navbar-mobile-actions-wrapper {
+    @apply flex items-center gap-2;
+}
+
+@media (min-width: 768px) {
+    .top-navbar-mobile-actions-wrapper {
+        @apply hidden;
+    }
+}
+
+/* Mobile actions - shown next to burger on mobile */
+.top-navbar-mobile-actions {
+    @apply flex items-center gap-1;
+}
+
+/* Mobile menu trigger - visible until desktop (1200px) */
+.top-navbar-mobile-trigger {
+    @apply flex;
+    @apply items-center justify-center;
+    @apply w-10 h-10;
+    @apply rounded-lg;
+    @apply hover:bg-accent;
+    @apply transition-colors duration-200;
+}
+
+/* Hamburger icon */
+.hamburger {
+    @apply flex flex-col justify-center items-center gap-1.5;
+    @apply w-5 h-5;
+}
+
+.hamburger-line {
+    @apply block w-5 h-0.5 bg-foreground;
+    @apply transition-all duration-300 ease-in-out;
+    @apply origin-center;
+}
+
+.hamburger[data-open="true"] .hamburger-line:nth-child(1) {
+    @apply translate-y-2 rotate-45;
+}
+
+.hamburger[data-open="true"] .hamburger-line:nth-child(2) {
+    @apply opacity-0 scale-x-0;
+}
+
+.hamburger[data-open="true"] .hamburger-line:nth-child(3) {
+    @apply -translate-y-2 -rotate-45;
+}
+
+/* Mobile menu dropdown - matches navbar design */
+.top-navbar-mobile-menu {
+    @apply absolute top-full left-0 right-0;
+    @apply bg-background/80;
+    @apply border-b border-border/50;
+    @apply overflow-hidden;
+    @apply origin-top;
+    @apply transition-all duration-300 ease-out;
+}
+
+/* Hide mobile menu on tablet and up (>=768px) since nav is visible */
+@media (min-width: 768px) {
+    .top-navbar-mobile-menu {
+        @apply hidden;
+    }
+}
+
+.top-navbar-mobile-menu[data-state="closed"] {
+    @apply max-h-0 opacity-0 pointer-events-none;
+}
+
+.top-navbar-mobile-menu[data-state="open"] {
+    @apply max-h-[80vh] opacity-100;
+}
+
+.top-navbar-mobile-menu-content {
+    @apply flex flex-col;
+    @apply py-2 px-4;
+    @apply bg-background/80 backdrop-blur-md;
+}
+
+/* Mobile menu item */
+.top-navbar-mobile-item {
+    @apply flex items-center gap-3;
+    @apply px-3 py-3;
+    @apply text-base font-medium;
+    @apply rounded-lg;
+    @apply text-muted-foreground;
+    @apply hover:text-foreground hover:bg-accent;
+    @apply transition-colors duration-200;
+    @apply no-underline;
+}
+
+.top-navbar-mobile-item[data-active="true"] {
+    @apply text-primary bg-primary/10;
+}
+
+.top-navbar-mobile-item[data-disabled] {
+    @apply opacity-50 cursor-not-allowed text-muted-foreground/70;
+}
+
+.top-navbar-mobile-item-icon {
+    @apply w-5 h-5;
+    @apply flex items-center justify-center;
+}
+
+.top-navbar-mobile-separator {
+    @apply border-t border-border/50;
+    @apply my-2;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .hamburger-line,
+    .top-navbar-mobile-menu,
+    .top-navbar-nav-item,
+    .top-navbar-mobile-item,
+    .top-navbar-inner,
+    .top-navbar-popup,
+    .top-navbar-dropdown-icon {
+        @apply transition-none;
+    }
+}
