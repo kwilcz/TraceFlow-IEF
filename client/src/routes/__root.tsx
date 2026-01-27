@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SidebarNavigationProvider } from "@/contexts/SidebarNavigationContext";
-import { Circuitry } from "@phosphor-icons/react";
+import { CircuitryIcon } from "@phosphor-icons/react";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 
@@ -21,9 +21,9 @@ function RootLayout() {
                     <BrowserBackHandler />
 
                     {/* Full-page wrapper with background that extends behind sticky navbar */}
-                    <div className="min-h-screen bg-muted">
+                    <div className="min-h-screen">
                         <TopNavbar>
-                            <TopNavbar.Logo icon={<Circuitry weight="fill" />}>TraceFlow</TopNavbar.Logo>
+                            <TopNavbar.Logo icon={<CircuitryIcon weight="fill" />}>Trace<span className="text-primary">Flow</span></TopNavbar.Logo>
 
                             <TopNavbar.Nav>
                                 <TopNavbar.NavItem href="/">Home</TopNavbar.NavItem>

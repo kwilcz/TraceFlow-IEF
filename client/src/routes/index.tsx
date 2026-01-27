@@ -72,9 +72,9 @@ function FeaturesMockup() {
 
 function HomePage() {
     return (
-        <>
+        <div className="dark:bg-surface">
             <HeroSection />
             <FeaturesMockup />
-        </>
+        </div>
     );
 }
