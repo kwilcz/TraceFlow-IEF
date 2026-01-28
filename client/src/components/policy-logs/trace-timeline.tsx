@@ -15,7 +15,9 @@ import {
     CaretLeftIcon,
     CaretRightIcon,
     CheckCircleIcon,
+    CheckIcon,
     ClockIcon,
+    CopyIcon,
     CursorClickIcon,
     EyeIcon,
     FlowArrowIcon,
@@ -143,9 +145,9 @@ const CopyButton: React.FC<{ value: string; label?: string }> = ({ value, label 
                 <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" onClick={handleCopy} className="h-6 w-6 p-0 hover:bg-accent">
                         {copied ? (
-                            <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <CheckIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                            <Copy className="w-3 h-3 text-muted-foreground" />
+                            <CopyIcon className="w-3 h-3 text-muted-foreground" />
                         )}
                     </Button>
                 </TooltipTrigger>

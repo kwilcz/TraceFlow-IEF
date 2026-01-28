@@ -10,12 +10,12 @@ export function ThemeToggle() {
 
     return (
         <Tabs value={theme} onValueChange={setTheme}>
-            <TabsList>
-                <TabsTrigger key="light" value="light">
-                    <SunIcon />
+            <TabsList className={""}>
+                <TabsTrigger key="light" value="light" className="size-7 px-0">
+                    <SunIcon size={12} />
                 </TabsTrigger>
-                <TabsTrigger key="dark" value="dark">
-                    <MoonIcon />
+                <TabsTrigger key="dark" value="dark" className="size-7 px-0">
+                    <MoonIcon size={12} />
                 </TabsTrigger>
             </TabsList>
         </Tabs>

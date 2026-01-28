@@ -109,24 +109,8 @@
         background-size: var(--grid-size, 40px) var(--grid-size, 40px);
     }
 
-    .-z-1 {
-        z-index: -1;
-    }
-
     .origin-0 {
         transform-origin: 0%;
-    }
-
-    .btn-primary {
-        @apply flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3;
-    }
-
-    .form-input-base {
-        @apply pt-3 pb-2 block w-full px-0 mt-0 bg-transparent border-0 border-b-2 appearance-none focus:outline-hidden focus:ring-0 focus:border-black border-gray-200;
-    }
-
-    .label-input-base {
-        @apply absolute duration-300 top-3 text-gray-500;
     }
 
     .collapsible-content {
@@ -151,14 +135,7 @@
 }
 
 @layer base {
-    /* Force override default tailwindcss border color */
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--border) !important;
-    }
+
 
     :root,
     .light,
@@ -236,7 +213,7 @@
         --popover: var(--theme-overlay);
         --popover-foreground: var(--theme-overlay-foreground);
         --border: var(--theme-border);
-        --input: var(--theme-field-background);
+        --input: var(--theme-border);
         --ring: var(--theme-focus);
         --separator: var(--theme-separator);
 

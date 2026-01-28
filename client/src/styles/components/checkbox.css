@@ -1,7 +1,7 @@
 /* Main checkbox square */
 [data-slot="checkbox"] {
     @apply flex gap-3 outline-none relative shrink-0 size-4 items-center;
-    @apply justify-center border border-input rounded-sm;
+    @apply justify-center border border-input rounded-sm bg-field shadow-xs;
 
     /* Larger hit target */
     @apply after:absolute after:-inset-x-3 after:-inset-y-2;
@@ -9,6 +9,10 @@
     /* Disabled */
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     @apply group-has-disabled/field:opacity-50;
+
+    @apply hover:bg-background;
+
+    cursor: pointer;
 
     /* Checked */
     &[data-checked],

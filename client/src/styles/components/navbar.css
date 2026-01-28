@@ -2,23 +2,15 @@
 
 /* CSS variable for navbar height - used by other components for spacing */
 :root {
-    --navbar-height: 56px;
+    --navbar-height: 70px;
 }
 
-@media (min-width: 768px) {
-    :root {
-        --navbar-height: 72px;
-    }
-}
 
 /* Outer container - sticky positioning */
 .top-navbar {
-    @apply sticky top-0 left-0 right-0 z-50;
+    @apply sticky top-0 left-0 right-0 z-50 h-(--navbar-height);
     @apply flex justify-center;
-    @apply py-2 md:py-3;
-    /* No horizontal padding on mobile/tablet */
-    padding-left: 0;
-    padding-right: 0;
+    @apply pb-2 md:p-2;
 }
 
 /* Add padding around floating navbar on desktop */
@@ -36,7 +28,7 @@
     /* Full width until 1200px, then 75% width */
     max-width: 100%;
     @apply flex items-center justify-between gap-4;
-    @apply px-4 py-2 lg:py-3;
+    @apply p-2;
     @apply bg-background/80 backdrop-blur-md;
     /* No border on mobile/tablet, border + rounded on desktop */
     @apply border-b;
@@ -72,7 +64,7 @@
 
 .top-navbar-logo-text {
     @apply font-bold text-lg;
-    @apply hidden sm:inline;
+    @apply inline;
 }
 
 /* Desktop navigation - centered */
