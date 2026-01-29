@@ -1,7 +1,7 @@
 ﻿import React, {useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {toast} from 'sonner';
-import { FolderOpen as FolderUpIcon } from '@phosphor-icons/react'
+import { FolderOpenIcon } from '@phosphor-icons/react'
 import {useUploadProgress} from '@/hooks/use-upload-progress';
 import UploadProgressModal from '@/components/upload-progress-modal';
 import type { PolicyData } from '@/lib/policyParser';
@@ -68,7 +68,7 @@ const PolicyUploadButton: React.FC<FileUploadProps> = ({onParsedData, className}
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadState.isUploading}
                 >
-                    <FolderUpIcon className="mr-2" size={22} />
+                    <FolderOpenIcon className="mr-2" size={22} />
                     {uploadState.isUploading ? 'Uploading...' : 'Upload Policies'}
                 </Button>
             </div>
