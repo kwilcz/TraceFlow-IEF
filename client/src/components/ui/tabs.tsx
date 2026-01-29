@@ -92,7 +92,7 @@ function TabsList({
 }
 
 const tabsTriggerBaseStyles = cn(
-    "relative z-10 flex min-h-8 w-full items-center justify-center gap-1.5 px-4 py-1.5 rounded-3xl text-sm font-medium text-muted outline-none select-none cursor-pointer",
+    "relative z-10 flex w-full items-center justify-center gap-1.5 px-4 py-1.5 rounded-3xl text-sm font-medium text-muted outline-none select-none cursor-pointer",
     noHighlight,
     transitionAll,
     "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",

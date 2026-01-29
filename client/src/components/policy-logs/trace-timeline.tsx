@@ -957,7 +957,7 @@ const TreeSidebar: React.FC<{
             {/* Search */}
             <div className="p-2 border-b">
                 <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     <Input
                         placeholder="Filter..."
                         value={filter}

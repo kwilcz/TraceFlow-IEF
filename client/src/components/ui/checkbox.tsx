@@ -3,11 +3,7 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
 import { cn } from "@/lib/utils";
-import {
-    focusRing,
-    dataDisabledState,
-    transitionColors,
-} from "@/lib/styles";
+import { focusRing, dataDisabledState, transitionColors } from "@/lib/styles";
 import { CheckIcon } from "@phosphor-icons/react";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
@@ -16,7 +12,7 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
             data-slot="checkbox"
             className={cn(
                 // Base layout
-                "relative flex shrink-0 size-4 items-center justify-center gap-3 rounded-md bg-field shadow-field outline-none cursor-pointer",
+                "relative border flex shrink-0 size-4 items-center justify-center gap-3 rounded-md bg-field shadow-field outline-none cursor-pointer",
                 // Larger hit target
                 "after:absolute after:-inset-x-3 after:-inset-y-2",
                 // Transitions
@@ -33,7 +29,7 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
                 "aria-invalid:data-checked:bg-danger aria-invalid:data-checked:text-danger-foreground",
                 // Disabled
                 dataDisabledState,
-                className
+                className,
             )}
             {...props}
         >

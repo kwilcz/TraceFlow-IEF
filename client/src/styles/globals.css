@@ -20,7 +20,7 @@
     --backdrop-blur-xs: 2px;
 
     /* Base radius value (used by theme.css for calculations) */
-    --radius: 0.25rem;
+    --radius: 0.5rem;
     --field-radius: calc(var(--radius) * 1.5);
 
     /* Interactive cursor */

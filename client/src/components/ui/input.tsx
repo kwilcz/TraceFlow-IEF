@@ -16,6 +16,7 @@ const inputVariants = cva(
         "hover:bg-field-hover focus:hover:bg-field-focus",
         // Invalid state
         "aria-invalid:ring-2 aria-invalid:ring-destructive aria-invalid:ring-offset-0",
+        "data-[invalid=true]:ring-2 data-[invalid=true]:ring-destructive data-[invalid=true]:ring-offset-0",
         // Disabled state
         disabledState,
     ),

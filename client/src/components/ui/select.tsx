@@ -56,7 +56,7 @@ function SelectTrigger({
     );
 }
 
-const selectValueStyles = "flex-1 text-left text-base break-words text-current sm:text-sm data-[placeholder=true]:text-field-placeholder";
+const selectValueStyles = cn("flex-1 text-left text-base wrap-break-word text-current sm:text-sm data-[placeholder=true]:text-field-placeholder");
 
 function SelectValue({
     placeholder,
@@ -73,7 +73,10 @@ function SelectValue({
     );
 }
 
-const selectIconStyles = "flex shrink-0 items-center justify-center text-field-placeholder transition duration-150 will-change-transform data-[open=true]:rotate-180 data-[popup-open=true]:rotate-180";
+const selectIconStyles = cn(
+    "flex shrink-0 items-center justify-center text-field-placeholder", 
+    "transition duration-150 will-change-transform",
+    "data-popup-open:rotate-180");
 
 function SelectIcon({
     className,
@@ -96,7 +99,7 @@ function SelectPortal(props: React.ComponentProps<typeof SelectPrimitive.Portal>
 }
 
 const selectPopoverStyles = cn(
-    "min-w-[var(--anchor-width)] scroll-py-1 overflow-y-auto overscroll-contain",
+    "min-w-(--anchor-width) scroll-py-1 overflow-y-auto overscroll-contain",
     overlayBase,
     "focus-visible:outline-none data-[focus-visible=true]:outline-none",
     popupAnimation

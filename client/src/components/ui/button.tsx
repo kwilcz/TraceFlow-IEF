@@ -15,7 +15,7 @@ import {
 const buttonVariants = cva(
     cn(
         // Base layout
-        "relative isolate inline-flex origin-center items-center justify-center gap-2 rounded-3xl text-sm font-medium whitespace-nowrap will-change-transform outline-none select-none cursor-pointer transform-gpu",
+        "relative isolate inline-flex origin-center items-center justify-center gap-2 rounded-2xl text-sm font-medium whitespace-nowrap will-change-transform outline-none select-none cursor-pointer transform-gpu",
         noHighlight,
         // Transitions
         transitionSmooth,

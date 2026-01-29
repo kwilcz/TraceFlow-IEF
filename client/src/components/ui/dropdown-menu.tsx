@@ -148,7 +148,7 @@ const menuItemStyles = cn(
     menuItemStates
 );
 
-const menuItemDestructiveStyles = "text-danger hover:bg-danger/10 data-[hovered=true]:bg-danger/10";
+const menuItemDestructiveStyles = cn("text-danger hover:bg-danger/10 data-[hovered=true]:bg-danger/10");
 
 function DropdownMenuItem({
     className,

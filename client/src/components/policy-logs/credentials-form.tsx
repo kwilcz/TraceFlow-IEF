@@ -1,12 +1,20 @@
 "use client";
 
 import React, { ChangeEvent, useEffect, useState } from "react";
-import { Warning as AlertCircle, SpinnerGap as Loader2, ArrowsClockwise as RefreshCw, MagnifyingGlass as Search } from "@phosphor-icons/react";
+import {
+    Warning as AlertCircle,
+    SpinnerGap as Loader2,
+    ArrowsClockwise as RefreshCw,
+    MagnifyingGlass as Search,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectIcon, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLogStore, type ExtendedLogStore } from "@/stores/log-store";
 import { useCredentialPersistence } from "@/hooks/use-credential-persistence";
 import { validateGuid, validateIsoDuration, clampRowCount } from "@/lib/validators/log-validators";
@@ -21,8 +29,9 @@ interface CredentialInputProps {
     onBlur?: () => void;
     type?: string;
     placeholder?: string;
-    error?: boolean;
+    invalid?: boolean;
     errorMessage?: string;
+    description?: string;
 }
 
 const CredentialInput = ({
@@ -33,13 +42,12 @@ const CredentialInput = ({
     onBlur,
     type = "text",
     placeholder,
-    error,
+    invalid,
     errorMessage,
+    description,
 }: CredentialInputProps) => (
-    <div className="space-y-2">
-        <label htmlFor={id} className="text-sm font-medium">
-            {label}
-        </label>
+    <Field invalid={invalid}>
+        <FieldLabel htmlFor={id}>{label}</FieldLabel>
         <Input
             id={id}
             type={type}
@@ -48,13 +56,11 @@ const CredentialInput = ({
             onBlur={onBlur}
             placeholder={placeholder}
             autoComplete="off"
+            aria-invalid={invalid || undefined}
         />
-        {error && errorMessage && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5" /> {errorMessage}
-            </p>
-        )}
-    </div>
+        {description && <FieldDescription>{description}</FieldDescription>}
+        {errorMessage && <FieldError match={invalid}>{errorMessage}</FieldError>}
+    </Field>
 );
 
 interface TimespanSelectorProps {
@@ -76,42 +82,43 @@ const TimespanSelector = ({
 }: TimespanSelectorProps) => {
     const isCustom = value === "custom";
 
+    const handleSelectChange = (newValue: string | null) => {
+        if (newValue) {
+            onValueChange(newValue);
+        }
+    };
+
     return (
-        <div className="space-y-2">
-            <label htmlFor="timespan" className="text-sm font-medium">
-                Timespan
-            </label>
-            <select
-                id="timespan"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                value={value}
-                onChange={(event: ChangeEvent<HTMLSelectElement>) => onValueChange(event.target.value)}
-            >
-                {TIMESPAN_OPTIONS.map((option) => (
-                    <option value={option.value} key={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </select>
+        <Field invalid={showError && isCustom}>
+            <FieldLabel>Timespan</FieldLabel>
+            <Select value={value} onValueChange={handleSelectChange}>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select timespan" />
+                    <SelectIcon />
+                </SelectTrigger>
+                <SelectContent>
+                    {TIMESPAN_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             {isCustom && (
-                <>
+                <div className="mt-2">
                     <Input
-                        className="mt-2"
                         placeholder="Example: PT2H30M"
                         value={customValue}
                         onBlur={onCustomBlur}
                         onChange={(event: ChangeEvent<HTMLInputElement>) =>
                             onCustomValueChange(event.target.value.toUpperCase())
                         }
+                        aria-invalid={showError || undefined}
                     />
-                    {showError && (
-                        <p className="text-xs text-destructive flex items-center gap-1">
-                            <AlertCircle className="h-3.5 w-3.5" /> Provide a valid ISO 8601 duration.
-                        </p>
-                    )}
-                </>
+                </div>
             )}
-        </div>
+            {isCustom && <FieldError match={showError}>Provide a valid ISO 8601 duration.</FieldError>}
+        </Field>
     );
 };
 
@@ -155,12 +162,13 @@ export const LogCredentialsForm = () => {
     const [maxRows, setMaxRows] = useState(preferences.maxRows || LOG_LIMITS.DEFAULT_ROWS);
     const [localSearchText, setLocalSearchText] = useState(searchText);
     const [timespanChoice, setTimespanChoice] = useState(
-        TIMESPAN_OPTIONS.some((opt) => opt.value === preferences.timespan) ? preferences.timespan : "custom"
+        TIMESPAN_OPTIONS.some((opt) => opt.value === preferences.timespan) ? preferences.timespan : "custom",
     );
     const [customTimespan, setCustomTimespan] = useState(
-        TIMESPAN_OPTIONS.some((opt) => opt.value === preferences.timespan) ? "" : preferences.timespan || ""
+        TIMESPAN_OPTIONS.some((opt) => opt.value === preferences.timespan) ? "" : preferences.timespan || "",
     );
     const [appIdTouched, setAppIdTouched] = useState(false);
+    const [apiKeyTouched, setApiKeyTouched] = useState(false);
     const [timespanTouched, setTimespanTouched] = useState(false);
 
     useEffect(() => {
@@ -194,9 +202,10 @@ export const LogCredentialsForm = () => {
     const usingCustomTimespan = timespanChoice === "custom";
     const effectiveTimespan = (usingCustomTimespan ? customTimespan : timespanChoice).toUpperCase();
     const isGuidValid = validateGuid(applicationId);
+    const isApiKeyValid = Boolean(apiKey.trim());
     const isCustomTimespanValid = !usingCustomTimespan || validateIsoDuration(effectiveTimespan);
     const boundedRows = clampRowCount(maxRows, LOG_LIMITS.MIN_ROWS, LOG_LIMITS.MAX_ROWS);
-    const canSubmit = Boolean(apiKey.trim()) && isGuidValid && isCustomTimespanValid;
+    const canSubmit = isApiKeyValid && isGuidValid && isCustomTimespanValid;
 
     const handleSaveCredentialsToggle = (checked: boolean) => {
         setShouldSave(checked);
@@ -207,11 +216,11 @@ export const LogCredentialsForm = () => {
 
     const handleRefresh = async () => {
         setAppIdTouched(true);
+        setApiKeyTouched(true);
         setTimespanTouched(true);
 
         if (!canSubmit) return;
 
-        // Update store search text before fetching
         setSearchText(localSearchText);
 
         await fetchLogs({
@@ -229,7 +238,9 @@ export const LogCredentialsForm = () => {
         } else {
             const flowCount = latestState.userFlows.length;
             const logCount = latestState.logs.length;
-            toast.success(`Loaded ${flowCount} flow${flowCount === 1 ? "" : "s"} (${logCount} log${logCount === 1 ? "" : "s"}).`);
+            toast.success(
+                `Loaded ${flowCount} flow${flowCount === 1 ? "" : "s"} (${logCount} log${logCount === 1 ? "" : "s"}).`,
+            );
         }
     };
 
@@ -267,7 +278,7 @@ export const LogCredentialsForm = () => {
                                 onChange={setApplicationId}
                                 onBlur={() => setAppIdTouched(true)}
                                 placeholder="00000000-0000-0000-0000-000000000000"
-                                error={!isGuidValid && appIdTouched}
+                                invalid={!isGuidValid && appIdTouched}
                                 errorMessage="Provide a valid GUID."
                             />
                             <CredentialInput
@@ -275,14 +286,15 @@ export const LogCredentialsForm = () => {
                                 label="Application Key"
                                 value={apiKey}
                                 onChange={setApiKey}
+                                onBlur={() => setApiKeyTouched(true)}
                                 type="password"
                                 placeholder="Read-only API key"
+                                invalid={!isApiKeyValid && apiKeyTouched}
+                                errorMessage="Application key is required."
                             />
                             <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label htmlFor="maxRows" className="text-sm font-medium">
-                                        Max Rows
-                                    </label>
+                                <Field>
+                                    <FieldLabel htmlFor="maxRows">Max Rows</FieldLabel>
                                     <Input
                                         id="maxRows"
                                         type="number"
@@ -293,10 +305,10 @@ export const LogCredentialsForm = () => {
                                             handleMaxRowsChange(event.target.value)
                                         }
                                     />
-                                    <p className="text-xs text-muted-foreground">
+                                    <FieldDescription>
                                         Between {LOG_LIMITS.MIN_ROWS} and {LOG_LIMITS.MAX_ROWS} rows.
-                                    </p>
-                                </div>
+                                    </FieldDescription>
+                                </Field>
                                 <TimespanSelector
                                     value={timespanChoice}
                                     customValue={customTimespan}
@@ -311,12 +323,10 @@ export const LogCredentialsForm = () => {
                                     showError={!isCustomTimespanValid && timespanTouched}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label htmlFor="searchText" className="text-sm font-medium">
-                                    Search (optional)
-                                </label>
+                            <Field>
+                                <FieldLabel htmlFor="searchText">Search (optional)</FieldLabel>
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                                     <Input
                                         id="searchText"
                                         type="text"
@@ -328,36 +338,36 @@ export const LogCredentialsForm = () => {
                                         className="pl-10"
                                     />
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Search for any text in the logs. Complete flows will be fetched for matching entries.
-                                </p>
-                            </div>
+                                <FieldDescription>
+                                    Search for any text in the logs. Complete flows will be fetched for matching
+                                    entries.
+                                </FieldDescription>
+                            </Field>
                             <div className="flex items-center gap-2">
                                 <Checkbox
                                     id="saveCredentials"
                                     checked={shouldSave}
                                     onCheckedChange={(checked) => handleSaveCredentialsToggle(!!checked)}
                                 />
-                                <label htmlFor="saveCredentials" className="text-sm text-muted-foreground">
+                                <Label
+                                    htmlFor="saveCredentials"
+                                    className="text-sm text-muted-foreground cursor-pointer"
+                                >
                                     Save credentials
-                                </label>
+                                </Label>
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 Credentials do not leave your browser, and are stored securely in local storage.
                             </p>
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <LastUpdatedStatus lastUpdated={lastUpdated} />
-                                <Button
-                                    onClick={handleRefresh}
-                                    disabled={!canSubmit || isLoading}
-                                    className="w-full sm:w-auto"
-                                >
+                                <Button onClick={handleRefresh} disabled={isLoading} className="w-full sm:w-auto">
                                     {isLoading ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                         <RefreshCw className="mr-2 h-4 w-4" />
                                     )}
-                                    Refresh Data
+                                    {lastUpdated ? "Refresh Data" : "Import Data"}
                                 </Button>
                             </div>
                             {error && <ErrorAlert message={error} />}
