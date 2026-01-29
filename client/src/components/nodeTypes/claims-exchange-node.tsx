@@ -20,7 +20,6 @@ import { Node, NodeProps, Position } from "@xyflow/react";
 import { useMemo } from "react";
 import PolicyNode from "./components/policy-node";
 import { ClaimsList, DisplayClaimsList, TransformationsList } from "./node-claim-components";
-import { Protocol } from '../../types/technical-profile';
 
 export type ClaimsExchangeNode = Node<
     {

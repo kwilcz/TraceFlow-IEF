@@ -11,75 +11,58 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 
+ * Tailwind Theme Extensions - Unique tokens not defined in theme.css
+ * Core color mappings, radius, easing, and derived colors are in theme.css
+ */
 @theme inline {
+    /* Blur extension */
     --backdrop-blur-xs: 2px;
 
-    --radius: 0.75rem;
+    /* Base radius value (used by theme.css for calculations) */
+    --radius: 0.25rem;
     --field-radius: calc(var(--radius) * 1.5);
 
+    /* Interactive cursor */
+    --cursor-interactive: pointer;
+
+    /* Border width for fields */
+    --border-width-field: 0px;
+
+    /* Animation durations */
+    --duration-150: 150ms;
+    --duration-200: 200ms;
+    --duration-250: 250ms;
+    --duration-300: 300ms;
+
+    /* Gradient utilities */
     --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
     --background-image-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops));
 
+    /* Custom size extensions */
     --width-128: 32rem;
     --width-176: 44rem;
     --width-208: 52rem;
-
     --height-128: 32rem;
     --height-160: 40rem;
     --height-176: 44rem;
 
-    /* Core colors - map directly to CSS variables */
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-
-    --color-surface: var(--theme-surface);
-    --color-surface-foreground: var(--theme-surface-foreground);
-
+    /* shadcn-compatible tokens (kept for backward compatibility) */
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
-
     --color-primary: var(--primary);
     --color-primary-foreground: var(--primary-foreground);
-
+    --color-primary-hover: var(--primary-hover);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--secondary-foreground);
-
-    --color-muted: var(--muted);
+    --color-secondary-hover: var(--secondary-hover);
     --color-muted-foreground: var(--muted-foreground);
-
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-
     --color-destructive: var(--destructive);
     --color-destructive-foreground: var(--destructive-foreground);
-
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-
-    /* New semantic colors */
-    --color-success: var(--success);
-    --color-success-foreground: var(--success-foreground);
-    --color-warning: var(--warning);
-    --color-warning-foreground: var(--warning-foreground);
-    --color-separator: var(--separator);
-
-    /* Field tokens */
-    --color-field: var(--field-background);
-    --color-field-foreground: var(--field-foreground);
-    --color-field-placeholder: var(--field-placeholder);
-
-    /* Segment tokens */
-    --color-segment: var(--segment);
-    --color-segment-foreground: var(--segment-foreground);
-
-    /* Derived/hover colors */
-    --color-primary-hover: var(--primary-hover);
-    --color-secondary-hover: var(--secondary-hover);
     --color-destructive-hover: var(--destructive-hover);
     --color-destructive-soft: var(--destructive-soft);
-    --color-accent-soft: var(--theme-accent-soft);
-    --color-accent-soft-hover: var(--theme-accent-soft-hover);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
 
     /* Chart colors */
     --color-chart-1: var(--chart-1);
@@ -93,6 +76,48 @@
     --color-nodes-combinedsigninup: var(--nodes-combined-signinup);
     --color-nodes-group: var(--nodes-group);
     --color-nodes-group-border: var(--nodes-group-border);
+}
+
+/* Status utilities as @utility for @apply support */
+@utility status-focused {
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-color: var(--color-background);
+    --tw-ring-color: var(--color-ring);
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+    outline: none;
+}
+
+@utility status-focused-field {
+    --tw-ring-color: color-mix(in oklch, var(--color-ring) 50%, transparent);
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+    outline: none;
+}
+
+@utility status-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@utility status-pending {
+    pointer-events: none;
+    cursor: wait;
+}
+
+@utility status-invalid-field {
+    --tw-ring-color: color-mix(in oklch, var(--color-destructive) 20%, transparent);
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+@utility no-highlight {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
 }
 
 @layer utilities {
@@ -135,15 +160,9 @@
 }
 
 @layer base {
-
-
     :root,
     .light,
     [data-theme="light"] {
-        /* ═══════════════════════════════════════════════════════════════════════
-           HeroUI Theme Colors - Light Mode
-           @see https://v3.heroui.com/docs/react/getting-started/theming
-           ═══════════════════════════════════════════════════════════════════════ */
         --theme-accent: oklch(62.06% 0.1742 250.36);
         --theme-accent-foreground: oklch(99.11% 0 0);
         --theme-background: oklch(97.02% 0.0132 250.36);
@@ -171,9 +190,6 @@
         --theme-warning: oklch(78.19% 0.1627 71.91);
         --theme-warning-foreground: oklch(21.03% 0.0059 71.91);
 
-        /* ═══════════════════════════════════════════════════════════════════════
-           Derived Colors (auto-calculated from theme tokens)
-           ═══════════════════════════════════════════════════════════════════════ */
         --theme-accent-hover: color-mix(in oklch, var(--theme-accent) 85%, black);
         --theme-accent-soft: color-mix(in oklch, var(--theme-accent) 15%, var(--theme-background));
         --theme-accent-soft-hover: color-mix(in oklch, var(--theme-accent) 22%, var(--theme-background));
@@ -188,10 +204,6 @@
         --theme-surface-secondary: color-mix(in oklch, var(--theme-surface) 95%, var(--theme-foreground));
         --theme-surface-tertiary: color-mix(in oklch, var(--theme-surface) 90%, var(--theme-foreground));
 
-        /* ═══════════════════════════════════════════════════════════════════════
-           Application Tokens (map to HeroUI theme tokens)
-           These are used by components - they reference the theme tokens above
-           ═══════════════════════════════════════════════════════════════════════ */
         --background: var(--theme-background);
         --foreground: var(--theme-foreground);
         --primary: var(--theme-accent);
@@ -200,10 +212,10 @@
         --secondary: var(--theme-default);
         --secondary-foreground: var(--theme-default-foreground);
         --secondary-hover: var(--theme-default-hover);
-        --muted: var(--theme-default);
+        --muted: var(--theme-muted);
         --muted-foreground: var(--theme-muted);
-        --accent: var(--theme-default);
-        --accent-foreground: var(--theme-default-foreground);
+        --accent: var(--theme-accent);
+        --accent-foreground: var(--theme-accent-foreground);
         --destructive: var(--theme-danger);
         --destructive-foreground: var(--theme-danger-foreground);
         --destructive-hover: var(--theme-danger-hover);
@@ -216,6 +228,24 @@
         --input: var(--theme-border);
         --ring: var(--theme-focus);
         --separator: var(--theme-separator);
+
+        --default: var(--theme-default);
+        --default-foreground: var(--theme-default-foreground);
+        --surface: var(--theme-surface);
+        --surface-foreground: var(--theme-surface-foreground);
+        --overlay: var(--theme-overlay);
+        --overlay-foreground: var(--theme-overlay-foreground);
+        --danger: var(--theme-danger);
+        --danger-foreground: var(--theme-danger-foreground);
+        --focus: var(--theme-focus);
+        --link: var(--theme-accent);
+
+        --surface-shadow:
+            0px 0px 1px 0px rgb(0 0 0 / 0.04), 0px 2px 6px 0px rgb(0 0 0 / 0.04), 0px 10px 20px 0px rgb(0 0 0 / 0.04);
+        --overlay-shadow:
+            0px 0px 1px 0px rgb(0 0 0 / 0.06), 0px 4px 12px 0px rgb(0 0 0 / 0.08), 0px 16px 32px 0px rgb(0 0 0 / 0.08);
+        --field-shadow: 0px 2px 4px 0px rgb(0 0 0 / 0.06);
+        --border-width: 1px;
 
         /* New semantic tokens */
         --success: var(--theme-success);
@@ -382,6 +412,71 @@
 
     body {
         @apply bg-background text-foreground;
+        font-family:
+            "Inter",
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            "Helvetica Neue",
+            Arial,
+            sans-serif;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Animation keyframes for components */
+    @keyframes caret-blink {
+        0%,
+        70%,
+        100% {
+            opacity: 1;
+        }
+        20%,
+        50% {
+            opacity: 0;
+        }
+    }
+
+    @keyframes spin-fast {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes skeleton {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    @keyframes slot-value-in {
+        0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.8);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .animate-caret-blink {
+        animation: caret-blink 1.25s ease-out infinite;
+    }
+
+    .animate-spin-fast {
+        animation: spin-fast 0.6s linear infinite;
+    }
+
+    .animate-skeleton {
+        animation: skeleton 2s ease-in-out infinite;
     }
 }
 

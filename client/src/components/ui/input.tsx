@@ -1,23 +1,42 @@
 "use client";
 
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
 import { cn } from "@/lib/utils";
+import { fieldBase, transitionAll, disabledState, focusRingCombined } from "@/lib/styles";
 
-export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+const inputVariants = cva(
+    cn(
+        // Base styles
+        fieldBase,
+        transitionAll,
+        focusRingCombined,
+        // Hover state (only when not focused)
+        "hover:bg-field-hover focus:hover:bg-field-focus",
+        // Invalid state
+        "aria-invalid:ring-2 aria-invalid:ring-destructive aria-invalid:ring-offset-0",
+        // Disabled state
+        disabledState,
+    ),
+    {
+        variants: {
+            variant: {
+                primary: "",
+                secondary: "shadow-none bg-default hover:bg-default-hover focus:bg-default",
+            },
+        },
+        defaultVariants: {
+            variant: "primary",
+        },
+    },
+);
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type = "text", ...props }, ref) => {
-    return (
-        <input
-            type={type}
-            className={cn(
-                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                className
-            )}
-            ref={ref}
-            {...props}
-        />
-    );
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof inputVariants> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type = "text", variant, ...props }, ref) => {
+    return <input type={type} className={cn(inputVariants({ variant }), className)} ref={ref} {...props} />;
 });
 Input.displayName = "Input";
 
-export { Input };
+export { Input, inputVariants };

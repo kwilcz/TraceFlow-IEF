@@ -23,10 +23,7 @@
 /* Inner container - the actual navbar with glass effect */
 /* Uses base-ui NavigationMenu.Root which renders as <nav> */
 .top-navbar-inner {
-    @apply relative;
-    @apply w-full;
-    /* Full width until 1200px, then 75% width */
-    max-width: 100%;
+    @apply relative w-full max-w-full;
     @apply flex items-center justify-between gap-4;
     @apply p-2;
     @apply bg-background/80 backdrop-blur-md;
@@ -38,9 +35,7 @@
 /* Desktop (>=1200px): 75% width with rounded corners */
 @media (min-width: 1200px) {
     .top-navbar-inner {
-        max-width: 75vw;
-        @apply border border-border/50;
-        @apply rounded-2xl;
+        @apply max-w-[75vw] border border-border/50 rounded-2xl;
     }
 }
 
@@ -78,11 +73,7 @@
 /* Tablet (768px - 1199px): Show nav, but not centered (flows with content) */
 @media (min-width: 768px) and (max-width: 1199px) {
     .top-navbar-nav {
-        @apply flex;
-        /* Not absolutely positioned on tablet */
-        position: relative;
-        left: auto;
-        transform: none;
+        @apply flex relative left-auto transform-none;
     }
 }
 
