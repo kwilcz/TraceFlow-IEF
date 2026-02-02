@@ -2,6 +2,9 @@ import {ArrowRightIcon, BugIcon, CloudCheckIcon, FileArrowUpIcon} from "@phospho
 import * as card from "@/components/ui/card"
 import {Button} from "@components/ui/button.tsx";
 
+import {disabledAll} from "@lib/styles.ts";
+import {Badge} from "@components/ui/badge.tsx";
+
 export const LogAnalyzerLanding = () => {
     return <div className="flex flex-col items-center justify-center min-h-screen-navbar gap-8 px-4 py-8">
         <header className="text-center space-y-6 items-center justify-center">
@@ -19,11 +22,11 @@ export const LogAnalyzerLanding = () => {
         <div className={"grid grid-cols-2 gap-8"}>
 
             <card.Card className={"p-8 gap-8 max-w-sm"}>
-                <card.CardHeader className={"gap-2"}>
+                <card.CardHeader className={"gap-3"}>
                     <div className="bg-primary/10 w-fit h-fit rounded-2xl p-3 mb-2">
                         <CloudCheckIcon weight={"fill"} className="size-8 text-primary"/>
                     </div>
-                    <card.CardTitle>Connect to API</card.CardTitle>
+                    <card.CardTitle className={"text-2xl"}>Connect to API</card.CardTitle>
                     <card.CardDescription>
                         Real-time connection to AppInsights.
                         Requires Application Insights connection details and permissions.
@@ -37,12 +40,13 @@ export const LogAnalyzerLanding = () => {
                 </card.CardFooter>
             </card.Card>
 
-            <card.Card className={"p-8 max-w-sm"}>
-                <card.CardHeader className={"gap-2"}>
+            <card.Card className={`p-8 max-w-sm ${disabledAll}`} aria-disabled={true}>
+                <Badge variant={"warning"} className={"z-10 absolute w-fit self-end top-4 right-4"}>Coming Soon</Badge>
+                <card.CardHeader className={"gap-3"}>
                     <div className="bg-primary/10 w-fit h-fit rounded-2xl p-3 mb-2">
                         <FileArrowUpIcon weight={"fill"} className="size-8 text-primary"/>
                     </div>
-                    <card.CardTitle>Upload logs manually</card.CardTitle>
+                    <card.CardTitle className={"text-2xl"}>Upload logs manually</card.CardTitle>
                     <card.CardDescription>
                         JSON-formatted logs, exported from Application Insights.
                         Allows working with no network connection.
