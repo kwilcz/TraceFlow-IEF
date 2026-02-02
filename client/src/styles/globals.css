@@ -502,3 +502,9 @@
 .react-flow__edge-label-renderer {
     z-index: 1000 !important;
 }
+
+@utility h-screen-navbar {
+    height: calc(100vh - var(--navbar-height));
+}
+@utility min-h-screen-navbar { min-height: calc(100vh - var(--navbar-height)); }
+@utility max-h-screen-navbar { max-height: calc(100vh - var(--navbar-height)); }
