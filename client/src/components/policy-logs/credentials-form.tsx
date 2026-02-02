@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
+import { Root, Label as FieldLabel, Description, Error } from "@/components/ui/field";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectIcon, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLogStore, type ExtendedLogStore } from "@/stores/log-store";
@@ -46,7 +46,7 @@ const CredentialInput = ({
     errorMessage,
     description,
 }: CredentialInputProps) => (
-    <Field invalid={invalid}>
+    <Root invalid={invalid}>
         <FieldLabel htmlFor={id}>{label}</FieldLabel>
         <Input
             id={id}
@@ -58,9 +58,9 @@ const CredentialInput = ({
             autoComplete="off"
             aria-invalid={invalid || undefined}
         />
-        {description && <FieldDescription>{description}</FieldDescription>}
-        {errorMessage && <FieldError match={invalid}>{errorMessage}</FieldError>}
-    </Field>
+        {description && <Description>{description}</Description>}
+        {errorMessage && <Error match={invalid}>{errorMessage}</Error>}
+    </Root>
 );
 
 interface TimespanSelectorProps {
@@ -89,7 +89,7 @@ const TimespanSelector = ({
     };
 
     return (
-        <Field invalid={showError && isCustom}>
+        <Root invalid={showError && isCustom}>
             <FieldLabel>Timespan</FieldLabel>
             <Select value={value} onValueChange={handleSelectChange}>
                 <SelectTrigger className="w-full">
@@ -117,8 +117,8 @@ const TimespanSelector = ({
                     />
                 </div>
             )}
-            {isCustom && <FieldError match={showError}>Provide a valid ISO 8601 duration.</FieldError>}
-        </Field>
+            {isCustom && <Error match={showError}>Provide a valid ISO 8601 duration.</Error>}
+        </Root>
     );
 };
 
@@ -293,7 +293,7 @@ export const LogCredentialsForm = () => {
                                 errorMessage="Application key is required."
                             />
                             <div className="grid gap-4 md:grid-cols-2">
-                                <Field>
+                                <Root>
                                     <FieldLabel htmlFor="maxRows">Max Rows</FieldLabel>
                                     <Input
                                         id="maxRows"
@@ -305,10 +305,10 @@ export const LogCredentialsForm = () => {
                                             handleMaxRowsChange(event.target.value)
                                         }
                                     />
-                                    <FieldDescription>
+                                    <Description>
                                         Between {LOG_LIMITS.MIN_ROWS} and {LOG_LIMITS.MAX_ROWS} rows.
-                                    </FieldDescription>
-                                </Field>
+                                    </Description>
+                                </Root>
                                 <TimespanSelector
                                     value={timespanChoice}
                                     customValue={customTimespan}
@@ -323,7 +323,7 @@ export const LogCredentialsForm = () => {
                                     showError={!isCustomTimespanValid && timespanTouched}
                                 />
                             </div>
-                            <Field>
+                            <Root>
                                 <FieldLabel htmlFor="searchText">Search (optional)</FieldLabel>
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -338,11 +338,11 @@ export const LogCredentialsForm = () => {
                                         className="pl-10"
                                     />
                                 </div>
-                                <FieldDescription>
+                                <Description>
                                     Search for any text in the logs. Complete flows will be fetched for matching
                                     entries.
-                                </FieldDescription>
-                            </Field>
+                                </Description>
+                            </Root>
                             <div className="flex items-center gap-2">
                                 <Checkbox
                                     id="saveCredentials"

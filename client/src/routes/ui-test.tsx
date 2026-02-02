@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Root, Description, Label as FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -62,20 +62,20 @@ function UITestPage() {
                     
                     {/* Text Input with Label */}
                     <div className="w-full">
-                        <Field>
+                        <Root>
                             <FieldLabel>Your email</FieldLabel>
                             <Input 
                                 placeholder="john@email.com" 
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                             />
-                            <FieldDescription>We won't share your email</FieldDescription>
-                        </Field>
+                            <Description>We won't share your email</Description>
+                        </Root>
                     </div>
 
                     {/* Select/Dropdown */}
                     <div className="w-64">
-                        <Field>
+                        <Root>
                             <FieldLabel>State</FieldLabel>
                             <Select items={STATE_ITEMS}>
                                 <SelectTrigger>
@@ -90,7 +90,7 @@ function UITestPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </Field>
+                        </Root>
                     </div>
 
                     {/* Controls Row: Checkbox, Switch, Radio */}
@@ -109,7 +109,7 @@ function UITestPage() {
 
                     {/* Slider/Progress */}
                     <div className="w-64 px-1">
-                        <Field>
+                        <Root>
                             <div className="flex justify-between items-center mb-2">
                                 <FieldLabel>Price</FieldLabel>
                                 <span className="text-sm font-medium tabular-nums">${sliderValue * 5}.00</span>
@@ -123,7 +123,7 @@ function UITestPage() {
                                 onChange={(e) => setSliderValue(Number(e.target.value))}
                                 className="w-full mt-2 accent-primary"
                             />
-                        </Field>
+                        </Root>
                     </div>
 
                     {/* Tabs - Segment Style */}
@@ -203,9 +203,9 @@ function UITestPage() {
 
                     {/* OTP Input Simulation */}
                     <div className="w-[280px]">
-                        <Field>
+                        <Root>
                             <FieldLabel>Verify account</FieldLabel>
-                            <FieldDescription>We've sent a code to a****@gmail.com</FieldDescription>
+                            <Description>We've sent a code to a****@gmail.com</Description>
                             <div className="flex gap-2 mt-2">
                                 <div className="flex gap-2">
                                     {['4', '3', '2'].map((digit, i) => (
@@ -224,7 +224,7 @@ function UITestPage() {
                             <p className="text-sm text-muted-foreground px-1 pt-1">
                                 Didn't receive a code? <button className="text-foreground hover:underline">Resend</button>
                             </p>
-                        </Field>
+                        </Root>
                     </div>
 
                     {/* Button Grid */}

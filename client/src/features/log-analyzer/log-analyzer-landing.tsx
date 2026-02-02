@@ -4,8 +4,16 @@ import {Button} from "@components/ui/button.tsx";
 
 import {disabledAll} from "@lib/styles.ts";
 import {Badge} from "@components/ui/badge.tsx";
+import {LogAnalyzerDialog} from "@/features/log-analyzer/log-analyzer-dialog.tsx";
+import React from "react";
 
 export const LogAnalyzerLanding = () => {
+    const [dialogOpen, setDialogOpen] = React.useState(false);
+
+    const OnConnectToApiClick = () => setDialogOpen(true);
+    const onDialogClosed = () => setDialogOpen(false);
+
+
     return <div className="flex flex-col items-center justify-center min-h-screen-navbar gap-8 px-4 py-8">
         <header className="text-center space-y-6 items-center justify-center">
             <div className="bg-primary/10 w-fit h-fit p-6 rounded-full mx-auto">
@@ -33,7 +41,7 @@ export const LogAnalyzerLanding = () => {
                     </card.CardDescription>
                 </card.CardHeader>
                 <card.CardFooter>
-                    <Button variant={"link"} className="text-primary">
+                    <Button variant={"link"} className="text-primary" onClick={OnConnectToApiClick}>
                         Configure
                         <ArrowRightIcon/>
                     </Button>
@@ -60,5 +68,7 @@ export const LogAnalyzerLanding = () => {
                 </card.CardFooter>
             </card.Card>
         </div>
+
+        <LogAnalyzerDialog open={dialogOpen} onClosed={onDialogClosed}/>
     </div>
 }
