@@ -1,12 +1,25 @@
-﻿import React, { useMemo } from "react";
-import { Node, NodeProps, Position } from "@xyflow/react";
-import { TechnicalProfile } from "@/types/technical-profile";
-import { getProviderBadgeColor } from "@/types/technical-profile";
-import { ArrowLeft, ArrowRight, FlowArrow as Workflow, ChartBar as BarChart3, FloppyDisk as Save, Sparkle as Sparkles, FloppyDisk as SaveAll } from "@phosphor-icons/react";
-import PolicyNode from "./components/policy-node";
-import { ClaimsList, DisplayClaimsList, DisplayClaimsSection, TransformationsList } from "./node-claim-components";
-import { usePolicyStore } from "@/stores/policy-store";
+﻿import { usePolicyStore } from "@/stores/policy-store";
+import {
+    getProtocolBadgeColor,
+    getProtocolHandlerBadgeColor,
+    getProtocolHandlerShortName,
+    PROTOCOL_NAME,
+    type Protocol,
+    type TechnicalProfile,
+} from "@/types/technical-profile";
 import { getEntity, TechnicalProfileEntity } from "@/types/trust-framework-entities";
+import {
+    FlowArrowIcon,
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    TreeStructureIcon,
+    ArchiveIcon,
+    DevicesIcon,
+} from "@phosphor-icons/react";
+import { Node, NodeProps, Position } from "@xyflow/react";
+import { useMemo } from "react";
+import PolicyNode from "./components/policy-node";
+import { ClaimsList, DisplayClaimsList, TransformationsList } from "./node-claim-components";
 
 export type ClaimsExchangeNode = Node<
     {
@@ -25,13 +38,39 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
 
     // Get primary technical profile from entities
     const primaryProfileId = data.claimsExchanges?.[0];
-    const primaryProfile = (primaryProfileId && entities 
-        ? getEntity(entities, 'TechnicalProfile', primaryProfileId) as TechnicalProfileEntity | undefined
-        : undefined);
+    const primaryProfile =
+        primaryProfileId && entities
+            ? (getEntity(entities, "TechnicalProfile", primaryProfileId) as TechnicalProfileEntity | undefined)
+            : undefined;
 
-    // Extract data for display
-    const providerName = primaryProfile?.providerName || "Unknown";
-    const providerColor = getProviderBadgeColor(providerName);
+    const fallbackProfile = useMemo(() => {
+        if (!data.technicalProfiles || data.technicalProfiles.length === 0) return undefined;
+        if (primaryProfileId) {
+            return data.technicalProfiles.find((p) => p.id === primaryProfileId) ?? data.technicalProfiles[0];
+        }
+        return data.technicalProfiles[0];
+    }, [data.technicalProfiles, primaryProfileId]);
+
+    const displayProfile = primaryProfile ?? fallbackProfile;
+
+    const displayProtocol: Protocol | undefined = useMemo(() => {
+        if (!displayProfile) return undefined;
+
+        if ('protocol' in displayProfile) {
+            return displayProfile.protocol;
+        }
+
+        return displayProfile.protocolName
+            ? { name: displayProfile.protocolName, handler: displayProfile.protocolHandler }
+            : undefined;
+    }, [displayProfile]);
+
+    const protocolColor = getProtocolBadgeColor(displayProtocol?.name);
+    const protocolHandlerShortName =
+        displayProtocol?.name === PROTOCOL_NAME.Proprietary
+            ? getProtocolHandlerShortName(displayProtocol.handler)
+            : undefined;
+    const protocolHandlerColor = getProtocolHandlerBadgeColor(protocolHandlerShortName);
 
     const inheritanceChain = useMemo(() => {
         if (!primaryProfile?.inheritanceChain) return null;
@@ -45,38 +84,42 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
     }, [primaryProfile]);
 
     const inputClaims = useMemo(() => {
-        return primaryProfile?.inputClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.inputClaims || [];
+    }, [displayProfile]);
 
     const outputClaims = useMemo(() => {
-        return primaryProfile?.outputClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.outputClaims || [];
+    }, [displayProfile]);
 
     const persistedClaims = useMemo(() => {
-        return primaryProfile?.persistedClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.persistedClaims || [];
+    }, [displayProfile]);
 
     const inputTransformations = useMemo(() => {
-        return primaryProfile?.inputClaimsTransformations || [];
-    }, [primaryProfile]);
+        return displayProfile?.inputClaimsTransformations || [];
+    }, [displayProfile]);
 
     const outputTransformations = useMemo(() => {
-        return primaryProfile?.outputClaimsTransformations || [];
-    }, [primaryProfile]);
+        return displayProfile?.outputClaimsTransformations || [];
+    }, [displayProfile]);
 
     const displayClaims = useMemo(() => {
-        return primaryProfile?.displayClaims || [];
-    }, [primaryProfile]);
+        return displayProfile?.displayClaims || [];
+    }, [displayProfile]);
+
+    const validationTechnicalProfiles = useMemo(() => {
+        return displayProfile?.validationTechnicalProfiles || [];
+    }, [displayProfile]);
 
     const highestHierarchyFile =
         primaryProfile?.inheritanceChain?.[primaryProfile.inheritanceChain.length - 1]?.policyId;
     const stepLabel = data.stepOrder ? `Step ${data.stepOrder}` : "ClaimsExchange";
 
     // Use DisplayName for title, fall back to label
-    const nodeTitle = primaryProfile?.displayName || data.label;
+    const nodeTitle = displayProfile?.displayName || data.label;
 
     // Debug logging
-    if (!primaryProfile && data.claimsExchanges?.length > 0) {
+    if (!primaryProfile && !fallbackProfile && data.claimsExchanges?.length > 0) {
         console.log("ClaimsExchangeNode missing profile data:", {
             nodeId: props.id,
             label: data.label,
@@ -94,25 +137,35 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
 
             <PolicyNode.Header>
                 <PolicyNode.Icon className="text-cyan-900 bg-cyan-200/40">
-                    <Workflow />
+                    <FlowArrowIcon />
                 </PolicyNode.Icon>
                 <div className="min-w-0">
                     <PolicyNode.Title>{nodeTitle}</PolicyNode.Title>
                     <PolicyNode.SubTitle>
-                        {stepLabel}: {primaryProfile?.id ?? ""}
+                        {stepLabel}: {displayProfile?.id ?? primaryProfileId ?? ""}
                     </PolicyNode.SubTitle>
-                    <PolicyNode.Badge className={`${providerColor} w-fit`}>{providerName}</PolicyNode.Badge>
+
                 </div>
             </PolicyNode.Header>
-
+                    {displayProtocol?.name && (
+                        <div className="flex flex-wrap gap-2">
+                            <p className="text-slate-300 font-mono">Protocol:</p>
+                            <div className="flex flex-wrap gap-2">
+                            <PolicyNode.Badge className={`${protocolColor}`}>{displayProtocol.name}</PolicyNode.Badge>
+                            {displayProtocol.name === PROTOCOL_NAME.Proprietary && protocolHandlerShortName && (
+                                <PolicyNode.Badge className={`${protocolHandlerColor}`}>{protocolHandlerShortName}</PolicyNode.Badge>
+                            )}
+                            </div>
+                        </div>
+                    )}
             {/* Details Content */}
-            {primaryProfile && (
+            {displayProfile && (
                 <PolicyNode.Content>
                     {/* Inheritance */}
-                    {primaryProfile.inheritanceChain.length > 1 && inheritanceChain && (
+                    {inheritanceChain && (
                         <PolicyNode.Section>
                             <div className="text-purple-300/80 font-semibold flex items-center gap-1 mb-1">
-                                <BarChart3 className="size-3" />
+                                <TreeStructureIcon className="size-3" />
                                 <span>Inheritance Chain</span>
                             </div>
                             <div className="text-slate-300 font-mono text-[10px]">{inheritanceChain}</div>
@@ -122,7 +175,7 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                     {inputClaims.length > 0 && (
                         <PolicyNode.Section className="bg-blue-900/20">
                             <div className={`text-blue-300/80 font-semibold flex items-center gap-1 mb-1`}>
-                                <ArrowLeft className="size-3" />
+                                <ArrowLeftIcon className="size-3" />
                                 <span>Input Claims</span>
                             </div>
                             <ClaimsList claims={inputClaims} color="blue" />
@@ -132,7 +185,7 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                     {displayClaims.length > 0 && (
                         <PolicyNode.Section className="bg-amber-900/20">
                             <div className={`text-amber-300/80 font-semibold flex items-center gap-1 mb-1`}>
-                                <Sparkles className="size-3" />
+                                <DevicesIcon className="size-3" />
                                 <span>Display Claims</span>
                             </div>
                             <DisplayClaimsList claims={displayClaims} />
@@ -142,7 +195,7 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                     {outputClaims.length > 0 && (
                         <PolicyNode.Section className="bg-green-900/20">
                             <div className={`text-green-300/80 font-semibold flex items-center gap-1 mb-1`}>
-                                <ArrowRight className="size-3" />
+                                <ArrowRightIcon className="size-3" />
                                 <span>Output Claims</span>
                             </div>
                             <ClaimsList claims={outputClaims} color="green" />
@@ -152,7 +205,7 @@ export default function ClaimsExchangeNode(props: NodeProps<ClaimsExchangeNode>)
                     {persistedClaims.length > 0 && (
                         <PolicyNode.Section className="bg-cyan-900/20">
                             <div className={`text-cyan-300/80 font-semibold flex items-center gap-1 mb-1`}>
-                                <SaveAll className="size-3" />
+                                <ArchiveIcon className="size-3" />
                                 <span>Persisted Claims</span>
                             </div>
                             <ClaimsList claims={persistedClaims} color="cyan" />

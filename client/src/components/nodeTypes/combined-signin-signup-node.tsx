@@ -3,6 +3,7 @@ import { Node, NodeProps, Position } from "@xyflow/react";
 import { User as UserIcon, FlowArrow as Workflow, ArrowRight, SignIn as LogIn, ShieldCheck } from "@phosphor-icons/react";
 import { PolicyNode } from "./components/policy-node";
 import { OrchestrationStepWithTechnicalProfile } from "@/types/technical-profile";
+import { getProtocolHandlerShortName, PROTOCOL_NAME } from "@/types/technical-profile";
 import { ClaimsList, DisplayClaimsList, TransformationsList } from "./node-claim-components";
 
 export type CombinedSignInAndSignUpNode = Node<
@@ -160,7 +161,11 @@ export default function CombinedSignInAndSignUpNode(props: NodeProps<CombinedSig
                                     </div>
                                     {exchange.technicalProfile && (
                                         <div className="ml-4 text-[9px] text-green-600">
-                                            {exchange.technicalProfile.providerName || "Unknown Provider"}
+                                            {exchange.technicalProfile.protocol?.name
+                                                ? exchange.technicalProfile.protocol.name === PROTOCOL_NAME.Proprietary
+                                                    ? `${exchange.technicalProfile.protocol.name} → ${getProtocolHandlerShortName(exchange.technicalProfile.protocol.handler) || 'Unknown'}`
+                                                    : exchange.technicalProfile.protocol.name
+                                                : "Unknown Protocol"}
                                         </div>
                                     )}
                                 </div>

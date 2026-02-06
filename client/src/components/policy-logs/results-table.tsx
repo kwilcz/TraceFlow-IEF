@@ -50,13 +50,13 @@ interface FilterInputProps {
 
 const FilterInput = ({ value, onChange, placeholder, icon: Icon }: FilterInputProps) => (
     <div className="relative">
+        <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
             placeholder={placeholder}
             value={value}
             onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
             className="pl-10"
         />
-        <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
     </div>
 );
 

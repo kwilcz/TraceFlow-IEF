@@ -8,12 +8,10 @@ export const Route = createFileRoute('/b2c/claims')({
 
 function ClaimsPage() {
   return (
-    <ContentLayout title="Custom Claims">
       <Card>
         <CardContent className="pt-6">
           <CardTitle>placeholder</CardTitle>
         </CardContent>
       </Card>
-    </ContentLayout>
   );
 }

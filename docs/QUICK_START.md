@@ -65,8 +65,6 @@ npm run preview
 |---------|-------------|
 | `npm run lint` | Run ESLint on the codebase |
 | `npm run test` | Run unit tests with Vitest |
-| `npm run storybook` | Launch Storybook component explorer |
-| `npm run build-storybook` | Build static Storybook site |
 
 ---
 

@@ -1,22 +1,17 @@
 import React, { createContext, useContext, useMemo } from "react";
 import { Handle, Node, NodeProps, Position } from "@xyflow/react";
 import { useNodeHighlight, getNodeHighlightClasses } from "@hooks/use-node-highlight";
-import { useTraceHighlight, getTraceHighlightClasses } from "@hooks/use-trace-highlight";
 import { cn } from "@lib/utils"; // assuming existing utility
-import { CheckCircle as CheckCircle2, XCircle, SkipForward, Clock } from "@phosphor-icons/react";
+import { Badge } from "@/components/ui/badge";
 
 type BaseNode = Node<Record<string, unknown>, string>;
 
 interface PolicyNodeContextValue {
     nodeProps: NodeProps<BaseNode>;
     searchHighlightClasses: string;
-    traceHighlightClasses: string;
     hoverClasses: string;
     selectClasses: string;
     isSelected: boolean;
-    isTraceModeActive: boolean;
-    isActiveTraceStep: boolean;
-    traceResult: import("@/types/trace").StepResult | null;
 }
 
 const PolicyNodeContext = createContext<PolicyNodeContextValue | null>(null);
@@ -38,18 +33,16 @@ interface PolicyNodeProps extends NodeProps<BaseNode> {
 export function PolicyNode(props: PolicyNodeProps) {
     const { id, selected } = props;
     const highlight = useNodeHighlight(id);
-    const traceHighlight = useTraceHighlight(id);
     const searchHighlightClasses = getNodeHighlightClasses(highlight);
-    const traceHighlightClasses = getTraceHighlightClasses(traceHighlight);
 
     const elevation =
         props.elevation === "none"
             ? ""
             : props.elevation === "sm"
-            ? "shadow"
-            : props.elevation === "md"
-            ? "shadow-md"
-            : "shadow-lg";
+              ? "shadow"
+              : props.elevation === "md"
+                ? "shadow-md"
+                : "shadow-lg";
 
     const hoverClasses = "hover:shadow-xl";
 
@@ -61,79 +54,30 @@ export function PolicyNode(props: PolicyNodeProps) {
             "relative rounded border-2 transition-all duration-150 p-3 w-fit flex flex-col gap-4",
             elevation,
             hoverClasses,
-            // Don't apply select classes in trace mode to avoid conflicts
-            !traceHighlight.isTraceModeActive && selectClasses,
+            selectClasses,
             searchHighlightClasses,
-            traceHighlightClasses,
             props.pattern && "node-dot-pattern",
-            props.className
+            props.className,
         );
-    }, [elevation, hoverClasses, selectClasses, searchHighlightClasses, traceHighlightClasses, traceHighlight.isTraceModeActive, props.pattern, props.className]);
+    }, [elevation, hoverClasses, selectClasses, searchHighlightClasses, props.pattern, props.className]);
 
     const ctx: PolicyNodeContextValue = useMemo(
         () => ({
             nodeProps: props,
             searchHighlightClasses,
-            traceHighlightClasses,
             hoverClasses,
             selectClasses,
             isSelected: !!selected,
-            isTraceModeActive: traceHighlight.isTraceModeActive,
-            isActiveTraceStep: traceHighlight.isActiveStep,
-            traceResult: traceHighlight.lastResult,
         }),
-        [props, searchHighlightClasses, traceHighlightClasses, hoverClasses, selectClasses, selected, traceHighlight]
+        [props, searchHighlightClasses, hoverClasses, selectClasses, selected],
     );
 
     return (
         <PolicyNodeContext.Provider value={ctx}>
-            <div className={containerClasses}>
-                {/* Trace status indicator */}
-                {traceHighlight.isTraceModeActive && traceHighlight.isVisited && (
-                    <TraceStatusIndicator result={traceHighlight.lastResult} visitCount={traceHighlight.visitCount} />
-                )}
-                {props.children}
-            </div>
+            <div className={containerClasses}>{props.children}</div>
         </PolicyNodeContext.Provider>
     );
 }
-
-/**
- * Trace status indicator component showing execution result.
- */
-const TraceStatusIndicator: React.FC<{
-    result: import("@/types/trace").StepResult | null;
-    visitCount: number;
-}> = React.memo(({ result, visitCount }) => {
-    if (!result) return null;
-
-    const iconMap = {
-        Success: <CheckCircle2 className="w-4 h-4 text-green-500" />,
-        Error: <XCircle className="w-4 h-4 text-red-500" />,
-        Skipped: <SkipForward className="w-4 h-4 text-yellow-500" />,
-        PendingInput: <Clock className="w-4 h-4 text-blue-500" />,
-    };
-
-    const bgMap = {
-        Success: "bg-green-500/20 border-green-500/50",
-        Error: "bg-red-500/20 border-red-500/50",
-        Skipped: "bg-yellow-500/20 border-yellow-500/50",
-        PendingInput: "bg-blue-500/20 border-blue-500/50",
-    };
-
-    return (
-        <div
-            className={cn(
-                "absolute -top-3 -right-3 flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-semibold z-10",
-                bgMap[result]
-            )}
-        >
-            {iconMap[result]}
-            {visitCount > 1 && <span className="text-slate-300">×{visitCount}</span>}
-        </div>
-    );
-});
-TraceStatusIndicator.displayName = "TraceStatusIndicator";
 
 // ---------------- Subcomponents ----------------
 
@@ -170,7 +114,7 @@ Title.displayName = "PolicyNode.Title";
 const SectionTitle: React.FC<{ children: React.ReactNode; className?: string }> = React.memo(
     ({ children, className }) => (
         <div className={cn("font-bold text-md text-slate-100 truncate", className)}>{children}</div>
-    )
+    ),
 );
 SectionTitle.displayName = "PolicyNode.SectionTitle";
 
@@ -225,15 +169,15 @@ const NodeHandle: React.FC<HandleProps> = React.memo(
                 type={type}
                 id={id}
                 position={position}
-                className={cn("!w-3 !h-3", colorClass, className)}
+                className={cn("w-3! h-3!", colorClass, className)}
                 style={style}
             />
         );
-    }
+    },
 );
 NodeHandle.displayName = "PolicyNode.Handle";
 
-const Badge: React.FC<{
+const PolicyBadge: React.FC<{
     children: React.ReactNode;
     className?: string;
     tone?: "info" | "warn" | "danger" | "neutral";
@@ -246,19 +190,12 @@ const Badge: React.FC<{
         neutral: "bg-slate-700/60 text-slate-200",
     };
     return (
-        <span
-            className={cn(
-                "shadow px-2 py-0.5 rounded text-[10px] font-semibold",
-                sticky && "absolute -top-3 right-2",
-                toneMap[tone],
-                className
-            )}
-        >
+        <Badge className={cn("text-[10px] font-mono", sticky && "absolute -top-3 right-2", toneMap[tone], className)}>
             {children}
-        </span>
+        </Badge>
     );
 });
-Badge.displayName = "PolicyNode.Badge";
+PolicyBadge.displayName = "PolicyNode.Badge";
 
 const Section: React.FC<{ children: React.ReactNode; className?: string }> = React.memo(({ children, className }) => (
     <div className={cn("rounded p-2 bg-slate-800/30 space-y-1 shadow", className)}>{children}</div>
@@ -294,7 +231,7 @@ const ActionButton: React.FC<ActionButtonProps> = React.memo(({ onClick, childre
         onClick={onClick}
         className={cn(
             "w-6 h-6 rounded bg-slate-700/50 hover:bg-slate-600/70 text-slate-300 hover:text-slate-100 transition-colors flex items-center justify-center text-xs",
-            className
+            className,
         )}
         title={title}
     >
@@ -314,7 +251,7 @@ PolicyNode.Content = Content;
 PolicyNode.Footer = Footer;
 PolicyNode.Divider = Divider;
 PolicyNode.Handle = NodeHandle;
-PolicyNode.Badge = Badge;
+PolicyNode.Badge = PolicyBadge;
 PolicyNode.Section = Section;
 PolicyNode.Actions = Actions;
 PolicyNode.ActionButton = ActionButton;

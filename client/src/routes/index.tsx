@@ -1,165 +1,80 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { ContentLayout } from '@/components/layout/content-layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Upload, Users, FlowArrow as Workflow, Star, Bug } from '@phosphor-icons/react';
+import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
+import HeroPolicyFlow from "@/components/hero/hero-policy-flow";
+import { heroSampleGraph } from "@/lib/hero/hero-sample-graph";
+import { Button } from "@/components/ui/button";
+import { KeyIcon } from "@phosphor-icons/react";
+
+export const Route = createFileRoute("/")({
+    component: HomePage,
 });
 
-function HomePage() {
-  const features = [
-    {
-      icon: <Upload className="w-6 h-6" />,
-      title: 'Policy Upload and Interpretation',
-      description: 'Seamlessly upload and display B2C policies',
-    },
-    {
-      icon: <Workflow className="w-6 h-6" />,
-      title: 'Interactive Visualization',
-      description: 'Transform complex policies into clear, interactive journey diagrams',
-    },
-    {
-      icon: <FileText className="w-6 h-6" />,
-      title: 'Easy Documentation',
-      description:
-        'Generate detailed diagram images with comments for your solution design documents',
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: 'Enhanced User Experience',
-      description: 'Enjoy an intuitive interface designed for easy policy interpretation',
-    },
-  ];
+function HeroSection() {
+    return (
+        <section className="h-[calc(100vh-var(--navbar-height,72px))] bg-grid-pattern text-primary/5">
+            {/* Centered container */}
+            <div className="h-full max-w-[110rem] mx-auto px-4 lg:px-6 grid grid-rows-[2fr_3fr] lg:grid-cols-[620px_1fr] lg:grid-rows-1 items-center">
+                {/* Content Card - fixed width on desktop, full width on mobile */}
+                <div className="flex items-center">
+                    <div className="w-full backdrop-blur-3xl p-6 lg:p-10 rounded-xl text-center lg:text-left text-primary">
+                        <h1 className="text-6xl text-foreground lg:text-8xl font-bold mb-10">
+                            Stop Guessing.
+                            <br />
+                            Start <span className="text-primary">Visualizing.</span>
+                        </h1>
 
-  const changelogs = [
-    {
-      version: '1.0.0',
-      date: 'September 2024',
-      changes: ['Initial solution deployment'],
-      type: 'feature',
-    },
-    {
-      version: '1.1.0',
-      date: 'November 2024',
-      changes: [
-        'Notes can bow added to the policy flow using context menu (RMB)',
-        'Added expand & collapse functionality to SubJourneys',
-        'Updated HomePage with changelog and updated visuals',
-        'Changed menu bar to be thinner and more compact',
-      ],
-      type: 'feature',
-    },
-    {
-      version: '1.1.1',
-      date: 'November 2024',
-      changes: [
-        'Fixed a bug where Edges were covered by group nodes',
-        'Fixed an issue where node updates were incorrectly processed',
-      ],
-      type: 'bug',
-    },
-    {
-      version: '1.2.0',
-      date: 'November 2024',
-      changes: [
-        'New custom nodes have been introduced for the following orchestration steps: ' +
-          '<ul><li>CombinedSignInAndSignUp</li><li>ClaimsExchange</li></ul>',
-        'Claims Exchange nodes are expanding on hover to ease readability',
-      ],
-      type: 'feature',
-    },
-    {
-      version: '1.3.0',
-      date: 'September 2025',
-      changes: [
-        'Update to policy upload process to improve user experience.<br/>' +
-          '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Now a modal is displayed with full progress instead of a simple processing message.',
-      ],
-      type: 'feature',
-    },
-  ].sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
+                        <p className="text-lg lg:text-2xl text-muted-foreground leading-relaxed font-medium mb-10">
+                            The first fully client-side debugger for Azure B2C. Turn thousands of lines of XML spaghetti
+                            into a pristine, navigable node graph.
+                        </p>
 
-  return (
-    <ContentLayout title="Home">
-      <div className="space-y-6 flex flex-col">
-        <Card className="lg:rounded-lg rounded-none lg:border border-0">
-          <CardContent className="pt-8">
-            <div className="max-w-2xl">
-              <h1 className="text-4xl font-bold tracking-tight mb-4">
-                Visualize Your Customer Journey Policies
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6">
-                Transform complex B2C policies into interactive, step-by-step diagrams for better
-                understanding and optimization of your customer journey.
-              </p>
-              <div className="flex items-center space-x-4">
-                <Link to="/b2c/policy-template">
-                  <Button>
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-                <Button variant="outline">Learn More</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                        <div className="flex flex-col gap-3 ">
+                            <Link to="/b2c/policy-graph" tabIndex={-1}>
+                                <Button size="xl" className="w-full max-w-lg">
+                                    Convert policy code to canvas
+                                </Button>
+                            </Link>
+                            <Link to="/b2c/analyze-logs" tabIndex={-1}>
+                                <Button size="xl" variant="outline" className="w-full max-w-lg">
+                                    Debug your own policies
+                                </Button>
+                            </Link>
+                        </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {features.map((feature, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex items-start space-x-4">
-                  <div className="p-2 bg-secondary/20 rounded-lg">{feature.icon}</div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </div>
+                        <p className="mt-4 text-sm text-muted-foreground font-mono flex items-center justify-center lg:justify-start">
+                            <KeyIcon className="mr-1" />
+                            100% Client-Side Processing. No data leaves your browser.
+                        </p>
+                    </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
 
-        <Card className="flex-grow lg:rounded-lg rounded-none lg:border border-0 border-y">
-          <CardHeader>
-            <CardTitle>Changelog</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="min-h-80 pr-4">
-              <div className="ml-4 relative border-l-2 border-border">
-                {changelogs.map((log, index) => (
-                  <div key={index} className="relative pl-8 pb-8 last:pb-0">
-                    <div className="absolute -left-[15px] top-0 bg-background p-1 rounded-full border-2 border-border">
-                      {log.type === 'feature' ? (
-                        <Star className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Bug className="w-4 h-4 text-destructive" />
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-semibold">Version {log.version}</h3>
-                      <Badge variant={log.type === 'feature' ? 'default' : 'destructive'}>
-                        {log.type}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">{log.date}</span>
-                    </div>
-                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                      {log.changes.map((change, changeIndex) => (
-                        <li key={changeIndex} dangerouslySetInnerHTML={{ __html: change }} />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-    </ContentLayout>
-  );
+                {/* Flow Canvas - purely decorative, completely non-interactive */}
+                <div className="h-[calc(100%+4rem)] -my-8 w-full overflow-hidden pointer-events-none" aria-hidden="true" inert>
+                    <HeroPolicyFlow graph={heroSampleGraph} />
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function FeaturesMockup() {
+    return (
+        <section className="py-20 px-6 bg-muted/30">
+            <div className="max-w-4xl mx-auto text-center">
+                <h2 className="text-3xl font-bold mb-4">More Features Coming Soon</h2>
+                <p className="text-muted-foreground">
+                    This section will showcase additional capabilities of TraceFlow.
+                </p>
+            </div>
+        </section>
+    );
+}
+
+function HomePage() {
+    return (
+        <div className="dark:bg-surface">
+            <HeroSection />
+            <FeaturesMockup />
+        </div>
+    );
 }

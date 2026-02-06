@@ -16,7 +16,7 @@ export const useDebounce = <T extends (...args: unknown[]) => void>(
   callback: T,
   delay: number = 300
 ): ((...args: Parameters<T>) => void) => {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const callbackRef = useRef(callback);
 
   useEffect(() => {

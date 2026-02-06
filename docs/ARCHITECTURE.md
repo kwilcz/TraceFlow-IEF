@@ -33,7 +33,7 @@ File-based routing powered by **TanStack Router**:
 | Route | Component | Description |
 |-------|-----------|-------------|
 | `/` | `index.tsx` | Home page with feature overview |
-| `/b2c/policy-template` | `policy-template.tsx` | Policy flow visualization |
+| `/b2c/policy-graph` | `policy-graph.tsx` | Policy flow visualization |
 | `/b2c/analyze-logs` | `analyze-logs.tsx` | Log analyzer interface |
 | `/b2c/claims` | `claims.tsx` | Claims management |
 | `/settings` | `settings.tsx` | Application settings |
@@ -325,20 +325,6 @@ test('renders group node with label', () => {
   render(<GroupNode data={{ label: 'TestJourney' }} />);
   expect(screen.getByText('TestJourney')).toBeInTheDocument();
 });
-```
-
-### Visual Testing (Storybook)
-
-Components are developed in isolation with Storybook stories:
-```typescript
-// button.stories.tsx
-export const Primary: Story = {
-  args: { variant: 'default', children: 'Button' }
-};
-
-export const Destructive: Story = {
-  args: { variant: 'destructive', children: 'Delete' }
-};
 ```
 
 ## Browser Support
