@@ -43,9 +43,9 @@ export class AppInsightsProcessor {
             return [];
         }
 
-        const rows = this.mapRows(table);
-        const aggregated = this.aggregate(rows);
-        return aggregated.map((entry) => this.toLogRecord(entry));
+        const rows = AppInsightsProcessor.mapRows(table);
+        const aggregated = AppInsightsProcessor.aggregate(rows);
+        return aggregated.map((entry) => AppInsightsProcessor.toLogRecord(entry));
     }
 
     private static mapRows(table: AppInsightsTable): RawLogRow[] {

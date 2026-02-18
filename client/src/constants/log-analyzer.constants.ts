@@ -16,6 +16,11 @@ export const ISO_DURATION_REGEX = /^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(
 export const CREDENTIALS_STORAGE_KEY = "designer:analyzeLogsCredentials";
 
 /**
+ * SessionStorage key for session-scoped Application Insights credentials.
+ */
+export const SESSION_CREDENTIALS_STORAGE_KEY = "designer:analyzeLogsCredentials:session";
+
+/**
  * Predefined timespan options for Application Insights queries.
  * Each option represents a lookback period in ISO 8601 duration format.
  */
@@ -24,7 +29,6 @@ export const TIMESPAN_OPTIONS = [
     { label: "Last 6 Hours", value: "PT6H" },
     { label: "Last 24 Hours", value: "P1D" },
     { label: "Last 7 Days", value: "P7D" },
-    { label: "Custom (ISO 8601)", value: "custom" },
 ] as const;
 
 /**

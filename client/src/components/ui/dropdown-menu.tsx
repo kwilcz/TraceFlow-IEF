@@ -60,7 +60,7 @@ function DropdownMenuTrigger({
 
 const dropdownPopoverStyles = cn(
     // Base layout
-    "max-w-[48svw] scroll-py-1 overflow-y-auto overscroll-contain md:min-w-55",
+    "max-w-[48svw] scroll-py-1 overflow-y-auto overscroll-contain md:min-w-55 space-y-2",
     overlayBase,
     "focus-visible:outline-none data-[focus-visible=true]:outline-none",
     // Animation
@@ -102,7 +102,7 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
     return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-const menuLabelStyles = "px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider";
+const menuLabelStyles = cn("px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider first:pt-2");
 
 function DropdownMenuGroupLabel({
     className,
@@ -308,7 +308,7 @@ function DropdownMenuSeparator({
     return (
         <MenuPrimitive.Separator
             data-slot="dropdown-menu-separator"
-            className={cn("my-1 h-px bg-border", className)}
+            className={cn("h-px bg-border", className)}
             {...props}
         />
     );

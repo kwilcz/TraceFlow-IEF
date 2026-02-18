@@ -5,12 +5,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import {
-    focusRing,
-    disabledState,
-    noHighlight,
-    transitionSmooth,
-} from "@/lib/styles";
+import { focusRing, disabledState, noHighlight, transitionSmooth } from "@/lib/styles";
 
 const buttonVariants = cva(
     cn(
@@ -26,7 +21,7 @@ const buttonVariants = cva(
         // Active/pressed
         "active:scale-[0.97]",
         // Icon styling
-        "[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:pointer-events-none [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:-mx-0.5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:my-0.5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:shrink-0 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:self-center sm:[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:my-1 sm:[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-4"
+        "[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:pointer-events-none [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:-mx-0.5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:my-0.5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-5 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:shrink-0 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:self-center sm:[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:my-1 sm:[&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-4",
     ),
     {
         variants: {
@@ -39,23 +34,25 @@ const buttonVariants = cva(
                 link: "bg-transparent text-default-foreground underline-offset-4 hover:underline active:scale-100",
             },
             size: {
-                default: "h-10 px-4 md:h-9",
-                xs: "h-8 px-2 text-xs md:h-7",
-                sm: "h-9 px-3 md:h-8 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-4 active:scale-[0.98]",
-                lg: "h-11 text-base md:h-10 active:scale-[0.96]",
-                xl: "h-12 px-6 text-base md:h-11",
-                icon: "w-10 p-0 md:w-9",
-                "icon-xs": "min-h-6.5 min-w-6.5 rounded-md [&_svg:not([class*=size-])]:size-3.5",
-                "icon-sm": "w-9 min-h-8 min-w-8 md:w-8 [&_svg:not([class*=size-])]:size-3.5",
-                "icon-lg": "w-11 min-h-11 min-w-11 md:w-10 [&_svg:not([class*=size-])]:size-6",
-                "icon-xl": "min-h-14 min-w-14 rounded-lg [&_svg:not([class*=size-])]:size-8",
+                default: "h-10 px-4 sm:h-9",
+                xs: "h-8 sm:h-7 px-2 text-xs",
+                sm: "h-9 sm:h-8 px-3 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-4 active:scale-[0.98]",
+                md: "h-10.5 sm:h-9.5 px-3 [&_svg:not([data-slot=spinner]_svg,[data-slot=link-icon]_svg)]:size-4 active:scale-[0.97]",
+                lg: "h-11 sm:h-10 px-4 text-base active:scale-[0.96]",
+                xl: "h-12 sm:h-11 px-6 text-base",
+                icon: "w-10 p-0 sm:w-9",
+                "icon-xs": "size-6.5 sm:size-6.5 rounded-md [&_svg:not([class*=size-])]:size-3.5",
+                "icon-sm": "size-9 sm:size-8 [&_svg:not([class*=size-])]:size-3.5",
+                "icon-md": "size-10.5 sm:size-9.5 [&_svg:not([class*=size-])]:size-4",
+                "icon-lg": "size-11 sm:size-10 [&_svg:not([class*=size-])]:size-6",
+                "icon-xl": "size-14 sm:size-12 rounded-lg [&_svg:not([class*=size-])]:size-8",
             },
         },
         defaultVariants: {
             variant: "default",
             size: "default",
         },
-    }
+    },
 );
 
 type ButtonProps = ButtonPrimitive.Props &
@@ -63,17 +60,8 @@ type ButtonProps = ButtonPrimitive.Props &
         asChild?: boolean;
     };
 
-function Button({
-    asChild,
-    className,
-    variant,
-    size,
-    children,
-    ...props
-}: ButtonProps) {
-    const render = asChild
-        ? (React.Children.only(children) as React.ReactElement)
-        : undefined;
+function Button({ asChild, className, variant, size, children, ...props }: ButtonProps) {
+    const render = asChild ? (React.Children.only(children) as React.ReactElement) : undefined;
 
     return (
         <ButtonPrimitive

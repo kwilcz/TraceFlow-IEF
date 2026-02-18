@@ -118,6 +118,16 @@ describe("AppInsightsProcessor", () => {
 
       expect(result[0].timestamp).toEqual(new Date("2024-01-15T10:30:00.000Z"));
     });
+
+    it("should process rows when called as a detached function reference", () => {
+      const processTable = AppInsightsProcessor.process;
+      const table = createTestTable([createTestRow("Detached invocation")]);
+
+      const result = processTable(table);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].payloadText).toBe("Detached invocation");
+    });
   });
 
   describe("clips parsing", () => {

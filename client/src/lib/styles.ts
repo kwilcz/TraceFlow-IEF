@@ -132,7 +132,7 @@ export const overlayBase = cn(
 
 /** Menu item base layout */
 export const menuItemBase = cn(
-    "relative flex min-h-9 w-full items-center justify-start gap-2 rounded-xl px-2 py-1.5 text-sm outline-none",
+    "relative flex min-h-9 w-full items-center justify-start gap-2 rounded-xl px-3 py-2 text-sm outline-none",
     noHighlight,
     "select-none cursor-pointer",
 );

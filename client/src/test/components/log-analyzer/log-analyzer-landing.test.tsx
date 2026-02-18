@@ -1,40 +1,29 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LogAnalyzerLanding } from "@/features/log-analyzer/log-analyzer-landing";
 
-const storeState = {
-    logs: [],
-};
-
-vi.mock("@/stores/log-store.ts", () => ({
-    useLogStore: (selector: (state: typeof storeState) => unknown) => selector(storeState),
-}));
-
-vi.mock("@/features/log-analyzer/log-analyzer-dialog.tsx", () => ({
-    LogAnalyzerDialog: ({ open }: { open: boolean }) => (open ? <div>connection-dialog-open</div> : null),
-}));
-
-vi.mock("@/features/log-analyzer/log-analyzer-workspace.tsx", () => ({
-    LogAnalyzerWorkspace: () => <div>workspace</div>,
-}));
-
 describe("LogAnalyzerLanding", () => {
-    it("shows capability showcase cards and coming-soon manual upload", () => {
-        render(<LogAnalyzerLanding />);
+    beforeEach(() => {
+        cleanup();
+    });
 
-        expect(screen.getByText("Flow-Centric Results")).toBeInTheDocument();
-        expect(screen.getByText("Timeline Replay")).toBeInTheDocument();
-        expect(screen.getByText("Claims & Statebag Diff")).toBeInTheDocument();
+    it("shows landing cards", () => {
+        render(<LogAnalyzerLanding onConnectClick={vi.fn()} />);
+
+        expect(screen.getByText("Start Debugging")).toBeInTheDocument();
+        expect(screen.getByText("Connect to API")).toBeInTheDocument();
+        expect(screen.getByText("Upload logs manually")).toBeInTheDocument();
         expect(screen.getByText("Coming Soon")).toBeInTheDocument();
     });
 
-    it("opens connection dialog when API configure is clicked", () => {
-        render(<LogAnalyzerLanding />);
+    it("calls onConnectClick when API configure is clicked", () => {
+        const onConnectClick = vi.fn();
+        render(<LogAnalyzerLanding onConnectClick={onConnectClick} />);
 
         const configureButtons = screen.getAllByRole("button", { name: "Configure" });
-        fireEvent.click(configureButtons[0]);
+        configureButtons[0].click();
 
-        expect(screen.getByText("connection-dialog-open")).toBeInTheDocument();
+        expect(onConnectClick).toHaveBeenCalledOnce();
     });
 });
