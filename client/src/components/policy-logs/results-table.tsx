@@ -84,7 +84,7 @@ const FlowTableRow = ({ flow, isSelected, onClick, formatter }: FlowTableRowProp
         <TableRow
             onClick={() => onClick(flow)}
             className={cn(
-                "cursor-pointer hover:bg-muted/40 transition-colors",
+                "cursor-pointer transition-colors",
                 isSelected && "bg-primary/5 border-l-2 border-l-primary"
             )}
         >

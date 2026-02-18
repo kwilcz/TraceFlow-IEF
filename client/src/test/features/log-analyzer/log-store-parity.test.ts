@@ -3,47 +3,28 @@ import type { LogRecord } from "@/types/logs";
 import type { UserFlow } from "@/types/trace";
 
 const {
-    queryMock,
-    fetchCompleteFlowsMock,
-    extractPrimaryTableMock,
-    processMock,
-    groupLogsIntoFlowsMock,
+    runTwoPhaseLogFetchOrchestrationMock,
     getLogsForFlowMock,
     parseTraceMock,
     logsToTraceInputMock,
 } = vi.hoisted(() => ({
-    queryMock: vi.fn(),
-    fetchCompleteFlowsMock: vi.fn(),
-    extractPrimaryTableMock: vi.fn((response: { table?: unknown }) => response.table),
-    processMock: vi.fn(),
-    groupLogsIntoFlowsMock: vi.fn(),
+    runTwoPhaseLogFetchOrchestrationMock: vi.fn(),
     getLogsForFlowMock: vi.fn(),
     parseTraceMock: vi.fn(),
     logsToTraceInputMock: vi.fn((logs: LogRecord[]) => logs),
 }));
 
-vi.mock("@/lib/api/application-insights-client", () => ({
-    applicationInsightsClient: {
-        query: queryMock,
-        fetchCompleteFlows: fetchCompleteFlowsMock,
-        extractPrimaryTable: extractPrimaryTableMock,
-    },
-}));
-
-vi.mock("@/lib/app-insights-processor", () => ({
-    AppInsightsProcessor: {
-        process: processMock,
-    },
+vi.mock("@/features/log-analyzer/services/log-fetch-orchestration-service", () => ({
+    runTwoPhaseLogFetchOrchestration: runTwoPhaseLogFetchOrchestrationMock,
 }));
 
 vi.mock("@/lib/trace", () => ({
-    groupLogsIntoFlows: groupLogsIntoFlowsMock,
     getLogsForFlow: getLogsForFlowMock,
     parseTrace: parseTraceMock,
     logsToTraceInput: logsToTraceInputMock,
 }));
 
-import { useLogStore } from "@/stores/log-store";
+let useLogStore: typeof import("../../../stores/log-store").useLogStore;
 
 function makeLog(id: string, correlationId: string): LogRecord {
     return {
@@ -93,12 +74,23 @@ function createDeferred<T>() {
 }
 
 function resetStore() {
-    useLogStore.setState(useLogStore.getInitialState(), true);
+    useLogStore.setState(useLogStore.getInitialState());
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+    vi.resetModules();
+    ({ useLogStore } = await import("../../../stores/log-store"));
+
     resetStore();
     vi.clearAllMocks();
+
+    runTwoPhaseLogFetchOrchestrationMock.mockResolvedValue({
+        processed: [],
+        userFlows: [],
+        selectedFlow: null,
+        selectedLog: null,
+        effectiveMaxRows: 100,
+    });
 
     logsToTraceInputMock.mockImplementation((logs: LogRecord[]) => logs);
     parseTraceMock.mockReturnValue({
@@ -112,16 +104,18 @@ beforeEach(() => {
 });
 
 describe("log-store parity guards", () => {
-    it("keeps mandatory two-phase fetch pipeline behavior", async () => {
-        const initialPhaseLogs = [makeLog("l-1", "corr-1"), makeLog("l-2", "corr-2")];
+    it("applies orchestration result to store state", async () => {
         const fullFlowLogs = [makeLog("l-4", "corr-2"), makeLog("l-1", "corr-1"), makeLog("l-3", "corr-1")];
         const primaryFlow = makeFlow("flow-1", "corr-1", ["l-1", "l-3"]);
 
-        queryMock.mockResolvedValue({ table: { name: "phase-1" } });
-        fetchCompleteFlowsMock.mockResolvedValue({ table: { name: "phase-2" } });
-        processMock.mockReturnValueOnce(initialPhaseLogs).mockReturnValueOnce(fullFlowLogs);
-        groupLogsIntoFlowsMock.mockReturnValue([primaryFlow]);
-        getLogsForFlowMock.mockReturnValue([fullFlowLogs[0], fullFlowLogs[1]]);
+        runTwoPhaseLogFetchOrchestrationMock.mockResolvedValueOnce({
+            processed: fullFlowLogs,
+            userFlows: [primaryFlow],
+            selectedFlow: primaryFlow,
+            selectedLog: fullFlowLogs[1],
+            effectiveMaxRows: 10000,
+        });
+        getLogsForFlowMock.mockReturnValue([fullFlowLogs[1], fullFlowLogs[2]]);
 
         useLogStore.setState({ searchText: "  email@contoso.com  " });
 
@@ -132,26 +126,18 @@ describe("log-store parity guards", () => {
             timespan: "PT6H",
         });
 
-        expect(queryMock).toHaveBeenCalledTimes(1);
-        expect(queryMock).toHaveBeenCalledWith(
+        expect(runTwoPhaseLogFetchOrchestrationMock).toHaveBeenCalledTimes(1);
+        expect(runTwoPhaseLogFetchOrchestrationMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                applicationId: "app-id",
-                apiKey: "api-key",
-                timespan: "PT6H",
-                policyIds: [],
-                searchText: "email@contoso.com",
+                args: {
+                    applicationId: "app-id",
+                    apiKey: "api-key",
+                    maxRows: 99999,
+                    timespan: "PT6H",
+                },
+                searchText: "  email@contoso.com  ",
             }),
         );
-
-        expect(fetchCompleteFlowsMock).toHaveBeenCalledTimes(1);
-        expect(fetchCompleteFlowsMock).toHaveBeenCalledWith({
-            applicationId: "app-id",
-            apiKey: "api-key",
-            timespan: "PT6H",
-            correlationIds: ["corr-1", "corr-2"],
-        });
-
-        expect(processMock).toHaveBeenCalledTimes(2);
 
         const state = useLogStore.getState();
         expect(state.logs).toEqual(fullFlowLogs);
@@ -161,15 +147,17 @@ describe("log-store parity guards", () => {
         expect(state.error).toBeNull();
     });
 
-    it("initializes canonical selection from first flow + first flow log when processed[0] is outside selected flow", async () => {
-        const initialPhaseLogs = [makeLog("l-10", "corr-10"), makeLog("l-20", "corr-20")];
+    it("uses selected flow/log from orchestration result", async () => {
         const fullFlowLogs = [makeLog("x", "corr-20"), makeLog("a", "corr-10"), makeLog("b", "corr-10")];
         const firstFlow = makeFlow("flow-10", "corr-10", ["a", "b"]);
 
-        queryMock.mockResolvedValue({ table: { name: "phase-1" } });
-        fetchCompleteFlowsMock.mockResolvedValue({ table: { name: "phase-2" } });
-        processMock.mockReturnValueOnce(initialPhaseLogs).mockReturnValueOnce(fullFlowLogs);
-        groupLogsIntoFlowsMock.mockReturnValue([firstFlow]);
+        runTwoPhaseLogFetchOrchestrationMock.mockResolvedValueOnce({
+            processed: fullFlowLogs,
+            userFlows: [firstFlow],
+            selectedFlow: firstFlow,
+            selectedLog: fullFlowLogs[1],
+            effectiveMaxRows: 100,
+        });
         getLogsForFlowMock.mockReturnValue([fullFlowLogs[1], fullFlowLogs[2]]);
 
         await useLogStore.getState().fetchLogs({
@@ -184,10 +172,14 @@ describe("log-store parity guards", () => {
         expect(state.selectedLog).toEqual(fullFlowLogs[1]);
     });
 
-    it("does not run phase-2 when phase-1 yields no correlation IDs", async () => {
-        queryMock.mockResolvedValue({ table: { name: "phase-1" } });
-        processMock.mockReturnValueOnce([]);
-        groupLogsIntoFlowsMock.mockReturnValue([]);
+    it("handles empty orchestration result", async () => {
+        runTwoPhaseLogFetchOrchestrationMock.mockResolvedValueOnce({
+            processed: [],
+            userFlows: [],
+            selectedFlow: null,
+            selectedLog: null,
+            effectiveMaxRows: 100,
+        });
 
         await useLogStore.getState().fetchLogs({
             applicationId: "app-id",
@@ -196,7 +188,7 @@ describe("log-store parity guards", () => {
             timespan: "PT1H",
         });
 
-        expect(fetchCompleteFlowsMock).not.toHaveBeenCalled();
+        expect(runTwoPhaseLogFetchOrchestrationMock).toHaveBeenCalledTimes(1);
         expect(useLogStore.getState().logs).toEqual([]);
     });
 
@@ -306,7 +298,13 @@ describe("log-store parity guards", () => {
     });
 
     it("enforces fetch lifecycle transitions: reset on start, loading exit on success/failure", async () => {
-        const deferred = createDeferred<{ table: { name: string } }>();
+        const deferred = createDeferred<{
+            processed: LogRecord[];
+            userFlows: UserFlow[];
+            selectedFlow: UserFlow | null;
+            selectedLog: LogRecord | null;
+            effectiveMaxRows: number;
+        }>();
 
         useLogStore.setState({
             searchText: "sticky-search",
@@ -317,9 +315,7 @@ describe("log-store parity guards", () => {
             selectedFlow: makeFlow("old-flow", "old-corr", ["x"]),
         });
 
-        queryMock.mockReturnValueOnce(deferred.promise);
-        processMock.mockReturnValueOnce([]);
-        groupLogsIntoFlowsMock.mockReturnValue([]);
+        runTwoPhaseLogFetchOrchestrationMock.mockReturnValueOnce(deferred.promise);
 
         const fetchPromise = useLogStore.getState().fetchLogs({
             applicationId: "app-id",
@@ -337,12 +333,18 @@ describe("log-store parity guards", () => {
         expect(stateDuringFetch.selectedFlow).toBeNull();
         expect(stateDuringFetch.searchText).toBe("sticky-search");
 
-        deferred.resolve({ table: { name: "phase-1" } });
+        deferred.resolve({
+            processed: [],
+            userFlows: [],
+            selectedFlow: null,
+            selectedLog: null,
+            effectiveMaxRows: 100,
+        });
         await fetchPromise;
 
         expect(useLogStore.getState().isLoading).toBe(false);
 
-        queryMock.mockRejectedValueOnce(new Error("network down"));
+        runTwoPhaseLogFetchOrchestrationMock.mockRejectedValueOnce(new Error("network down"));
 
         await useLogStore.getState().fetchLogs({
             applicationId: "app-id",

@@ -50,6 +50,10 @@ interface LogStepInfo {
     isSendClaims: boolean;
     /** Whether the user cancelled */
     isCancelled: boolean;
+    /** Sign-in email from Complex-CLMS */
+    signInName: string | null;
+    /** AAD Object ID from Complex-CLMS */
+    objectId: string | null;
 }
 
 /**
@@ -186,6 +190,8 @@ export class FlowAnalyzer {
             cancelled: stepInfo.isCancelled,
             subJourneys: [],
             logIds: [logId],
+            userEmail: stepInfo.signInName ?? undefined,
+            userObjectId: stepInfo.objectId ?? undefined,
         };
 
         this.flows.push(flow);
@@ -242,6 +248,14 @@ export class FlowAnalyzer {
             flow.completed = true;
         }
 
+        // Update user identity if not yet set (claims may appear in later steps)
+        if (!tracker.flow.userEmail && stepInfo.signInName) {
+            tracker.flow.userEmail = stepInfo.signInName;
+        }
+        if (!tracker.flow.userObjectId && stepInfo.objectId) {
+            tracker.flow.userObjectId = stepInfo.objectId;
+        }
+
         tracker.justEnqueuedSubJourney = stepInfo.enqueuedSubJourney;
     }
 
@@ -270,6 +284,8 @@ export class FlowAnalyzer {
             isJourneyComplete: false,
             isSendClaims: false,
             isCancelled: false,
+            signInName: null,
+            objectId: null,
         };
 
         let currentAction: string | null = null;
@@ -365,6 +381,18 @@ export class FlowAnalyzer {
                     // Track final/current step (always update to latest)
                     info.orchStep = step;
                 }
+            }
+        }
+
+        // Extract user identity from Complex-CLMS (signInName = email, objectId = AAD ID)
+        const complexClaims = statebag[StatebagKey.ComplexClaims];
+        if (complexClaims && typeof complexClaims === "object" && !isStatebagEntry(complexClaims)) {
+            const claims = complexClaims as Record<string, string>;
+            if (claims.signInName && claims.signInName !== "Null") {
+                info.signInName = claims.signInName;
+            }
+            if (claims.objectId && claims.objectId !== "Null") {
+                info.objectId = claims.objectId;
             }
         }
 

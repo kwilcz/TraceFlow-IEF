@@ -6,7 +6,14 @@ import { initialTraceState } from "@/features/log-analyzer/model/trace-state";
 export function generateTraceStateFromLogs(logs: LogRecord[]): Partial<TraceState> {
     if (logs.length === 0) {
         return {
-            ...initialTraceState,
+            traceSteps: initialTraceState.traceSteps,
+            executionMap: initialTraceState.executionMap,
+            activeStepIndex: initialTraceState.activeStepIndex,
+            isTraceModeActive: initialTraceState.isTraceModeActive,
+            mainJourneyId: initialTraceState.mainJourneyId,
+            correlationId: initialTraceState.correlationId,
+            finalStatebag: initialTraceState.finalStatebag,
+            finalClaims: initialTraceState.finalClaims,
             traceErrors: ["No logs available to generate trace"],
         };
     }

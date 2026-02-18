@@ -1,16 +1,15 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { LogAnalyzerDialog } from "../../../features/log-analyzer/log-analyzer-dialog.tsx";
 import {
     APP_INSIGHTS_AUTH_ERROR_MESSAGES,
     DEFAULT_AUTH_ERROR_MESSAGE,
 } from "../../../lib/api/app-insights-auth-error.ts";
+import { useLogStore } from "../../../stores/log-store";
 
 const credentialsFormMock = vi.fn();
 const mockFetchLogs = vi.fn();
-let mockStoreError: string | null = null;
 
 vi.mock("@/features/log-analyzer/credentials-form.tsx", () => ({
     CredentialsForm: (props: {
@@ -54,23 +53,22 @@ vi.mock("@/hooks/use-credential-persistence", () => ({
     }),
 }));
 
-vi.mock("@/stores/log-store.ts", () => ({
-    useLogStore: Object.assign(
-        (selector: (state: Record<string, unknown>) => unknown) =>
-            selector({
-                fetchLogs: mockFetchLogs,
-            }),
-        {
-            getState: () => ({ error: mockStoreError }),
-        },
-    ),
-}));
+let LogAnalyzerDialog: typeof import("../../../features/log-analyzer/log-analyzer-dialog.tsx").LogAnalyzerDialog;
 
 describe("LogAnalyzerDialog", () => {
+    beforeAll(async () => {
+        ({ LogAnalyzerDialog } = await import("../../../features/log-analyzer/log-analyzer-dialog.tsx"));
+    });
+
     beforeEach(() => {
+        cleanup();
         credentialsFormMock.mockClear();
         mockFetchLogs.mockReset();
-        mockStoreError = null;
+        useLogStore.setState(useLogStore.getInitialState());
+        useLogStore.setState({
+            fetchLogs: mockFetchLogs,
+            error: null,
+        } as any);
     });
 
     it("renders connection settings dialog", () => {
@@ -88,8 +86,9 @@ describe("LogAnalyzerDialog", () => {
     it("calls fetchLogs on submit and closes on success", async () => {
         const onConnect = vi.fn();
         const onOpenChange = vi.fn();
-        mockFetchLogs.mockResolvedValueOnce(undefined);
-        mockStoreError = null;
+        mockFetchLogs.mockImplementationOnce(async () => {
+            useLogStore.setState({ error: null });
+        });
 
         render(
             <LogAnalyzerDialog
@@ -121,13 +120,16 @@ describe("LogAnalyzerDialog", () => {
     it("stays open and shows mapped error when store contains known AppInsights auth payload", async () => {
         const onConnect = vi.fn();
         const onOpenChange = vi.fn();
-        mockStoreError = JSON.stringify({
-            error: {
-                message: "The application could not be found",
-                code: "ApplicationNotFoundError",
-            },
+        mockFetchLogs.mockImplementationOnce(async () => {
+            useLogStore.setState({
+                error: JSON.stringify({
+                    error: {
+                        message: "The application could not be found",
+                        code: "ApplicationNotFoundError",
+                    },
+                }),
+            });
         });
-        mockFetchLogs.mockResolvedValueOnce(undefined);
 
         render(
             <LogAnalyzerDialog
@@ -152,7 +154,7 @@ describe("LogAnalyzerDialog", () => {
     it("stays open and shows generic fallback when thrown error payload is unknown", async () => {
         const onConnect = vi.fn();
         const onOpenChange = vi.fn();
-        mockStoreError = null;
+        useLogStore.setState({ error: null });
         mockFetchLogs.mockRejectedValueOnce(new Error("raw backend stacktrace / json"));
 
         render(

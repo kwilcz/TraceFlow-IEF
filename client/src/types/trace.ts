@@ -411,6 +411,10 @@ export interface UserFlow {
     subJourneys: string[];
     /** All log record IDs that belong to this flow */
     logIds: string[];
+    /** User's sign-in email from Complex-CLMS signInName claim */
+    userEmail?: string;
+    /** User's AAD object ID from Complex-CLMS objectId claim */
+    userObjectId?: string;
 }
 
 /**
