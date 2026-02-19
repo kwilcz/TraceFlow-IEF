@@ -18,17 +18,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LOG_LIMITS, TIMESPAN_OPTIONS } from "@/constants/log-analyzer.constants";
 import { clampRowCount, validateIsoDuration } from "@/lib/validators/log-validators";
-import { cn } from "@/lib/utils";
 import { useLogStore } from "@/stores/log-store";
 
 /** Props for the {@link QueryControls} component. */
 export type QueryControlsProps = {
     /** Opens the credentials dialog so the user can change connection settings. */
     onOpenSettings: () => void;
-    /** Optional content rendered below query controls inside the same card. */
     children?: React.ReactNode;
-    /** Optional className applied to the containing card. */
-    className?: string;
 };
 
 type QueryDraftState = {
@@ -103,7 +99,7 @@ const getTimespanLabel = (choice: string, customValue: string): string => {
  * Renders a search input, timespan chip dropdown, max-rows chip dropdown,
  * and a credentials settings button in a responsive grid layout.
  */
-export const QueryControls = ({ onOpenSettings, children, className }: QueryControlsProps) => {
+export const QueryControls = ({ onOpenSettings, children }: QueryControlsProps) => {
     const { fetchLogs, setSearchText, isLoading, credentials, preferences, searchText } = useLogStore(
         useShallow((state) => ({
             fetchLogs: state.fetchLogs,
@@ -151,8 +147,8 @@ export const QueryControls = ({ onOpenSettings, children, className }: QueryCont
     };
 
     return (
-        <card.Card className={cn("w-full max-w-full min-[1200px]:max-w-[75vw] p-4 md:p-6 gap-5", className)}>
-            <card.CardContent className="w-full">
+        <card.Card>
+            <card.CardContent>
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-3 min-[1200px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[1200px]:gap-4">
                     <div className="col-start-1 row-start-2 justify-self-start min-[1200px]:row-start-1">
                         <Button variant="secondary" size="xs" onClick={onOpenSettings}>
@@ -301,12 +297,13 @@ export const QueryControls = ({ onOpenSettings, children, className }: QueryCont
                         </DropdownMenu>
                     </div>
                 </div>
-                {children ? (
+
+                {children && (
                     <>
-                        <Separator className="my-4" />
+                        <Separator className={'my-4'} />
                         {children}
                     </>
-                ) : null}
+                )}
             </card.CardContent>
         </card.Card>
     );

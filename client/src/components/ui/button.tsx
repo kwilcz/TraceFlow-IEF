@@ -29,6 +29,7 @@ const buttonVariants = cva(
                 default: "bg-accent text-accent-foreground hover:bg-accent-hover",
                 secondary: "bg-default text-accent-soft-foreground hover:bg-default-hover",
                 outline: "border border-border bg-transparent text-default-foreground hover:bg-default/60",
+                tertiary: "bg-default text-default-foreground hover:bg-default/50 data-[state=open]:bg-default/50",
                 ghost: "bg-transparent text-default-foreground hover:bg-default-hover",
                 destructive: "bg-danger text-danger-foreground hover:bg-danger-hover",
                 link: "bg-transparent text-default-foreground underline-offset-4 hover:underline active:scale-100",

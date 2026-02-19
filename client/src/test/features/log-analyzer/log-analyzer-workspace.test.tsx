@@ -5,10 +5,42 @@ import type { UserFlow } from "@/types/trace";
 import { useLogStore } from "../../../stores/log-store";
 import { LogAnalyzerWorkspace } from "@/features/log-analyzer/log-analyzer-workspace";
 
+vi.mock("@/components/ui/scroll-area", () => {
+    const Passthrough = ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => (
+        <div {...(props as React.HTMLAttributes<HTMLDivElement>)}>{children}</div>
+    );
+    return {
+        Root: Passthrough,
+        Viewport: Passthrough,
+        Content: Passthrough,
+        ScrollBar: Passthrough,
+        ScrollAreaCorner: () => null,
+        ScrollArea: Passthrough,
+        ScrollAreaRoot: Passthrough,
+        ScrollAreaViewport: Passthrough,
+        ScrollAreaContent: Passthrough,
+        ScrollAreaScrollbar: Passthrough,
+        ScrollAreaThumb: () => null,
+        Scrollbar: Passthrough,
+        Thumb: () => null,
+        Corner: () => null,
+    };
+});
+
 vi.mock("@/features/log-analyzer/query-controls.tsx", () => ({
     QueryControls: ({ children }: { children?: React.ReactNode }) => (
         <div data-testid="query-controls">{children}</div>
     ),
+}));
+
+vi.mock("motion/react", () => ({
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    motion: {
+        tbody: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
+            const { initial, animate, exit, transition, ...htmlProps } = props;
+            return <tbody {...(htmlProps as React.HTMLAttributes<HTMLTableSectionElement>)}>{children}</tbody>;
+        },
+    },
 }));
 
 const makeFlow = (id: string, correlationId: string, overrides?: Partial<UserFlow>): UserFlow => ({
@@ -76,7 +108,8 @@ describe("LogAnalyzerWorkspace flow panel", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "flow-2" }));
 
-        expect(screen.getByText("Selected flow: flow-2")).toBeInTheDocument();
+        const summaryAfterSelect = within(screen.getByTestId("selected-flow-summary"));
+        expect(summaryAfterSelect.getByText("corr-2")).toBeInTheDocument();
         expect(screen.getByTestId("available-flows-panel")).toHaveAttribute("data-state", "collapsed");
     });
 
@@ -87,7 +120,8 @@ describe("LogAnalyzerWorkspace flow panel", () => {
         fireEvent.click(screen.getByRole("button", { name: "Expand available flows" }));
         fireEvent.click(screen.getByRole("button", { name: "flow-1" }));
 
-        expect(screen.getByText("Selected flow: flow-1")).toBeInTheDocument();
+        const summaryAfterReselect = within(screen.getByTestId("selected-flow-summary"));
+        expect(summaryAfterReselect.getByText("corr-1")).toBeInTheDocument();
         expect(screen.getByTestId("available-flows-table")).toBeInTheDocument();
     });
 
@@ -387,132 +421,21 @@ describe("Flow grouping", () => {
 
         render(<LogAnalyzerWorkspace onOpenSettings={vi.fn()} />);
 
+        // Before collapse — leaf row is in DOM
         expect(screen.getByRole("button", { name: "flow-g5" })).toBeInTheDocument();
 
         fireEvent.click(screen.getByTestId("group-row-B2C_1A_Collapse"));
 
+        // After collapse — leaf row is unmounted from DOM
         expect(screen.queryByRole("button", { name: "flow-g5" })).not.toBeInTheDocument();
+
+        // Re-expand — leaf row is back in DOM
+        fireEvent.click(screen.getByTestId("group-row-B2C_1A_Collapse"));
+        expect(screen.getByRole("button", { name: "flow-g5" })).toBeInTheDocument();
     });
 });
 
-/* ------------------------------------------------------------------ */
-/*  Pagination                                                         */
-/* ------------------------------------------------------------------ */
 
-describe("Pagination", () => {
-    afterEach(() => {
-        cleanup();
-    });
-
-    beforeEach(() => {
-        resetStore();
-    });
-
-    it("shows pagination controls", () => {
-        const flows = [
-            makeFlow("flow-p1", "corr-p1"),
-            makeFlow("flow-p2", "corr-p2"),
-        ];
-
-        useLogStore.setState({
-            userFlows: flows,
-            selectedFlow: flows[0],
-            logs: [
-                {
-                    id: "log-p1",
-                    timestamp: new Date("2026-01-01T00:00:00.000Z"),
-                    policyId: "B2C_1A_TEST",
-                    correlationId: "corr-p1",
-                    level: "INFO",
-                    message: "test",
-                    operationName: "operation",
-                    customDimensions: {},
-                    clips: [],
-                    eventType: "AUTH",
-                    orchestrationStep: 0,
-                },
-            ],
-        });
-
-        render(<LogAnalyzerWorkspace onOpenSettings={vi.fn()} />);
-
-        expect(screen.getByText(/Page 1 of/)).toBeInTheDocument();
-    });
-
-    it("navigates to next page with many flows", () => {
-        const flows = Array.from({ length: 15 }, (_, i) =>
-            makeFlow(`flow-pn-${i}`, `corr-pn-${i}`, {
-                policyId: `B2C_1A_Policy_${i}`,
-            }),
-        );
-
-        useLogStore.setState({
-            userFlows: flows,
-            selectedFlow: flows[0],
-            logs: [
-                {
-                    id: "log-pn",
-                    timestamp: new Date("2026-01-01T00:00:00.000Z"),
-                    policyId: "B2C_1A_Policy_0",
-                    correlationId: "corr-pn-0",
-                    level: "INFO",
-                    message: "test",
-                    operationName: "operation",
-                    customDimensions: {},
-                    clips: [],
-                    eventType: "AUTH",
-                    orchestrationStep: 0,
-                },
-            ],
-        });
-
-        render(<LogAnalyzerWorkspace onOpenSettings={vi.fn()} />);
-
-        expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole("button", { name: /Next/ }));
-
-        expect(screen.getByText("Page 2 of 2")).toBeInTheDocument();
-    });
-
-    it("changes page size", () => {
-        const flows = Array.from({ length: 15 }, (_, i) =>
-            makeFlow(`flow-ps-${i}`, `corr-ps-${i}`, {
-                policyId: `B2C_1A_Policy_${i}`,
-            }),
-        );
-
-        useLogStore.setState({
-            userFlows: flows,
-            selectedFlow: flows[0],
-            logs: [
-                {
-                    id: "log-ps",
-                    timestamp: new Date("2026-01-01T00:00:00.000Z"),
-                    policyId: "B2C_1A_Policy_0",
-                    correlationId: "corr-ps-0",
-                    level: "INFO",
-                    message: "test",
-                    operationName: "operation",
-                    customDimensions: {},
-                    clips: [],
-                    eventType: "AUTH",
-                    orchestrationStep: 0,
-                },
-            ],
-        });
-
-        render(<LogAnalyzerWorkspace onOpenSettings={vi.fn()} />);
-
-        expect(screen.getByText("Page 1 of 2")).toBeInTheDocument();
-
-        fireEvent.change(screen.getByLabelText("Rows per page"), {
-            target: { value: "25" },
-        });
-
-        expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
-    });
-});
 
 /* ------------------------------------------------------------------ */
 /*  Performance                                                        */

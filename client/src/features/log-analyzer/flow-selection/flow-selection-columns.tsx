@@ -1,4 +1,4 @@
-import { createColumnHelper, type Row } from "@tanstack/react-table";
+import { createColumnHelper, type Row, type Table } from "@tanstack/react-table";
 import {
     CaretRight,
     CaretDown,
@@ -45,19 +45,21 @@ export const flowColumns = [
                 </span>
             );
         },
-        aggregatedCell: ({ row }: { row: Row<UserFlow> }) => {
-            const isExpanded = row.getIsExpanded();
+        aggregatedCell: ({ row, table }: { row: Row<UserFlow>; table: Table<UserFlow> }) => {
+            const collapsedGroups = (table.options.meta as { collapsedGroups?: Set<string> })?.collapsedGroups;
+            const groupId = String(row.groupingValue ?? "");
+            const isExpanded = !collapsedGroups?.has(groupId);
             const policyName = formatPolicyName(String(row.groupingValue ?? ""));
             const count = row.subRows.length;
 
             return (
-                <div className="flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1">
                     {isExpanded ? (
                         <CaretDown className="size-4 shrink-0" />
                     ) : (
                         <CaretRight className="size-4 shrink-0" />
                     )}
-                    <span className="font-medium text-sm truncate">
+                    <span className="font-bold text-sm truncate">
                         {policyName}
                     </span>
                     <Badge variant="outline" size="sm">

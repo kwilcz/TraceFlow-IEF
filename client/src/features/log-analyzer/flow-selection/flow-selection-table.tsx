@@ -1,28 +1,17 @@
-import { useState } from "react";
+import { Fragment, useState, useCallback, useMemo } from "react";
 import {
     useReactTable,
     getCoreRowModel,
     getGroupedRowModel,
     getExpandedRowModel,
-    getPaginationRowModel,
     flexRender,
-    type ExpandedState,
-    type PaginationState,
     type Row,
 } from "@tanstack/react-table";
 
 import type { UserFlow } from "@/types/trace";
 import { flowColumns } from "./flow-selection-columns";
-import { FlowSelectionPagination } from "./flow-selection-pagination";
-import {
-    Table,
-    TableHeader,
-    TableBody,
-    TableRow,
-    TableHead,
-    TableCell,
-} from "@/components/ui/table";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -36,7 +25,6 @@ const GROUPING: string[] = ["policyId"];
 const coreRowModel = getCoreRowModel<UserFlow>();
 const groupedRowModel = getGroupedRowModel<UserFlow>();
 const expandedRowModel = getExpandedRowModel<UserFlow>();
-const paginationRowModel = getPaginationRowModel<UserFlow>();
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -52,30 +40,36 @@ interface FlowSelectionTableProps {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function FlowSelectionTable({
-    userFlows,
-    selectedFlow,
-    onSelectFlow,
-}: FlowSelectionTableProps) {
-    const [expanded, setExpanded] = useState<ExpandedState>(true);
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 10,
-    });
+export function FlowSelectionTable({ userFlows, selectedFlow, onSelectFlow }: FlowSelectionTableProps) {
+    /* ---- Visual group collapse (independent of TanStack expanded) ---- */
+    const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
+
+    const toggleGroup = useCallback((groupId: string) => {
+        setCollapsedGroups((prev) => {
+            const next = new Set(prev);
+            if (next.has(groupId)) next.delete(groupId);
+            else next.add(groupId);
+            return next;
+        });
+    }, []);
+
+    /* ---- TanStack Table — expanded is ALWAYS true ---- */
+    const tableState = useMemo(() => ({ grouping: GROUPING, expanded: true as const }), []);
+    const tableMeta = useMemo(() => ({ collapsedGroups }), [collapsedGroups]);
 
     const table = useReactTable({
         data: userFlows,
         columns: flowColumns,
-        state: { grouping: GROUPING, expanded, pagination },
-        onExpandedChange: setExpanded,
-        onPaginationChange: setPagination,
+        state: tableState,
         getCoreRowModel: coreRowModel,
         getGroupedRowModel: groupedRowModel,
         getExpandedRowModel: expandedRowModel,
-        getPaginationRowModel: paginationRowModel,
         groupedColumnMode: "remove",
-        paginateExpandedRows: false,
+        meta: tableMeta,
     });
+
+    const allRows = table.getRowModel().rows;
+    const groupRows = allRows.filter(row => row.getIsGrouped());
 
     /* -------------------------------------------------------------- */
     /*  Row renderers                                                  */
@@ -83,7 +77,8 @@ export function FlowSelectionTable({
 
     function renderGroupRow(row: Row<UserFlow>) {
         const visibleCells = row.getVisibleCells();
-        const toggleExpanded = row.getToggleExpandedHandler();
+        const groupId = String(row.groupingValue ?? "");
+        const isCollapsed = collapsedGroups.has(groupId);
 
         return (
             <TableRow
@@ -91,22 +86,19 @@ export function FlowSelectionTable({
                 data-testid={`group-row-${row.groupingValue}`}
                 role="button"
                 tabIndex={0}
-                aria-expanded={row.getIsExpanded()}
-                aria-label={`${String(row.groupingValue ?? "")} group`}
+                aria-expanded={!isCollapsed}
+                aria-label={`${groupId} group`}
                 className="cursor-pointer"
-                onClick={toggleExpanded}
+                onClick={() => toggleGroup(groupId)}
                 onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        toggleExpanded();
+                        toggleGroup(groupId);
                     }
                 }}
             >
                 <TableCell colSpan={visibleCells.length}>
-                    {flexRender(
-                        visibleCells[0].column.columnDef.aggregatedCell,
-                        visibleCells[0].getContext(),
-                    )}
+                    {flexRender(visibleCells[0].column.columnDef.aggregatedCell, visibleCells[0].getContext())}
                 </TableCell>
             </TableRow>
         );
@@ -137,10 +129,7 @@ export function FlowSelectionTable({
             >
                 {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                        {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                 ))}
             </TableRow>
@@ -150,43 +139,47 @@ export function FlowSelectionTable({
     /* -------------------------------------------------------------- */
     /*  Render                                                         */
     /* -------------------------------------------------------------- */
-
     return (
-        <div data-testid="available-flows-table">
-            <ScrollArea className="w-full">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead
-                                        key={header.id}
-                                        colSpan={header.colSpan}
-                                    >
-                                        {header.isPlaceholder
-                                            ? null
-                                            : flexRender(
-                                                  header.column.columnDef
-                                                      .header,
-                                                  header.getContext(),
-                                              )}
-                                    </TableHead>
-                                ))}
-                            </TableRow>
+        <Table data-testid="available-flows-table">
+            <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                            <TableHead key={header.id} colSpan={header.colSpan}>
+                                {header.isPlaceholder
+                                    ? null
+                                    : flexRender(header.column.columnDef.header, header.getContext())}
+                            </TableHead>
                         ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows.map((row) => {
-                            if (row.getIsGrouped()) {
-                                return renderGroupRow(row);
-                            }
-                            return renderLeafRow(row);
-                        })}
-                    </TableBody>
-                </Table>
-                <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-            <FlowSelectionPagination table={table} />
-        </div>
+                    </TableRow>
+                ))}
+            </TableHeader>
+
+            {groupRows.map((groupRow) => {
+                const groupId = String(groupRow.groupingValue ?? "");
+                const isCollapsed = collapsedGroups.has(groupId);
+
+                return (
+                    <Fragment key={groupRow.id}>
+                        <TableBody>
+                            {renderGroupRow(groupRow)}
+                        </TableBody>
+                        <AnimatePresence initial={false}>
+                            {!isCollapsed && (
+                                <motion.tbody
+                                    key={`leaves-${groupId}`}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                >
+                                    {groupRow.subRows.map((leafRow) => renderLeafRow(leafRow))}
+                                </motion.tbody>
+                            )}
+                        </AnimatePresence>
+                    </Fragment>
+                );
+            })}
+        </Table>
     );
 }

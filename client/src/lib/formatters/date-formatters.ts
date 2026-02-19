@@ -39,3 +39,28 @@ export const formatTimestamp = (date: Date, formatter?: Intl.DateTimeFormat): st
     const defaultFormatter = formatter ?? createDateFormatter();
     return defaultFormatter.format(date);
 };
+
+/**
+ * Module-scope singleton for technical date formatting.
+ * Uses en-GB locale for dd/MM/YYYY ordering, 24-hour clock.
+ */
+const technicalDateFormatter = new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+});
+
+/**
+ * Formats a Date as `dd-MM-YYYY HH:mm:ss` — a locale-independent
+ * technical format suitable for precise timestamps.
+ */
+export const formatTechnicalDate = (date: Date): string => {
+    const parts = technicalDateFormatter.formatToParts(date);
+    const get = (type: Intl.DateTimeFormatPartTypes) =>
+        parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")}:${get("second")}`;
+};

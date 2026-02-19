@@ -11,13 +11,7 @@
     @apply sticky top-0 left-0 right-0 z-50 h-(--navbar-height);
     @apply flex justify-center;
     @apply pb-2 md:p-2;
-}
-
-/* Add padding around floating navbar on desktop */
-@media (min-width: 1200px) {
-    .top-navbar {
-        @apply px-4;
-    }
+    @apply lg:px-4;
 }
 
 /* Inner container - the actual navbar with glass effect */
@@ -29,14 +23,7 @@
     @apply bg-background/80 backdrop-blur-md;
     /* No border on mobile/tablet, border + rounded on desktop */
     @apply border-b;
-    @apply transition-all duration-300;
-}
-
-/* Desktop (>=1200px): 75% width with rounded corners */
-@media (min-width: 1200px) {
-    .top-navbar-inner {
-        @apply max-w-[75vw] border border-border/50 rounded-2xl;
-    }
+    @apply lg:max-w-[75vw] lg:border lg:border-border/50 lg:rounded-2xl;
 }
 
 /* Logo styles */
@@ -68,22 +55,7 @@
     @apply hidden;
     @apply items-center gap-0.5;
     @apply list-none m-0 p-0;
-}
-
-/* Tablet (768px - 1199px): Show nav, but not centered (flows with content) */
-@media (min-width: 768px) and (max-width: 1199px) {
-    .top-navbar-nav {
-        @apply flex relative left-auto transform-none;
-    }
-}
-
-/* Desktop (>=1200px): Show nav centered */
-@media (min-width: 1200px) {
-    .top-navbar-nav {
-        @apply flex;
-        @apply absolute left-1/2 -translate-x-1/2;
-        @apply gap-1;
-    }
+    @apply md:flex md:absolute md:left-1/2 md:-translate-x-1/2 md:gap-1;
 }
 
 /* Remove list markers from all nav items */
@@ -104,21 +76,15 @@
     @apply text-sm font-medium;
     @apply rounded-lg;
     @apply text-muted-foreground;
-    @apply hover:text-foreground hover:bg-accent;
+    @apply hover:text-foreground hover:bg-surface-hover;
     @apply transition-colors duration-200;
     @apply whitespace-nowrap;
     @apply no-underline;
+    @apply xl:px-3 xl:py-2;
 }
 
-/* Larger padding on desktop */
-@media (min-width: 1200px) {
-    .top-navbar-nav-item {
-        @apply px-3 py-2;
-    }
-}
-
-.top-navbar-nav-item[data-active="true"] {
-    @apply text-primary bg-primary/10;
+.top-navbar-nav-item[data-status="active"] {
+    @apply text-primary bg-primary/20;
 }
 
 .top-navbar-nav-item[data-disabled] {
@@ -132,7 +98,7 @@
     @apply text-sm font-medium;
     @apply rounded-lg;
     @apply text-muted-foreground;
-    @apply hover:text-foreground hover:bg-accent;
+    @apply hover:text-foreground hover:bg-surface-hover;
     @apply transition-colors duration-200;
     @apply cursor-pointer;
     @apply bg-transparent border-none;
@@ -227,7 +193,7 @@
     @apply items-center justify-center;
     @apply w-10 h-10;
     @apply rounded-lg;
-    @apply hover:bg-accent;
+    @apply hover:bg-surface-hover;
     @apply transition-colors duration-200;
 }
 
@@ -293,13 +259,13 @@
     @apply text-base font-medium;
     @apply rounded-lg;
     @apply text-muted-foreground;
-    @apply hover:text-foreground hover:bg-accent;
+    @apply hover:text-foreground hover:bg-surface-hover;
     @apply transition-colors duration-200;
     @apply no-underline;
 }
 
 .top-navbar-mobile-item[data-active="true"] {
-    @apply text-primary bg-primary/10;
+    @apply text-primary bg-primary/20;
 }
 
 .top-navbar-mobile-item[data-disabled] {
