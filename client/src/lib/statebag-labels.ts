@@ -25,8 +25,8 @@ export const STATEBAG_LABELS: Record<string, string> = {
 
     // Tenant and application
     OTID: "Original Tenant ID",
-    APPMV: "Application Model Version",
-    CT: "Content Type",
+    APPMV: "App Model Version",
+    CT: "Client Type",
 
     // Session and authentication
     SSO: "Single Sign-On State",
@@ -34,12 +34,12 @@ export const STATEBAG_LABELS: Record<string, string> = {
 
     // Token and security
     REPRM: "Request Parameters",
-    IC: "Input Claims",
+    IC: "Is Continuation",
     CP: "Claims Provider",
 
     // UI and self-asserted
     SA_FIELDS: "Self-Asserted Fields",
-    EID: "Exchange ID",
+    EID: "Element ID (Page Layout)",
     UXRC: "UX Resource Context",
     ARC: "API Resource Context",
 
@@ -49,6 +49,36 @@ export const STATEBAG_LABELS: Record<string, string> = {
 
     // Complex items indicator
     ComplexItems: "Complex Items List",
+
+    // Status indicators
+    CC: "Code Challenge (PKCE)",
+    CCM: "Code Challenge Method",
+    REAUTH: "Re-auth Required",
+    CTP: "Current Technical Profile",
+    SE: "Session Entity",
+    CI: "User Identity (OID)",
+    UJ_S: "User Journey Status",
+
+    // Protocol & session
+    PROT: "Protocol Trace (AAD Graph)",
+    S_CTP: "Saved Technical Profile",
+    AUPRM: "Auth Parameters",
+    PRMCH: "Parameter Chain",
+
+    // Complex object indicators
+    "Complex-CLMS": "Claims Bag (Snapshot)",
+    "Complex-API_RESULT": "API/UI Result",
+
+    // Message/validation patterns
+    IMESSAGE: "Initiating Message ID",
+    CMESSAGE: "Current Message ID",
+
+    // Validation patterns
+    ValidationRequest: "Validation Request",
+    ValidationResponse: "Validation Response",
+
+    // Claims patterns
+    "SAA-Claims": "Self-Asserted Aggregated Claims",
 };
 
 /**

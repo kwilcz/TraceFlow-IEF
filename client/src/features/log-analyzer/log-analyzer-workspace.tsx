@@ -3,9 +3,9 @@ import { useShallow } from "zustand/react/shallow";
 import { useLogStore } from "@/stores/log-store";
 import type { UserFlow } from "@/types/trace";
 import { QueryControls } from "@/features/log-analyzer/query-controls.tsx";
-import { FlowSelectionPanel, FlowSelectionSummary } from "@/features/log-analyzer/flow-selection";
-import { FlowSelectionLoading, FlowSelectionNoLogs, FlowSelectionNoFlows } from "@/features/log-analyzer/flow-selection/flow-selection-empty-states";
-import { usePanelCollapse } from "@/features/log-analyzer/flow-selection/use-panel-collapse";
+import { FlowPicker, FlowPickerLoading, FlowPickerNoLogs, FlowPickerNoFlows } from "@/features/log-analyzer/flow-picker";
+import { DebuggerWorkspace } from "@/features/log-analyzer/debugger";
+import { cn } from "@/lib/utils";
 import * as card from "@/components/ui/card";
 
 /** Props for the {@link LogAnalyzerWorkspace} component. */
@@ -21,80 +21,77 @@ export type LogAnalyzerWorkspaceProps = {
  * Reads from the Zustand log store and manages panel collapse state.
  */
 export const LogAnalyzerWorkspace = ({ onOpenSettings }: LogAnalyzerWorkspaceProps) => {
-    const { userFlows, selectedFlow, selectFlow, isLoading, logs } = useLogStore(
+    const { userFlows, selectedFlow, selectFlow, isLoading, logs, traceSteps, traceLoading } = useLogStore(
         useShallow((state) => ({
             userFlows: state.userFlows,
             selectedFlow: state.selectedFlow,
             selectFlow: state.selectFlow,
             isLoading: state.isLoading,
             logs: state.logs,
+            traceSteps: state.traceSteps,
+            traceLoading: state.traceLoading,
         })),
     );
-
-    const [collapseState, dispatchCollapse] = usePanelCollapse();
 
     const handleSelectFlow = useCallback(
         (flow: UserFlow) => {
             selectFlow(flow);
-            dispatchCollapse({ type: "auto-collapse" });
         },
-        [selectFlow, dispatchCollapse],
-    );
-
-    const handleToggle = useCallback(
-        () => dispatchCollapse({ type: "manual-toggle" }),
-        [dispatchCollapse],
+        [selectFlow],
     );
 
     /* ---- Determine display mode ---- */
     const isNormalMode = !isLoading && logs.length > 0 && userFlows.length > 0;
+    const showDebugger = selectedFlow !== null && (traceSteps.length > 0 || traceLoading);
 
     return (
-        <div className="flex flex-col items-center min-h-screen-navbar gap-2 sm:gap-4 px-2 sm:px-4 ">
-            {/* Sticky search bar + summary */}
-            <div className="sticky top-0 z-10 w-full max-w-full lg:max-w-[75vw]">
-                <QueryControls onOpenSettings={onOpenSettings}>
-                    {isNormalMode && (
-                        <div
-                            data-testid="available-flows-panel"
-                            data-state={collapseState.expanded ? "expanded" : "collapsed"}
-                        >
-                            <FlowSelectionSummary
-                                selectedFlow={selectedFlow}
-                                expanded={collapseState.expanded}
-                                onToggle={handleToggle}
-                            />
-                        </div>
-                    )}
-                </QueryControls>
+        <div
+            className={cn(
+                "flex flex-col items-center gap-2 sm:gap-4 px-2 sm:px-4",
+                showDebugger
+                    ? "h-screen-navbar overflow-hidden"
+                    : "min-h-screen-navbar",
+            )}
+        >
+            {/* Sticky search bar */}
+            <div className="sticky top-0 z-10 w-full max-w-full lg:max-w-[75vw] shrink-0">
+                <QueryControls onOpenSettings={onOpenSettings} />
             </div>
 
             {/* Content area: empty states OR table card */}
             {isLoading && (
                 <card.Card className="w-full">
                     <card.CardContent>
-                        <FlowSelectionLoading />
+                        <FlowPickerLoading />
                     </card.CardContent>
                 </card.Card>
             )}
 
-            {!isLoading && logs.length === 0 && <FlowSelectionNoLogs />}
+            {!isLoading && logs.length === 0 && (
+                <card.Card className="w-full">
+                    <card.CardContent>
+                        <FlowPickerNoLogs />
+                    </card.CardContent>
+                </card.Card>
+            )}
 
             {!isLoading && logs.length > 0 && userFlows.length === 0 && (
                 <card.Card className="w-full">
                     <card.CardContent>
-                        <FlowSelectionNoFlows />
+                        <FlowPickerNoFlows />
                     </card.CardContent>
                 </card.Card>
             )}
 
-            {isNormalMode && collapseState.expanded && (
-                <FlowSelectionPanel
+            {isNormalMode && (
+                <FlowPicker
                     userFlows={userFlows}
                     selectedFlow={selectedFlow}
                     onSelectFlow={handleSelectFlow}
                 />
             )}
+
+            {showDebugger && <DebuggerWorkspace />}
         </div>
     );
 };

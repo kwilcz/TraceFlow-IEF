@@ -11,6 +11,8 @@ import {
 } from "@/features/log-analyzer/services/log-selection-service";
 import { generateTraceStateFromLogs } from "@/features/log-analyzer/services/trace-bootstrap-service";
 
+let pendingComputeId: symbol | null = null;
+
 const initialState: Omit<LogStore, keyof LogStoreActions> & TraceState = {
     credentials: {
         applicationId: "",
@@ -169,18 +171,38 @@ export const useLogStore = create<ExtendedLogStore>()(
 
                 selectFlow: (flow) => {
                     const { logs, userFlows, searchText } = get();
-                    const { selectedLog, tracePatch, selectedFlow } = resolveSelectionFromFlow(
-                        flow,
-                        logs,
-                        userFlows,
-                        searchText,
-                    );
 
+                    if (!flow) {
+                        pendingComputeId = null;
+                        set({
+                            ...initialTraceState,
+                            userFlows,
+                            searchText,
+                            selectedFlow: null,
+                            selectedLog: null,
+                            traceLoading: false,
+                        });
+                        return;
+                    }
+
+                    const flowLogs = getLogsForFlow(logs, flow.id, userFlows);
+
+                    pendingComputeId = Symbol();
+                    const computeId = pendingComputeId;
+
+                    // Phase 1 — instant: visual state + loading flag (keep stale trace for smooth transition)
                     set({
-                        ...tracePatch,
-                        selectedFlow,
-                        selectedLog,
+                        selectedFlow: flow,
+                        selectedLog: flowLogs[0] ?? null,
+                        traceLoading: true,
                     });
+
+                    // Phase 2 — deferred: heavy trace computation
+                    setTimeout(() => {
+                        if (pendingComputeId !== computeId) return; // stale — cancelled
+                        const traceState = generateTraceStateFromLogs(flowLogs);
+                        set({ ...traceState, traceLoading: false });
+                    }, 0);
                 },
 
                 setSearchText: (text) => {

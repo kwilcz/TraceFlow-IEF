@@ -162,6 +162,7 @@ export const QueryControls = ({ onOpenSettings, children }: QueryControlsProps) 
                             <Input
                                 className="pr-12"
                                 value={localSearchText}
+                                disabled={isLoading}
                                 onChange={(event) =>
                                     dispatch({ type: "set-search-text", value: event.target.value })
                                 }

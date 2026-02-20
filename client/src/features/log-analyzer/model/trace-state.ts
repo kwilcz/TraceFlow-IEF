@@ -14,6 +14,7 @@ export interface TraceState {
     userFlows: UserFlow[];
     selectedFlow: UserFlow | null;
     searchText: string;
+    traceLoading: boolean;
 }
 
 export interface TraceActions {
@@ -41,4 +42,5 @@ export const initialTraceState: TraceState = {
     userFlows: [],
     selectedFlow: null,
     searchText: "",
+    traceLoading: false,
 };
