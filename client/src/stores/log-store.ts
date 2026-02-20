@@ -93,9 +93,14 @@ export const useLogStore = create<ExtendedLogStore>()(
 
                         // Auto-generate trace for the first flow
                         if (selectedFlow && processed.length > 0) {
-                            const flowLogs = getLogsForFlow(processed, selectedFlow.id, userFlows);
-                            const traceState = generateTraceStateFromLogs(flowLogs);
-                            set(traceState);
+                            try {
+                                const flowLogs = getLogsForFlow(processed, selectedFlow.id, userFlows);
+                                const traceState = generateTraceStateFromLogs(flowLogs);
+                                set(traceState);
+                            } catch (traceError) {
+                                const message = traceError instanceof Error ? traceError.message : "Trace generation failed";
+                                set({ traceErrors: [message] });
+                            }
                         }
                     } catch (error) {
                         const message = error instanceof Error ? error.message : "Unable to fetch logs";
@@ -200,8 +205,26 @@ export const useLogStore = create<ExtendedLogStore>()(
                     // Phase 2 — deferred: heavy trace computation
                     setTimeout(() => {
                         if (pendingComputeId !== computeId) return; // stale — cancelled
-                        const traceState = generateTraceStateFromLogs(flowLogs);
-                        set({ ...traceState, traceLoading: false });
+                        try {
+                            const traceState = generateTraceStateFromLogs(flowLogs);
+                            set({ ...traceState, traceLoading: false });
+                        } catch (error) {
+                            const message = error instanceof Error ? error.message : "Trace computation failed";
+                            // Reset only trace-specific fields — preserve userFlows,
+                            // selectedFlow and searchText so the flow picker stays usable.
+                            set({
+                                traceSteps: [],
+                                executionMap: {},
+                                activeStepIndex: null,
+                                isTraceModeActive: false,
+                                mainJourneyId: "",
+                                correlationId: "",
+                                finalStatebag: {},
+                                finalClaims: {},
+                                traceErrors: [message],
+                                traceLoading: false,
+                            });
+                        }
                     }, 0);
                 },
 

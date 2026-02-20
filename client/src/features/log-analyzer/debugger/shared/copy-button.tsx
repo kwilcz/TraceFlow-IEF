@@ -35,11 +35,11 @@ export const CopyButton: React.FC<{ value: string; label?: string }> = ({ value,
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" onClick={handleCopy} className="h-6 w-6 p-0 hover:bg-accent">
+                <Button variant="ghost" size="icon-xs" onClick={handleCopy}>
                     {copied ? (
-                        <CheckIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        <CheckIcon className="text-success" />
                     ) : (
-                        <CopyIcon className="w-3 h-3 text-muted-foreground" />
+                        <CopyIcon className="text-muted-foreground" />
                     )}
                 </Button>
             </TooltipTrigger>

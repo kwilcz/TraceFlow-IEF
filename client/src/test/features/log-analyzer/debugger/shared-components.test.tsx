@@ -185,10 +185,10 @@ describe("CopyButton", () => {
             fireEvent.click(button);
         });
 
-        // After click — CheckIcon present (emerald color)
+        // After click — CheckIcon present (success color)
         const svgAfter = container.querySelector("svg");
         const classes = svgAfter?.getAttribute("class") ?? "";
-        expect(classes).toContain("text-emerald");
+        expect(classes).toContain("text-success");
     });
 });
 

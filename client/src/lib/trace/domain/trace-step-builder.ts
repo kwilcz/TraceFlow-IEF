@@ -274,6 +274,12 @@ export class TraceStepBuilder {
             if (!existing.protocolType && detail.protocolType) {
                 existing.protocolType = detail.protocolType;
             }
+            // Always update claimsSnapshot to the latest value —
+            // later interpreters have more accurate state since claims
+            // were applied between interpreter invocations.
+            if (detail.claimsSnapshot) {
+                existing.claimsSnapshot = detail.claimsSnapshot;
+            }
         } else {
             this.step.technicalProfileDetails.push(detail);
         }

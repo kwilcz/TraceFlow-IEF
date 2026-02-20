@@ -21,15 +21,13 @@ export type LogAnalyzerWorkspaceProps = {
  * Reads from the Zustand log store and manages panel collapse state.
  */
 export const LogAnalyzerWorkspace = ({ onOpenSettings }: LogAnalyzerWorkspaceProps) => {
-    const { userFlows, selectedFlow, selectFlow, isLoading, logs, traceSteps, traceLoading } = useLogStore(
+    const { userFlows, selectedFlow, selectFlow, isLoading, logs } = useLogStore(
         useShallow((state) => ({
             userFlows: state.userFlows,
             selectedFlow: state.selectedFlow,
             selectFlow: state.selectFlow,
             isLoading: state.isLoading,
             logs: state.logs,
-            traceSteps: state.traceSteps,
-            traceLoading: state.traceLoading,
         })),
     );
 
@@ -42,7 +40,7 @@ export const LogAnalyzerWorkspace = ({ onOpenSettings }: LogAnalyzerWorkspacePro
 
     /* ---- Determine display mode ---- */
     const isNormalMode = !isLoading && logs.length > 0 && userFlows.length > 0;
-    const showDebugger = selectedFlow !== null && (traceSteps.length > 0 || traceLoading);
+    const showDebugger = selectedFlow !== null;
 
     return (
         <div

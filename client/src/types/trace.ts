@@ -42,6 +42,8 @@ export interface TechnicalProfileDetail {
     protocolType?: string;
     /** Claims transformations executed within this TP */
     claimsTransformations?: ClaimsTransformationDetail[];
+    /** Claims snapshot taken AFTER this TP's handler was applied. */
+    claimsSnapshot?: Record<string, string>;
 }
 
 /**

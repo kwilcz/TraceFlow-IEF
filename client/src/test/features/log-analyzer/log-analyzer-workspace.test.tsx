@@ -36,6 +36,10 @@ vi.mock("@/features/log-analyzer/query-controls.tsx", () => ({
 vi.mock("motion/react", () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     motion: {
+        div: (props: Record<string, unknown> & { children?: React.ReactNode }) => {
+            const { initial, animate, exit, transition, ...htmlProps } = props;
+            return React.createElement("div", htmlProps as React.HTMLAttributes<HTMLDivElement>, props.children);
+        },
         tbody: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
             const { initial, animate, exit, transition, ...htmlProps } = props;
             return <tbody {...(htmlProps as React.HTMLAttributes<HTMLTableSectionElement>)}>{children}</tbody>;
@@ -47,9 +51,14 @@ vi.mock("motion/react", () => ({
             });
         },
     },
+    useReducedMotion: () => false,
 }));
 
 vi.mock("@/features/log-analyzer/flow-picker/flow-picker.css", () => ({}));
+
+vi.mock("@/features/log-analyzer/debugger", () => ({
+    DebuggerWorkspace: () => <div data-testid="debugger-workspace" />,
+}));
 
 const makeFlow = (id: string, correlationId: string, overrides?: Partial<UserFlow>): UserFlow => ({
     id,

@@ -5,7 +5,7 @@ import { useLogStore } from "@/stores/log-store";
 import { DebuggerProvider, useDebuggerContext } from "./debugger-context";
 import { InspectorPanel } from "./inspector-panel";
 import { JourneyTree } from "./journey-tree/journey-tree";
-import { StatebagPanel } from "./statebag-panel";
+import { ClaimsDiffTable } from "./claims-diff-table";
 import { useResizer } from "./use-resizer";
 
 // ============================================================================
@@ -48,8 +48,6 @@ export function DebuggerWorkspace() {
     );
     const { splitRatio, resizerProps, containerRef } = useResizer();
 
-    if (traceSteps.length === 0 && !traceLoading) return null;
-
     const topBasis = `calc(var(--split-ratio) * 100%)`;
     const bottomBasis = `calc((1 - var(--split-ratio)) * 100%)`;
 
@@ -60,7 +58,7 @@ export function DebuggerWorkspace() {
             {/* Vertical split container */}
             <div
                 ref={containerRef}
-                className="flex flex-col flex-1 min-h-0 relative"
+                className="flex flex-col flex-1 min-h-0 w-full relative"
             >
                 {traceLoading && (
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
@@ -98,7 +96,7 @@ export function DebuggerWorkspace() {
                     className="min-h-0 overflow-y-auto"
                     style={{ flexBasis: bottomBasis }}
                 >
-                    <StatebagPanel />
+                    <ClaimsDiffTable />
                 </div>
             </div>
         </DebuggerProvider>

@@ -4,6 +4,10 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 
 vi.mock("motion/react", () => ({
     motion: {
+        div: (props: Record<string, unknown> & { children?: React.ReactNode }) => {
+            const { initial, animate, exit, transition, ...htmlProps } = props;
+            return React.createElement("div", htmlProps as React.HTMLAttributes<HTMLDivElement>, props.children);
+        },
         create: (Component: React.ComponentType<Record<string, unknown>>) => {
             return React.forwardRef(function MotionMock(props: Record<string, unknown>, ref: React.Ref<unknown>) {
                 const { initial, animate, exit, transition, ...rest } = props;
@@ -12,6 +16,7 @@ vi.mock("motion/react", () => ({
         },
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    useReducedMotion: () => false,
 }));
 
 vi.mock("@/features/log-analyzer/flow-picker/flow-picker.css", () => ({}));

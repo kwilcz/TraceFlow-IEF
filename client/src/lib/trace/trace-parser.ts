@@ -334,8 +334,17 @@ export class TraceParser {
             }
 
             if (result.technicalProfiles) {
+                const tpSnapshot = this.state.statebag.getClaimsSnapshot();
                 for (const tp of result.technicalProfiles) {
                     this.state.currentStepBuilder.addTechnicalProfile(tp);
+                    // Auto-create detail with snapshot so per-TP diff works
+                    // even for interpreters that don't produce full details.
+                    // addTechnicalProfileDetail handles merge if detail already exists.
+                    this.state.currentStepBuilder.addTechnicalProfileDetail({
+                        id: tp,
+                        providerType: "",
+                        claimsSnapshot: tpSnapshot,
+                    });
                 }
             }
 
@@ -392,7 +401,9 @@ export class TraceParser {
             }
 
             if (result.technicalProfileDetails) {
+                const snapshot = this.state.statebag.getClaimsSnapshot();
                 for (const detail of result.technicalProfileDetails) {
+                    detail.claimsSnapshot = snapshot;
                     this.state.currentStepBuilder.addTechnicalProfileDetail(detail);
                 }
             }
@@ -474,6 +485,18 @@ export class TraceParser {
         for (const tp of step.technicalProfiles) {
             if (!existing.technicalProfiles.includes(tp)) {
                 existing.technicalProfiles.push(tp);
+            }
+        }
+
+        // Also merge technicalProfileDetails to preserve per-TP snapshots
+        if (step.technicalProfileDetails) {
+            if (!existing.technicalProfileDetails) {
+                existing.technicalProfileDetails = [];
+            }
+            for (const detail of step.technicalProfileDetails) {
+                if (!existing.technicalProfileDetails.some(d => d.id === detail.id)) {
+                    existing.technicalProfileDetails.push(detail);
+                }
             }
         }
 
