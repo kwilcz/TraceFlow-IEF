@@ -166,7 +166,7 @@ describe("buildStepNode", () => {
         const node = buildStepNode(step, 5);
 
         expect(node.id).toBe("step-5");
-        expect(node.label).toBe("Step 3");
+        expect(node.label).toBe("Step 3 — Unknown");
         expect(node.type).toBe("step");
         expect(node.stepIndex).toBe(5);
         expect(node.metadata?.result).toBe("Skipped");
@@ -364,5 +364,250 @@ describe("buildStepNode", () => {
         const node = buildStepNode(step, 1);
 
         expect(node.children).toBeUndefined();
+    });
+});
+
+// ============================================================================
+// Helpers for dedup tests
+// ============================================================================
+
+/** Recursively collect all labels from a tree node and its descendants. */
+function flattenLabels(node: TreeNode): string[] {
+    const labels = [node.label];
+    if (node.children) {
+        for (const child of node.children) {
+            labels.push(...flattenLabels(child));
+        }
+    }
+    return labels;
+}
+
+// ============================================================================
+// Semantic Labels (4a-1)
+// ============================================================================
+
+describe("semantic labels", () => {
+    it("should include primary TP name in step label", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["AAD-UserRead"],
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.label).toBe("Step 1 — AAD-UserRead");
+    });
+
+    it("should fall back to actionHandler when no TPs", () => {
+        const step = makeTraceStep({
+            technicalProfiles: [],
+            actionHandler: "ClaimsExchangeHandler",
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.label).toBe("Step 1 — ClaimsExchangeHandler");
+    });
+
+    it("should fall back to Unknown when no TPs and no actionHandler", () => {
+        const step = makeTraceStep({
+            technicalProfiles: [],
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.label).toBe("Step 1 — Unknown");
+    });
+
+    it("should include isFinalStep in metadata", () => {
+        const step = makeTraceStep({
+            isFinalStep: true,
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.metadata?.isFinalStep).toBe(true);
+    });
+
+    it("should include isVerificationStep in metadata", () => {
+        const step = makeTraceStep({
+            isVerificationStep: true,
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.metadata?.isVerificationStep).toBe(true);
+    });
+});
+
+// ============================================================================
+// Ownership-chain dedup (ISS-006) (4a-2)
+// ============================================================================
+
+describe("ownership-chain dedup (ISS-006)", () => {
+    it("simple 1-TP step: single TP child, no orphan CTs", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["AAD-UserRead"],
+        });
+        const node = buildStepNode(step, 1);
+
+        expect(node.children).toHaveLength(1);
+        expect(node.children![0].type).toBe("technicalProfile");
+        expect(node.children![0].label).toBe("AAD-UserRead");
+
+        // No transformation children at step level
+        const topLevelCts = node.children!.filter((c) => c.type === "transformation");
+        expect(topLevelCts).toHaveLength(0);
+    });
+
+    it("SelfAsserted with validation TPs: VTPs nested under SA TP", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["SelfAsserted-ProfileEdit", "AAD-UserWrite"],
+            technicalProfileDetails: [
+                { id: "SelfAsserted-ProfileEdit", providerType: "SelfAssertedAttributeProvider" },
+            ],
+            validationTechnicalProfiles: ["AAD-UserWrite"],
+        });
+        const node = buildStepNode(step, 1);
+
+        // SelfAsserted TP is a child of the step
+        const saNode = node.children?.find((c) => c.label === "SelfAsserted-ProfileEdit");
+        expect(saNode).toBeDefined();
+
+        // AAD-UserWrite is nested under SelfAsserted TP (as VTP)
+        const nestedVtp = saNode!.children?.find((c) => c.label === "AAD-UserWrite");
+        expect(nestedVtp).toBeDefined();
+        expect(nestedVtp!.type).toBe("technicalProfile");
+
+        // AAD-UserWrite does NOT appear at step level
+        const stepLevelTps = node.children?.filter((c) => c.label === "AAD-UserWrite") ?? [];
+        expect(stepLevelTps).toHaveLength(0);
+    });
+
+    it("DC with nested TPs: REST-Verify under DC node, DC nested under SelfAsserted TP", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["SelfAsserted-SA", "REST-Verify"],
+            technicalProfileDetails: [
+                { id: "SelfAsserted-SA", providerType: "SelfAssertedAttributeProvider" },
+            ],
+            displayControlActions: [
+                {
+                    displayControlId: "emailVerify",
+                    action: "Send",
+                    technicalProfiles: [{ technicalProfileId: "REST-Verify" }],
+                },
+            ],
+        });
+        const node = buildStepNode(step, 1);
+
+        // SelfAsserted-SA is a child of the step
+        const saNode = node.children?.find((c) => c.label === "SelfAsserted-SA");
+        expect(saNode).toBeDefined();
+
+        // DC node nested under SelfAsserted TP
+        const dcNode = saNode!.children?.find((c) => c.type === "displayControl");
+        expect(dcNode).toBeDefined();
+        expect(dcNode!.metadata?.displayControlId).toBe("emailVerify");
+
+        // REST-Verify nested under DC node
+        const dcTp = dcNode!.children?.find((c) => c.label === "REST-Verify");
+        expect(dcTp).toBeDefined();
+        expect(dcTp!.type).toBe("dcTechnicalProfile");
+
+        // REST-Verify does NOT appear at step level
+        const stepLevelRestVerify = node.children?.filter((c) => c.label === "REST-Verify") ?? [];
+        expect(stepLevelRestVerify).toHaveLength(0);
+    });
+
+    it("each component appears exactly once", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["SA", "VTP-1", "VTP-2"],
+            technicalProfileDetails: [
+                {
+                    id: "SA",
+                    providerType: "SelfAssertedAttributeProvider",
+                    claimsTransformations: [{ id: "CT-A", inputClaims: [], inputParameters: [], outputClaims: [] }],
+                },
+            ],
+            validationTechnicalProfiles: ["VTP-1", "VTP-2"],
+            claimsTransformations: ["CT-A", "CT-B"],
+        });
+        const node = buildStepNode(step, 1);
+
+        const allLabels = flattenLabels(node);
+
+        // Each component appears exactly once
+        for (const component of ["SA", "VTP-1", "VTP-2", "CT-A", "CT-B"]) {
+            const count = allLabels.filter((l) => l === component).length;
+            expect(count, `"${component}" should appear exactly once, found ${count}`).toBe(1);
+        }
+    });
+
+    it("HRD step excludes selected option from TP children", () => {
+        const step = makeTraceStep({
+            isInteractiveStep: true,
+            selectableOptions: ["Google", "Facebook"],
+            selectedOption: "Google",
+            technicalProfiles: ["Google", "Facebook"],
+            actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
+        });
+        const node = buildStepNode(step, 1);
+
+        // HRD node exists
+        const hrdNode = node.children?.find((c) => c.type === "hrd");
+        expect(hrdNode).toBeDefined();
+
+        // Selected option "Google" is excluded from TP children
+        const tpLabels = node.children?.filter((c) => c.type === "technicalProfile").map((c) => c.label) ?? [];
+        expect(tpLabels).not.toContain("Google");
+        // Non-selected option "Facebook" remains as a TP child
+        expect(tpLabels).toContain("Facebook");
+    });
+
+    it("orphan CTs appear at step level when multiple TPs exist", () => {
+        const step = makeTraceStep({
+            technicalProfiles: ["TP-A", "TP-B"],
+            claimsTransformations: ["CT-Orphan"],
+        });
+        const node = buildStepNode(step, 1);
+
+        // CT-Orphan is at step level (not under any TP) since multiple TPs exist
+        const topLevelCts = node.children?.filter((c) => c.type === "transformation") ?? [];
+        expect(topLevelCts).toHaveLength(1);
+        expect(topLevelCts[0].label).toBe("CT-Orphan");
+
+        // CT-Orphan is NOT nested under TP-A or TP-B
+        const tpA = node.children?.find((c) => c.label === "TP-A");
+        const tpB = node.children?.find((c) => c.label === "TP-B");
+        const tpACts = tpA?.children?.filter((c) => c.type === "transformation") ?? [];
+        const tpBCts = tpB?.children?.filter((c) => c.type === "transformation") ?? [];
+        expect(tpACts).toHaveLength(0);
+        expect(tpBCts).toHaveLength(0);
+    });
+
+    it("DC with legacy technicalProfileId creates nested TP with CTs", () => {
+        const step = makeTraceStep({
+            displayControlActions: [
+                {
+                    displayControlId: "captcha",
+                    action: "Verify",
+                    technicalProfileId: "TP-Captcha",
+                },
+            ],
+            technicalProfileDetails: [{ id: "TP-Captcha", providerType: "Claimsransformation", claimsTransformations: [{ id: "CT-Cap", inputClaims: [], inputParameters: [], outputClaims: [] }] }],
+            claimsTransformations: ["CT-Cap"],
+        });
+        const node = buildStepNode(step, 1);
+
+        // DC node exists
+        const dcNode = node.children?.find((c) => c.type === "displayControl");
+        expect(dcNode).toBeDefined();
+        expect(dcNode!.children).toHaveLength(1);
+        expect(dcNode!.children![0].label).toBe("TP-Captcha");
+        expect(dcNode!.children![0].type).toBe("dcTechnicalProfile");
+
+        // CT-Cap is nested under the DC's TP as dcTransformation
+        const dcTp = dcNode!.children![0];
+        expect(dcTp.children).toHaveLength(1);
+        expect(dcTp.children![0].label).toBe("CT-Cap");
+        expect(dcTp.children![0].type).toBe("dcTransformation");
+
+        // CT-Cap does NOT appear at step level
+        const stepCtNodes = node.children?.filter((c) => c.type === "transformation") ?? [];
+        expect(stepCtNodes).toHaveLength(0);
     });
 });

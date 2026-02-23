@@ -19,6 +19,25 @@ interface TreeNodeRowProps {
     onToggleExpand: () => void;
     /** Render props for recursion — avoids circular dependency. */
     renderChildren: (children: TreeNode[], depth: number) => React.ReactNode;
+    /** Number of siblings at this level (for aria-setsize). */
+    siblingCount: number;
+    /** 1-based position among siblings (for aria-posinset). */
+    positionInSet: number;
+    /** Node ID that should carry tabindex="0" (roving tabindex). */
+    tabbableNodeId: string | null;
+}
+
+// -------------- Step tint helper --------------------------------------------
+
+/** Returns a subtle background-tint class for step rows (only when not selected). */
+function getStepTintClass(node: TreeNode): string | undefined {
+    const m = node.metadata;
+    if (!m) return undefined;
+    if (m.isHrdStep) return "bg-warning-soft/50";
+    if (m.isFinalStep) return "bg-success-soft/50";
+    if (m.isVerificationStep) return "bg-accent-soft/50";
+    if (m.isInteractive && !m.isHrdStep) return "bg-accent-soft/50";
+    return undefined;
 }
 
 // -------------- Label style mapping per node type ---------------------------
@@ -105,6 +124,12 @@ function NodeBadges({ node }: { node: TreeNode }) {
 
 // -------------- TreeNodeRow -------------------------------------------------
 
+/** Whether a node type is selectable (dispatches to inspector). */
+const selectableTypes = new Set([
+    "step", "technicalProfile", "dcTechnicalProfile", "selectedOption",
+    "transformation", "dcTransformation", "hrd", "displayControl",
+]);
+
 export function TreeNodeRow({
     node,
     depth,
@@ -113,9 +138,13 @@ export function TreeNodeRow({
     onSelect,
     onToggleExpand,
     renderChildren,
+    siblingCount,
+    positionInSet,
+    tabbableNodeId,
 }: TreeNodeRowProps) {
     const rowRef = useRef<HTMLDivElement>(null);
     const hasChildren = (node.children?.length ?? 0) > 0;
+    const isSelectable = selectableTypes.has(node.type);
 
     // Auto-scroll when selected
     useEffect(() => {
@@ -124,14 +153,28 @@ export function TreeNodeRow({
         }
     }, [isSelected]);
 
+    // WAI-ARIA 1.2: treeitem must CONTAIN role="group" children.
+    // The outer div is role="treeitem"; the inner div is the visual clickable row.
     return (
-        <>
+        <div
+            ref={rowRef}
+            id={node.id}
+            role="treeitem"
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-selected={isSelectable ? isSelected : undefined}
+            aria-level={depth + 1}
+            aria-setsize={siblingCount}
+            aria-posinset={positionInSet}
+            tabIndex={tabbableNodeId === node.id ? 0 : -1}
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+        >
+            {/* Visual row content */}
             <div
-                ref={rowRef}
                 className={cn(
                     "flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors",
                     "hover:bg-accent/50",
                     isSelected && "bg-primary/10 ring-1 ring-primary",
+                    !isSelected && node.type === "step" && getStepTintClass(node),
                 )}
                 style={{ paddingLeft: `${8 + depth * 16}px` }}
                 onClick={() => handleRowClick(node, isSelected, isExpanded, onSelect, onToggleExpand)}
@@ -142,6 +185,7 @@ export function TreeNodeRow({
                         type="button"
                         className="p-0 h-auto w-auto shrink-0"
                         tabIndex={-1}
+                        aria-hidden="true"
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggleExpand();
@@ -159,11 +203,14 @@ export function TreeNodeRow({
 
                 {/* Icon */}
                 <span className="shrink-0">
-                    <TreeNodeIcon type={node.type} result={node.metadata?.result} />
+                    <TreeNodeIcon type={node.type} result={node.metadata?.result} metadata={node.metadata} />
                 </span>
 
                 {/* Label */}
-                <span className={cn("min-w-0", labelStyles[node.type] ?? "text-xs text-foreground")}>
+                <span
+                    className={cn("min-w-0", labelStyles[node.type] ?? "text-xs text-foreground", node.type === "step" && "truncate")}
+                    title={node.type === "step" ? node.label : undefined}
+                >
                     {node.label}
                 </span>
 
@@ -173,8 +220,12 @@ export function TreeNodeRow({
                 </span>
             </div>
 
-            {/* Children (recursive) */}
-            {isExpanded && hasChildren && renderChildren(node.children!, depth + 1)}
-        </>
+            {/* Children nested INSIDE treeitem (WAI-ARIA 1.2 requirement) */}
+            {isExpanded && hasChildren && (
+                <div role="group">
+                    {renderChildren(node.children!, depth + 1)}
+                </div>
+            )}
+        </div>
     );
 }

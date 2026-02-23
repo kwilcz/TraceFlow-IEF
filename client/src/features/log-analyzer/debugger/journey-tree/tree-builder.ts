@@ -84,113 +84,160 @@ export function buildTreeStructure(traceSteps: TraceStep[]): TreeNode[] {
 }
 
 /**
- * Builds a tree node for a single step.
+ * Detects whether a step should emit an HRD (Home Realm Discovery) node.
  *
- * For interactive steps with HRD, shows:
- * 1. HRD selection node (orange, shows available options)
- * 2. Selected option node (the TP that was chosen)
- *
- * For regular steps, shows TPs and CTs as children.
- *
- * For DisplayControl actions, shows nested TPs and CTs under each DC action.
- * If there's a main SelfAsserted TP, DCs are nested under it.
+ * A step qualifies when it is interactive, offers multiple options, and its
+ * action handler indicates HomeRealmDiscovery behavior.
  */
-export function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
-    const children: TreeNode[] = [];
-    // Only show HRD node for actual HomeRealmDiscovery steps, not self-asserted or other interactive steps
-    const isHrdStep =
+function isHomeRealmDiscoveryStep(step: TraceStep): boolean {
+    return (
         step.isInteractiveStep &&
         step.selectableOptions.length > 1 &&
-        step.actionHandler?.includes("HomeRealmDiscovery");
-    const hasHrdSelection = isHrdStep;
+        (step.actionHandler?.includes("HomeRealmDiscovery") ?? false)
+    );
+}
 
-    if (hasHrdSelection) {
-        // Add HRD selection node (the interactive choice point)
-        // Include selectedOption in metadata so it can be highlighted within the HRD badge
-        // (instead of showing as a separate child node)
-        children.push({
-            id: `hrd-${step.sequenceNumber}`,
-            label: "HomeRealmDiscovery",
-            type: "hrd",
-            stepIndex,
-            metadata: {
-                isHrdSelection: true,
-                selectableOptions: step.selectableOptions,
-                selectedOption: step.selectedOption,
-                isInteractive: true,
-            },
-        });
+/**
+ * Builds the synthetic HRD node shown when an interactive step exposes
+ * multiple selectable options and uses HomeRealmDiscovery routing.
+ *
+ * This node is intentionally inserted before all TP/DC content so the
+ * decision point is visually prominent in the step tree.
+ */
+function buildHrdNode(seq: number, stepIndex: number, step: TraceStep): TreeNode {
+    return {
+        id: `hrd-${seq}`,
+        label: "HomeRealmDiscovery",
+        type: "hrd",
+        stepIndex,
+        metadata: {
+            isHrdSelection: true,
+            selectableOptions: step.selectableOptions,
+            selectedOption: step.selectedOption,
+            isInteractive: true,
+        },
+    };
+}
+
+/**
+ * Creates a lookup from Technical Profile id to Claims Transformation ids
+ * based on `technicalProfileDetails`.
+ *
+ * This normalization supports ownership assignment in later phases, where
+ * CTs are attached under the most specific parent that claims them.
+ */
+function createTpToCtsMap(step: TraceStep): Map<string, string[]> {
+    const tpToCts = new Map<string, string[]>();
+
+    if (!step.technicalProfileDetails) {
+        return tpToCts;
     }
 
-    // Collect TPs that are shown under DisplayControl actions (to avoid duplicating them)
-    const displayControlTpIds = new Set<string>();
-    const displayControlCtIds = new Set<string>();
+    for (const detail of step.technicalProfileDetails) {
+        if (detail.claimsTransformations?.length) {
+            tpToCts.set(detail.id, detail.claimsTransformations.map((ct) => ct.id));
+        }
+    }
 
-    // Find the "main" SelfAsserted TP for this step (if any)
-    // This is the TP that contains DisplayControls
-    const mainSelfAssertedTp = step.technicalProfileDetails?.find(
-        (tp) => tp.providerType === "SelfAssertedAttributeProvider",
-    );
+    return tpToCts;
+}
 
-    // Build DC nodes
+/**
+ * Phase 1 ownership pass.
+ *
+ * Builds DisplayControl nodes and marks their owned entities in `owned`:
+ * - owned TP ids
+ * - owned CT ids (from both inline action data and TP details mapping)
+ *
+ * This prevents duplicate CT/TP rendering in later passes.
+ */
+function buildDisplayControlNodes(params: {
+    step: TraceStep;
+    seq: number;
+    stepIndex: number;
+    getCtsForTp: (tpId: string) => string[];
+    owned: Set<string>;
+}): TreeNode[] {
+    const { step, seq, stepIndex, getCtsForTp, owned } = params;
     const dcNodes: TreeNode[] = [];
+
     for (const dcAction of step.displayControlActions) {
         const dcLabel = dcAction.action
             ? `${dcAction.displayControlId} → ${dcAction.action}`
             : dcAction.displayControlId;
-
         const dcChildren: TreeNode[] = [];
 
-        // Add nested technical profiles under this DC action
-        if (dcAction.technicalProfiles && dcAction.technicalProfiles.length > 0) {
+        if (dcAction.technicalProfiles?.length) {
             for (const tp of dcAction.technicalProfiles) {
-                displayControlTpIds.add(tp.technicalProfileId);
+                owned.add(tp.technicalProfileId);
 
                 const tpChildren: TreeNode[] = [];
+                const inlineCtIds = new Set<string>();
 
-                // Add nested claims transformations under this TP
-                if (tp.claimsTransformations && tp.claimsTransformations.length > 0) {
+                if (tp.claimsTransformations?.length) {
                     for (const ct of tp.claimsTransformations) {
-                        displayControlCtIds.add(ct.id);
+                        owned.add(ct.id);
+                        inlineCtIds.add(ct.id);
                         tpChildren.push({
-                            id: `dc-ct-${step.sequenceNumber}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}-${ct.id}`,
+                            id: `dc-ct-${seq}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}-${ct.id}`,
                             label: ct.id,
                             type: "dcTransformation",
                             stepIndex,
-                            metadata: {
-                                parentDisplayControlId: dcAction.displayControlId,
-                            },
+                            metadata: { parentDisplayControlId: dcAction.displayControlId },
+                        });
+                    }
+                }
+
+                for (const ctId of getCtsForTp(tp.technicalProfileId)) {
+                    owned.add(ctId);
+                    if (!inlineCtIds.has(ctId)) {
+                        tpChildren.push({
+                            id: `dc-ct-${seq}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}-${ctId}`,
+                            label: ctId,
+                            type: "dcTransformation",
+                            stepIndex,
+                            metadata: { parentDisplayControlId: dcAction.displayControlId },
                         });
                     }
                 }
 
                 dcChildren.push({
-                    id: `dc-tp-${step.sequenceNumber}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}`,
+                    id: `dc-tp-${seq}-${dcAction.displayControlId}-${dcAction.action}-${tp.technicalProfileId}`,
                     label: tp.technicalProfileId,
                     type: "dcTechnicalProfile",
                     stepIndex,
                     children: tpChildren.length > 0 ? tpChildren : undefined,
-                    metadata: {
-                        parentDisplayControlId: dcAction.displayControlId,
-                    },
+                    metadata: { parentDisplayControlId: dcAction.displayControlId },
                 });
             }
         } else if (dcAction.technicalProfileId) {
-            // Fallback to legacy single technicalProfileId
-            displayControlTpIds.add(dcAction.technicalProfileId);
+            owned.add(dcAction.technicalProfileId);
+
+            const legacyCts = getCtsForTp(dcAction.technicalProfileId);
+            for (const ctId of legacyCts) {
+                owned.add(ctId);
+            }
+
+            const legacyCtNodes: TreeNode[] = legacyCts.map((ctId) => ({
+                id: `dc-ct-${seq}-${dcAction.displayControlId}-${dcAction.action}-${dcAction.technicalProfileId}-${ctId}`,
+                label: ctId,
+                type: "dcTransformation" as const,
+                stepIndex,
+                metadata: { parentDisplayControlId: dcAction.displayControlId },
+            }));
+
             dcChildren.push({
-                id: `dc-tp-${step.sequenceNumber}-${dcAction.displayControlId}-${dcAction.action}-${dcAction.technicalProfileId}`,
+                id: `dc-tp-${seq}-${dcAction.displayControlId}-${dcAction.action}-${dcAction.technicalProfileId}`,
                 label: dcAction.technicalProfileId,
                 type: "dcTechnicalProfile",
                 stepIndex,
-                metadata: {
-                    parentDisplayControlId: dcAction.displayControlId,
-                },
+                children: legacyCtNodes.length > 0 ? legacyCtNodes : undefined,
+                metadata: { parentDisplayControlId: dcAction.displayControlId },
             });
         }
 
         dcNodes.push({
-            id: `dc-${step.sequenceNumber}-${dcAction.displayControlId}-${dcAction.action}`,
+            id: `dc-${seq}-${dcAction.displayControlId}-${dcAction.action}`,
             label: dcLabel,
             type: "displayControl",
             stepIndex,
@@ -204,126 +251,141 @@ export function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
         });
     }
 
-    // Build a map of TP -> CTs from technicalProfileDetails
-    const tpToCts = new Map<string, string[]>();
-    const ctsWithParentTp = new Set<string>();
-    if (step.technicalProfileDetails) {
-        for (const tpDetail of step.technicalProfileDetails) {
-            if (tpDetail.claimsTransformations && tpDetail.claimsTransformations.length > 0) {
-                const ctIds = tpDetail.claimsTransformations.map((ct) => ct.id);
-                tpToCts.set(tpDetail.id, ctIds);
-                for (const ctId of ctIds) {
-                    ctsWithParentTp.add(ctId);
-                }
-            }
+    return dcNodes;
+}
+
+/**
+ * Phase 2 ownership pass.
+ *
+ * Builds Validation Technical Profile nodes and marks both VTP ids and
+ * mapped CT ids as owned, ensuring they are not re-attached elsewhere.
+ */
+function buildValidationTpNodes(params: {
+    step: TraceStep;
+    seq: number;
+    stepIndex: number;
+    getCtsForTp: (tpId: string) => string[];
+    owned: Set<string>;
+}): TreeNode[] {
+    const { step, seq, stepIndex, getCtsForTp, owned } = params;
+    const vtpNodes: TreeNode[] = [];
+
+    for (const vtpId of step.validationTechnicalProfiles ?? []) {
+        owned.add(vtpId);
+
+        const vtpCts = getCtsForTp(vtpId);
+        for (const ctId of vtpCts) {
+            owned.add(ctId);
         }
+
+        const vtpChildren: TreeNode[] = vtpCts.map((ctId) => ({
+            id: `vtp-ct-${seq}-${vtpId}-${ctId}`,
+            label: ctId,
+            type: "transformation" as const,
+            stepIndex,
+            metadata: { parentTechnicalProfileId: vtpId },
+        }));
+
+        vtpNodes.push({
+            id: `vtp-${seq}-${vtpId}`,
+            label: vtpId,
+            type: "technicalProfile",
+            stepIndex,
+            children: vtpChildren.length > 0 ? vtpChildren : undefined,
+        });
     }
 
-    // Collect validation TPs to show them nested under main TP
-    const validationTpIds = new Set(step.validationTechnicalProfiles || []);
+    return vtpNodes;
+}
 
-    // Determine the "primary" TP for this step (for nesting orphan CTs)
-    // If there's only one TP (excluding validation TPs), orphan CTs should nest under it
-    const visibleTps = step.technicalProfiles.filter(
-        (tp) =>
-            !(hasHrdSelection && tp === step.selectedOption) &&
-            !displayControlTpIds.has(tp) &&
-            !validationTpIds.has(tp),
-    );
-    const hasSinglePrimaryTp = visibleTps.length === 1;
-    const singlePrimaryTpId = hasSinglePrimaryTp ? visibleTps[0] : null;
+/**
+ * Phase 3 candidate selection.
+ *
+ * Returns technical profiles that are still eligible for direct step-level
+ * rendering after ownership has been claimed by DC/VTP phases.
+ *
+ * In HRD steps, the selected option TP is suppressed to avoid duplicating
+ * the decision output as a standard TP node.
+ */
+function getRemainingTechnicalProfiles(params: {
+    step: TraceStep;
+    owned: Set<string>;
+    isHrdStep: boolean;
+}): string[] {
+    const { step, owned, isHrdStep } = params;
 
-    // Calculate orphan CTs (not under DC or already assigned to a TP)
-    const orphanCts = step.claimsTransformations.filter(
-        (ct) => !displayControlCtIds.has(ct) && !ctsWithParentTp.has(ct),
-    );
+    return step.technicalProfiles.filter((tp) => {
+        if (owned.has(tp)) return false;
+        if (isHrdStep && tp === step.selectedOption) return false;
+        return true;
+    });
+}
 
-    // Add technical profiles as children
-    // If there's a main SelfAsserted TP, nest DCs and validation TPs under it
-    for (const tp of step.technicalProfiles) {
-        // Skip if this TP is already shown as the selected option or under a DisplayControl
-        if (hasHrdSelection && tp === step.selectedOption) continue;
-        if (displayControlTpIds.has(tp)) continue;
+/**
+ * Builds nodes for remaining technical profiles and attaches child content
+ * according to nesting rules:
+ * - Main SelfAsserted TP absorbs DC and VTP nodes
+ * - TP-mapped CTs are attached under each TP
+ * - Orphan CTs are absorbed by the single remaining TP when only one exists
+ */
+function buildRemainingTpNodes(params: {
+    seq: number;
+    stepIndex: number;
+    remainingTps: string[];
+    mainSelfAssertedTpId?: string;
+    dcNodes: TreeNode[];
+    vtpNodes: TreeNode[];
+    getCtsForTp: (tpId: string) => string[];
+    orphanCts: string[];
+    singlePrimaryTpId: string | null;
+}): TreeNode[] {
+    const {
+        seq,
+        stepIndex,
+        remainingTps,
+        mainSelfAssertedTpId,
+        dcNodes,
+        vtpNodes,
+        getCtsForTp,
+        orphanCts,
+        singlePrimaryTpId,
+    } = params;
 
-        // Skip validation TPs - they'll be nested under the main TP
-        if (validationTpIds.has(tp)) continue;
+    const nodes: TreeNode[] = [];
 
-        // Check if this is the main SelfAsserted TP
-        const isMainSelfAsserted = mainSelfAssertedTp && mainSelfAssertedTp.id === tp;
-
-        // Check if this TP has nested CTs
-        const nestedCts = tpToCts.get(tp);
+    for (const tp of remainingTps) {
+        const isMainSelfAsserted = mainSelfAssertedTpId === tp;
         const tpChildren: TreeNode[] = [];
 
-        // If this is the main SelfAsserted TP, nest DCs under it
-        if (isMainSelfAsserted && dcNodes.length > 0) {
+        if (isMainSelfAsserted) {
             tpChildren.push(...dcNodes);
+            tpChildren.push(...vtpNodes);
         }
 
-        // If this is the main SelfAsserted TP, nest validation TPs under it
-        if (isMainSelfAsserted && step.validationTechnicalProfiles && step.validationTechnicalProfiles.length > 0) {
-            for (const vtpId of step.validationTechnicalProfiles) {
-                // Get nested CTs for this validation TP
-                const vtpNestedCts = tpToCts.get(vtpId);
-                const vtpChildren: TreeNode[] = [];
-
-                if (vtpNestedCts && vtpNestedCts.length > 0) {
-                    for (const ctId of vtpNestedCts) {
-                        vtpChildren.push({
-                            id: `vtp-ct-${step.sequenceNumber}-${vtpId}-${ctId}`,
-                            label: ctId,
-                            type: "transformation",
-                            stepIndex,
-                            metadata: {
-                                parentTechnicalProfileId: vtpId,
-                            },
-                        });
-                    }
-                }
-
-                tpChildren.push({
-                    id: `vtp-${step.sequenceNumber}-${vtpId}`,
-                    label: vtpId,
-                    type: "technicalProfile", // Show as regular TP, not special validation node
-                    stepIndex,
-                    children: vtpChildren.length > 0 ? vtpChildren : undefined,
-                });
-            }
+        for (const ctId of getCtsForTp(tp)) {
+            tpChildren.push({
+                id: `tp-ct-${seq}-${tp}-${ctId}`,
+                label: ctId,
+                type: "transformation",
+                stepIndex,
+                metadata: { parentTechnicalProfileId: tp },
+            });
         }
 
-        // Add nested CTs
-        if (nestedCts && nestedCts.length > 0) {
-            for (const ctId of nestedCts) {
-                tpChildren.push({
-                    id: `tp-ct-${step.sequenceNumber}-${tp}-${ctId}`,
-                    label: ctId,
-                    type: "transformation",
-                    stepIndex,
-                    metadata: {
-                        parentTechnicalProfileId: tp,
-                    },
-                });
-            }
-        }
-
-        // If this is the single primary TP, also nest orphan CTs under it
-        // This handles OpenIdConnect and similar flows where CTs don't have explicit TP context
-        if (tp === singlePrimaryTpId && orphanCts.length > 0) {
+        if (tp === singlePrimaryTpId) {
             for (const ctId of orphanCts) {
                 tpChildren.push({
-                    id: `tp-ct-${step.sequenceNumber}-${tp}-${ctId}`,
+                    id: `tp-ct-${seq}-${tp}-${ctId}`,
                     label: ctId,
                     type: "transformation",
                     stepIndex,
-                    metadata: {
-                        parentTechnicalProfileId: tp,
-                    },
+                    metadata: { parentTechnicalProfileId: tp },
                 });
             }
         }
 
-        children.push({
-            id: `tp-${step.sequenceNumber}-${tp}`,
+        nodes.push({
+            id: `tp-${seq}-${tp}`,
             label: tp,
             type: "technicalProfile",
             stepIndex,
@@ -331,45 +393,90 @@ export function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
         });
     }
 
-    // Add DC nodes at step level if there's no main SelfAsserted TP to nest them under
-    if (!mainSelfAssertedTp && dcNodes.length > 0) {
-        children.push(...dcNodes);
+    return nodes;
+}
+
+/**
+ * Builds a tree node for a single step using ownership-chain deduplication.
+ *
+ * Every component (TP, CT) is assigned exactly one parent via a strict
+ * ownership priority:
+ *   1. DisplayControl actions own their TPs and those TPs' CTs
+ *   2. ValidationTPs own themselves and their CTs
+ *   3. Remaining TPs own their unassigned CTs (via technicalProfileDetails)
+ *   4. Orphan CTs (no TP context) appear at step level — or under the
+ *      single remaining TP when exactly one exists
+ *
+ * If a main SelfAsserted TP is detected, DC nodes and VTP nodes are nested
+ * under it; otherwise they appear at step level.
+ */
+export function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
+    const children: TreeNode[] = [];
+    const seq = step.sequenceNumber;
+
+    const isHrdStep = isHomeRealmDiscoveryStep(step);
+
+    if (isHrdStep) {
+        children.push(buildHrdNode(seq, stepIndex, step));
     }
 
-    // Add validation TPs at step level if there's no main SelfAsserted TP
-    if (!mainSelfAssertedTp && step.validationTechnicalProfiles && step.validationTechnicalProfiles.length > 0) {
-        for (const vtpId of step.validationTechnicalProfiles) {
-            // Skip if already shown under DC
-            if (displayControlTpIds.has(vtpId)) continue;
+    const tpToCts = createTpToCtsMap(step);
+    const getCtsForTp = (tpId: string): string[] => tpToCts.get(tpId) ?? [];
 
+    const mainSelfAssertedTp = step.technicalProfileDetails?.find(
+        (tp) => tp.providerType === "SelfAssertedAttributeProvider",
+    );
+
+    const owned = new Set<string>();
+
+    const dcNodes = buildDisplayControlNodes({ step, seq, stepIndex, getCtsForTp, owned });
+    const vtpNodes = buildValidationTpNodes({ step, seq, stepIndex, getCtsForTp, owned });
+
+    const remainingTps = getRemainingTechnicalProfiles({ step, owned, isHrdStep });
+
+    for (const tp of remainingTps) {
+        for (const ctId of getCtsForTp(tp)) {
+            owned.add(ctId);
+        }
+    }
+
+    const orphanCts = step.claimsTransformations.filter((ct) => !owned.has(ct));
+    const singlePrimaryTpId = remainingTps.length === 1 ? remainingTps[0] : null;
+
+    const remainingTpNodes = buildRemainingTpNodes({
+        seq,
+        stepIndex,
+        remainingTps,
+        mainSelfAssertedTpId: mainSelfAssertedTp?.id,
+        dcNodes,
+        vtpNodes,
+        getCtsForTp,
+        orphanCts,
+        singlePrimaryTpId,
+    });
+    children.push(...remainingTpNodes);
+
+    if (!mainSelfAssertedTp) {
+        if (dcNodes.length > 0) children.push(...dcNodes);
+        children.push(...vtpNodes);
+    }
+
+    if (!singlePrimaryTpId) {
+        for (const ct of orphanCts) {
             children.push({
-                id: `vtp-${step.sequenceNumber}-${vtpId}`,
-                label: vtpId,
-                type: "technicalProfile",
+                id: `ct-${seq}-${ct}`,
+                label: ct,
+                type: "transformation",
                 stepIndex,
             });
         }
     }
 
-    // Add claims transformations as children (but not if already shown under DisplayControl,
-    // under a TP from technicalProfileDetails, or nested under the single primary TP)
-    for (const ct of step.claimsTransformations) {
-        if (displayControlCtIds.has(ct)) continue;
-        if (ctsWithParentTp.has(ct)) continue;
-        // Skip if we already nested orphan CTs under the single primary TP
-        if (singlePrimaryTpId && orphanCts.includes(ct)) continue;
-
-        children.push({
-            id: `ct-${step.sequenceNumber}-${ct}`,
-            label: ct,
-            type: "transformation",
-            stepIndex,
-        });
-    }
+    const primaryTp = step.technicalProfiles[0] || step.actionHandler || "Unknown";
 
     return {
-        id: `step-${step.sequenceNumber}`,
-        label: `Step ${step.stepOrder}`,
+        id: `step-${seq}`,
+        label: `Step ${step.stepOrder} — ${primaryTp}`,
         type: "step",
         step,
         stepIndex,
@@ -377,6 +484,8 @@ export function buildStepNode(step: TraceStep, stepIndex: number): TreeNode {
             result: step.result,
             isInteractive: step.isInteractiveStep,
             isHrdStep,
+            isFinalStep: step.isFinalStep,
+            isVerificationStep: step.isVerificationStep,
             duration: step.duration,
             tpCount: step.technicalProfiles.length,
             ctCount: step.claimsTransformations.length,

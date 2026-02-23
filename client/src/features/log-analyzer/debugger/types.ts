@@ -45,6 +45,8 @@ export interface TreeNodeMetadata {
     result?: TraceStep["result"];
     isInteractive?: boolean;
     isHrdStep?: boolean;
+    isFinalStep?: boolean;
+    isVerificationStep?: boolean;
     duration?: number;
     tpCount?: number;
     ctCount?: number;

@@ -7,6 +7,7 @@ import { useDebuggerContext } from "../debugger-context";
 import type { TreeNode, Selection } from "../types";
 import { buildTreeStructure } from "./tree-builder";
 import { TreeNodeRow } from "./tree-node";
+import { useTreeKeyboard } from "./use-tree-keyboard";
 
 // ============================================================================
 // Helpers
@@ -111,6 +112,14 @@ export function JourneyTree() {
         setExpandedNodes(new Set());
     };
 
+    const expandMultiple = (nodeIds: string[]) => {
+        setExpandedNodes((prev) => {
+            const next = new Set(prev);
+            for (const id of nodeIds) next.add(id);
+            return next;
+        });
+    };
+
     // ---- Selection dispatch ----
 
     const handleNodeSelect = (node: TreeNode) => {
@@ -142,10 +151,20 @@ export function JourneyTree() {
         }
     };
 
+    // ---- Keyboard navigation ----
+
+    const { tabbableNodeId, handleKeyDown, handleFocus } = useTreeKeyboard({
+        tree,
+        expandedIds: expandedNodes,
+        onToggleExpand: toggleExpanded,
+        onSelect: handleNodeSelect,
+        onExpandMultiple: expandMultiple,
+    });
+
     // ---- Recursive renderer (shared across all TreeNodeRow instances) ----
 
     const renderChildren = (children: TreeNode[], depth: number) =>
-        children.map((child) => (
+        children.map((child, index) => (
             <TreeNodeRow
                 key={child.id}
                 node={child}
@@ -155,6 +174,9 @@ export function JourneyTree() {
                 onSelect={() => handleNodeSelect(child)}
                 onToggleExpand={() => toggleExpanded(child.id)}
                 renderChildren={renderChildren}
+                siblingCount={children.length}
+                positionInSet={index + 1}
+                tabbableNodeId={tabbableNodeId}
             />
         ));
 
@@ -179,8 +201,14 @@ export function JourneyTree() {
 
             {/* Tree content */}
             <ScrollArea className="flex-1">
-                <div className="py-1">
-                    {tree.map((node) => (
+                <div
+                    role="tree"
+                    aria-label="Journey tree"
+                    onKeyDown={handleKeyDown}
+                    onFocus={handleFocus}
+                    className="py-1"
+                >
+                    {tree.map((node, index) => (
                         <TreeNodeRow
                             key={node.id}
                             node={node}
@@ -190,6 +218,9 @@ export function JourneyTree() {
                             onSelect={() => handleNodeSelect(node)}
                             onToggleExpand={() => toggleExpanded(node.id)}
                             renderChildren={renderChildren}
+                            siblingCount={tree.length}
+                            positionInSet={index + 1}
+                            tabbableNodeId={tabbableNodeId}
                         />
                     ))}
                 </div>
