@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import * as scroll from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
 import { useDebuggerContext } from "../debugger-context";
 import type { TreeNode, Selection } from "../types";
@@ -186,9 +186,7 @@ export function JourneyTree() {
         <div className="flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Journey
-                </h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Journey</h3>
                 <div className="flex items-center gap-1">
                     <button type="button" title="Expand all" onClick={expandAll}>
                         <ArrowsOutIcon className="w-3.5 h-3.5 text-muted-foreground" />
@@ -200,31 +198,35 @@ export function JourneyTree() {
             </div>
 
             {/* Tree content */}
-            <ScrollArea className="flex-1">
-                <div
-                    role="tree"
-                    aria-label="Journey tree"
-                    onKeyDown={handleKeyDown}
-                    onFocus={handleFocus}
-                    className="py-1"
-                >
-                    {tree.map((node, index) => (
-                        <TreeNodeRow
-                            key={node.id}
-                            node={node}
-                            depth={0}
-                            isSelected={isNodeSelected(node, selection)}
-                            isExpanded={expandedNodes.has(node.id)}
-                            onSelect={() => handleNodeSelect(node)}
-                            onToggleExpand={() => toggleExpanded(node.id)}
-                            renderChildren={renderChildren}
-                            siblingCount={tree.length}
-                            positionInSet={index + 1}
-                            tabbableNodeId={tabbableNodeId}
-                        />
-                    ))}
-                </div>
-            </ScrollArea>
+            <scroll.Root className="flex-1">
+                <scroll.Viewport>
+                    <scroll.Content>
+                        <div
+                            role="tree"
+                            aria-label="Journey tree"
+                            onKeyDown={handleKeyDown}
+                            onFocus={handleFocus}
+                        >
+                            {tree.map((node, index) => (
+                                <TreeNodeRow
+                                    key={node.id}
+                                    node={node}
+                                    depth={0}
+                                    isSelected={isNodeSelected(node, selection)}
+                                    isExpanded={expandedNodes.has(node.id)}
+                                    onSelect={() => handleNodeSelect(node)}
+                                    onToggleExpand={() => toggleExpanded(node.id)}
+                                    renderChildren={renderChildren}
+                                    siblingCount={tree.length}
+                                    positionInSet={index + 1}
+                                    tabbableNodeId={tabbableNodeId}
+                                />
+                            ))}
+                        </div>
+                    </scroll.Content>
+                </scroll.Viewport>
+                <scroll.Scrollbar orientation="vertical" />
+            </scroll.Root>
 
             {/* Footer */}
             <div className="flex items-center justify-between px-3 py-1.5 border-t border-border text-[10px] text-muted-foreground shrink-0">

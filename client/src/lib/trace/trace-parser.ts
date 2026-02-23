@@ -5,16 +5,8 @@
  * Uses the interpreter pattern with specialized handlers for each B2C handler type.
  */
 
-import type {
-    Clip,
-    ClipsArray,
-    HeadersContent,
-} from "@/types/journey-recorder";
-import type {
-    TraceLogInput,
-    TraceParseResult,
-    TraceStep,
-} from "@/types/trace";
+import type { Clip, ClipsArray, HeadersContent } from "@/types/journey-recorder";
+import type { TraceLogInput, TraceParseResult, TraceStep } from "@/types/trace";
 
 import { TraceStepBuilder } from "./domain/trace-step-builder";
 import { JourneyStack } from "./domain/journey-stack";
@@ -71,14 +63,12 @@ export class TraceParser {
 
         if (traceLogs.length === 0) {
             return this.createEmptyResult(
-                "No Event:AUTH, Event:API, Event:SELFASSERTED, or Event:ClaimsExchange logs found."
+                "No Event:AUTH, Event:API, Event:SELFASSERTED, or Event:ClaimsExchange logs found.",
             );
         }
 
         // Sort logs by timestamp
-        const sortedLogs = [...traceLogs].sort(
-            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
-        );
+        const sortedLogs = [...traceLogs].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
         this.extractMainJourney(sortedLogs);
 
@@ -87,7 +77,7 @@ export class TraceParser {
         }
 
         this.finalizeCurrentStep();
-        
+
         // Run post-processors for cross-step analysis (duration calculation, HRD resolution, etc.)
         const postProcessingResult = runPostProcessors(this.state.traceSteps);
         if (!postProcessingResult.success) {
@@ -171,23 +161,14 @@ export class TraceParser {
         }
 
         if (aggregation.fatalException) {
-            this.handleFatalException(
-                aggregation.fatalException.Exception.Message,
-                log.timestamp,
-                log.id
-            );
+            this.handleFatalException(aggregation.fatalException.Exception.Message, log.timestamp, log.id);
         }
     }
 
     /**
      * Processes a single clip group through the interpreter system.
      */
-    private processClipGroup(
-        group: ClipGroup,
-        timestamp: Date,
-        eventType: EventType,
-        logId: string
-    ): void {
+    private processClipGroup(group: ClipGroup, timestamp: Date, eventType: EventType, logId: string): void {
         const interpreter = this.interpreterRegistry.getInterpreter(group.handlerName);
 
         if (!interpreter) {
@@ -202,13 +183,8 @@ export class TraceParser {
         } catch (error) {
             // Log error but don't fail the entire parse - continue with remaining groups
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.warn(
-                `[TraceParser] Interpreter ${group.handlerName} failed for log ${logId}:`,
-                errorMessage
-            );
-            this.state.errors.push(
-                `Interpreter error in ${group.handlerName}: ${errorMessage}`
-            );
+            console.warn(`[TraceParser] Interpreter ${group.handlerName} failed for log ${logId}:`, errorMessage);
+            this.state.errors.push(`Interpreter error in ${group.handlerName}: ${errorMessage}`);
         }
     }
 
@@ -219,14 +195,16 @@ export class TraceParser {
         group: ClipGroup,
         timestamp: Date,
         eventType: EventType,
-        logId: string
+        logId: string,
     ): InterpretContext {
         // Create a temporary builder for the interpreter to populate
-        const tempBuilder = this.state.currentStepBuilder ?? TraceStepBuilder.create()
-            .withSequence(this.state.sequenceNumber)
-            .withTimestamp(timestamp)
-            .withLogId(logId)
-            .withEventType(eventType);
+        const tempBuilder =
+            this.state.currentStepBuilder ??
+            TraceStepBuilder.create()
+                .withSequence(this.state.sequenceNumber)
+                .withTimestamp(timestamp)
+                .withLogId(logId)
+                .withEventType(eventType);
 
         return {
             clip: group.clips[0],
@@ -261,11 +239,11 @@ export class TraceParser {
         if (result.createStep) {
             // Finalize current step if it has a valid stepOrder
             this.finalizeCurrentStep();
-            
+
             // Clear the statebag but keep claims - B2C statebag is step-scoped
             // but claims (Complex-CLMS) persist across steps
             this.state.statebag.clearStatebagKeepClaims();
-            
+
             // Now apply statebag updates for this new step
             if (result.statebagUpdates) {
                 this.state.statebag.applyUpdates(result.statebagUpdates);
@@ -274,7 +252,7 @@ export class TraceParser {
             if (result.claimsUpdates) {
                 this.state.statebag.applyClaimsUpdates(result.claimsUpdates);
             }
-            
+
             // Create the new step builder with the data from the interpreter
             const context = this.state.journeyStack.current();
             this.state.currentStepBuilder = TraceStepBuilder.create()
@@ -286,7 +264,7 @@ export class TraceParser {
                 .withOrchStep(context.lastOrchStep)
                 .withActionHandler(result.actionHandler ?? "")
                 .calculateGraphNodeId();
-            
+
             // Apply any error from the result
             if (result.stepResult === "Error" && result.error) {
                 this.state.currentStepBuilder.withError(result.error, result.errorHResult);
@@ -453,10 +431,9 @@ export class TraceParser {
         const stepKey = `${step.journeyContextId}-${step.stepOrder}`;
         const lastTimestamp = this.state.lastStepTimestamps.get(stepKey);
         const currentTimestamp = step.timestamp.getTime();
-        
+
         // Steps more than DEDUP_THRESHOLD_MS apart are considered separate interactions
-        const isNewInteraction = !lastTimestamp || 
-            (currentTimestamp - lastTimestamp) > DEDUP_THRESHOLD_MS;
+        const isNewInteraction = !lastTimestamp || currentTimestamp - lastTimestamp > DEDUP_THRESHOLD_MS;
 
         if (this.state.processedStepKeys.has(stepKey) && !isNewInteraction) {
             this.mergeWithExistingStep(step);
@@ -475,9 +452,7 @@ export class TraceParser {
      */
     private mergeWithExistingStep(step: TraceStep): void {
         const existing = this.state.traceSteps.find(
-            (s) =>
-                s.journeyContextId === step.journeyContextId &&
-                s.stepOrder === step.stepOrder
+            (s) => s.journeyContextId === step.journeyContextId && s.stepOrder === step.stepOrder,
         );
 
         if (!existing) return;
@@ -494,7 +469,7 @@ export class TraceParser {
                 existing.technicalProfileDetails = [];
             }
             for (const detail of step.technicalProfileDetails) {
-                if (!existing.technicalProfileDetails.some(d => d.id === detail.id)) {
+                if (!existing.technicalProfileDetails.some((d) => d.id === detail.id)) {
                     existing.technicalProfileDetails.push(detail);
                 }
             }
@@ -511,9 +486,7 @@ export class TraceParser {
         this.state.errors.push(message);
 
         if (this.state.currentStepBuilder) {
-            this.state.currentStepBuilder
-                .withError(message)
-                .withResult("Error");
+            this.state.currentStepBuilder.withError(message).withResult("Error");
         }
 
         const context = this.state.journeyStack.current();
