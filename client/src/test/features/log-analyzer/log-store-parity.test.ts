@@ -7,11 +7,13 @@ const {
     getLogsForFlowMock,
     parseTraceMock,
     logsToTraceInputMock,
+    analyzeAllFlowsMock,
 } = vi.hoisted(() => ({
     runTwoPhaseLogFetchOrchestrationMock: vi.fn(),
     getLogsForFlowMock: vi.fn(),
     parseTraceMock: vi.fn(),
     logsToTraceInputMock: vi.fn((logs: LogRecord[]) => logs),
+    analyzeAllFlowsMock: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/features/log-analyzer/services/log-fetch-orchestration-service", () => ({
@@ -22,6 +24,10 @@ vi.mock("@/lib/trace", () => ({
     getLogsForFlow: getLogsForFlowMock,
     parseTrace: parseTraceMock,
     logsToTraceInput: logsToTraceInputMock,
+}));
+
+vi.mock("@/features/log-analyzer/services/background-flow-enrichment-service", () => ({
+    analyzeAllFlows: analyzeAllFlowsMock,
 }));
 
 let useLogStore: typeof import("../../../stores/log-store").useLogStore;
@@ -93,13 +99,18 @@ beforeEach(async () => {
     });
 
     logsToTraceInputMock.mockImplementation((logs: LogRecord[]) => logs);
+    analyzeAllFlowsMock.mockResolvedValue(undefined);
     parseTraceMock.mockReturnValue({
-        traceSteps: [{ nodeId: "step-1", sequenceNumber: 1 }],
+        traceSteps: [
+            { nodeId: "step-1", sequenceNumber: 0, result: "Success" },
+            { nodeId: "step-2", sequenceNumber: 1, result: "Success" },
+        ],
         executionMap: {},
         mainJourneyId: "B2C_1A_TEST",
         errors: [],
         finalStatebag: {},
         finalClaims: {},
+        sessions: [],
     });
 });
 

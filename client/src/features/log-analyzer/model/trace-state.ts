@@ -1,5 +1,5 @@
 import type { LogRecord } from "@/types/logs";
-import type { TraceExecutionMap, TraceStep, UserFlow } from "@/types/trace";
+import type { TraceExecutionMap, TraceStep, UserFlow, SessionInfo } from "@/types/trace";
 
 export interface TraceState {
     traceSteps: TraceStep[];
@@ -15,6 +15,7 @@ export interface TraceState {
     selectedFlow: UserFlow | null;
     searchText: string;
     traceLoading: boolean;
+    sessions: SessionInfo[];
 }
 
 export interface TraceActions {
@@ -43,4 +44,5 @@ export const initialTraceState: TraceState = {
     selectedFlow: null,
     searchText: "",
     traceLoading: false,
+    sessions: [],
 };

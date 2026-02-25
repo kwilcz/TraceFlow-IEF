@@ -5,13 +5,6 @@
  */
 
 export {
-    ClipAggregator,
-    createClipAggregator,
-    type ClipGroup,
-    type ClipAggregationResult,
-} from "./clip-aggregator";
-
-export {
     StatebagAccumulator,
     createStatebagAccumulator,
     type AccumulatedState,

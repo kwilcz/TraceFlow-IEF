@@ -436,6 +436,21 @@ export interface TraceLogInput {
 }
 
 /**
+ * Information about a session boundary detected during parsing.
+ * Multiple sessions can exist within a single flow when the user
+ * navigates back with the browser, causing B2C to start a new
+ * authentication session with the same correlationId.
+ */
+export interface SessionInfo {
+    /** Zero-based session index */
+    sessionIndex: number;
+    /** When this session started (timestamp of the first Event:AUTH log) */
+    startTimestamp: Date;
+    /** Number of trace steps produced by this session */
+    stepCount: number;
+}
+
+/**
  * Result of trace parsing.
  */
 export interface TraceParseResult {
@@ -453,6 +468,8 @@ export interface TraceParseResult {
     finalStatebag: Record<string, string>;
     /** The final claims state */
     finalClaims: Record<string, string>;
+    /** Session boundaries detected during parsing (1 session = normal, 2+ = browser back detected) */
+    sessions: SessionInfo[];
 }
 
 /**

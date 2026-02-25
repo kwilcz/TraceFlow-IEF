@@ -3,7 +3,7 @@ import type { LogRecord } from "@/types/logs";
 import type { UserFlow } from "@/types/trace";
 import type { TraceState } from "@/features/log-analyzer/model/trace-state";
 import { initialTraceState } from "@/features/log-analyzer/model/trace-state";
-import { generateTraceStateFromLogs } from "@/features/log-analyzer/services/trace-bootstrap-service";
+import { generateTraceStateFromLogs, enrichUserFlow } from "@/features/log-analyzer/services/trace-bootstrap-service";
 
 export interface SelectedLogOrchestrationResult {
     selectedFlow: UserFlow | null;
@@ -28,7 +28,7 @@ export function resolveSelectionFromLog(
         const flowLogs = getLogsForFlow(logs, matchingFlow.id, userFlows);
         const traceState = generateTraceStateFromLogs(flowLogs);
         return {
-            selectedFlow: matchingFlow,
+            selectedFlow: enrichUserFlow(matchingFlow, traceState),
             tracePatch: traceState,
         };
     }
@@ -68,7 +68,7 @@ export function resolveSelectionFromFlow(
 
     return {
         tracePatch,
-        selectedFlow: flow,
+        selectedFlow: enrichUserFlow(flow, tracePatch),
         selectedLog,
     };
 }

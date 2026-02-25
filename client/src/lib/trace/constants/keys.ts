@@ -12,6 +12,8 @@
 export enum ClipKind {
     /** HTTP headers and correlation information */
     Headers = "Headers",
+    /** Log transition information */
+    Transition = "Transition",
     /** Handler action being executed */
     Action = "Action",
     /** Predicate evaluation */

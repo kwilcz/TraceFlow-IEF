@@ -9,9 +9,14 @@ import {
     resolveSelectionFromFlow,
     resolveSelectionFromLog,
 } from "@/features/log-analyzer/services/log-selection-service";
-import { generateTraceStateFromLogs } from "@/features/log-analyzer/services/trace-bootstrap-service";
+import { generateTraceStateFromLogs, enrichUserFlow } from "@/features/log-analyzer/services/trace-bootstrap-service";
+import { analyzeAllFlows, type FlowAnalysisCache } from "@/features/log-analyzer/services/background-flow-enrichment-service";
 
 let pendingComputeId: symbol | null = null;
+/** Module-level trace cache — stores full parse results per flow for instant switching. */
+let traceCache = new Map<string, FlowAnalysisCache>();
+/** AbortController for background analysis — cancelled on new fetchLogs/reset. */
+let backgroundAbort: AbortController | null = null;
 
 const initialState: Omit<LogStore, keyof LogStoreActions> & TraceState = {
     credentials: {
@@ -58,7 +63,13 @@ export const useLogStore = create<ExtendedLogStore>()(
                         }
                     }
                 },
-                reset: () => set({ ...initialState }),
+                reset: () => {
+                    backgroundAbort?.abort();
+                    backgroundAbort = null;
+                    traceCache.clear();
+                    pendingComputeId = null;
+                    set({ ...initialState });
+                },
                 fetchLogs: async ({ applicationId, apiKey, maxRows, timespan }: FetchLogsArgs) => {
                     const { searchText } = get();
 
@@ -71,6 +82,10 @@ export const useLogStore = create<ExtendedLogStore>()(
                     });
 
                     try {
+                        // Cancel any previous background analysis
+                        backgroundAbort?.abort();
+                        traceCache.clear();
+
                         const { processed, selectedFlow, selectedLog, userFlows, effectiveMaxRows } = await runTwoPhaseLogFetchOrchestration({
                             args: {
                                 applicationId,
@@ -91,17 +106,44 @@ export const useLogStore = create<ExtendedLogStore>()(
                             selectedFlow,
                         });
 
-                        // Auto-generate trace for the first flow
+                        // Inline trace for selected flow (immediate UX)
+                        let currentFlows = userFlows;
                         if (selectedFlow && processed.length > 0) {
                             try {
                                 const flowLogs = getLogsForFlow(processed, selectedFlow.id, userFlows);
                                 const traceState = generateTraceStateFromLogs(flowLogs);
-                                set(traceState);
+                                const enrichedFlow = enrichUserFlow(selectedFlow, traceState);
+                                currentFlows = userFlows.map(f => f.id === enrichedFlow.id ? enrichedFlow : f);
+                                set({ ...traceState, selectedFlow: enrichedFlow, userFlows: currentFlows });
+
+                                // Cache the selected flow's result
+                                traceCache.set(selectedFlow.id, { traceState, enrichedFlow });
                             } catch (traceError) {
                                 const message = traceError instanceof Error ? traceError.message : "Trace generation failed";
                                 set({ traceErrors: [message] });
                             }
                         }
+
+                        // Start background analysis for ALL flows (fire-and-forget)
+                        backgroundAbort = new AbortController();
+                        analyzeAllFlows(
+                            processed,
+                            userFlows,
+                            traceCache,
+                            (flowId, result) => {
+                                // Progressive update: replace the enriched flow in the store
+                                const state = get();
+                                const updatedFlows = state.userFlows.map(f =>
+                                    f.id === flowId ? result.enrichedFlow : f,
+                                );
+                                // Also update selectedFlow if it matches
+                                const updatedSelected = state.selectedFlow?.id === flowId
+                                    ? result.enrichedFlow
+                                    : state.selectedFlow;
+                                set({ userFlows: updatedFlows, selectedFlow: updatedSelected });
+                            },
+                            backgroundAbort.signal,
+                        );
                     } catch (error) {
                         const message = error instanceof Error ? error.message : "Unable to fetch logs";
                         set({ error: message });
@@ -171,6 +213,9 @@ export const useLogStore = create<ExtendedLogStore>()(
                 },
 
                 clearTrace: () => {
+                    backgroundAbort?.abort();
+                    backgroundAbort = null;
+                    traceCache.clear();
                     set({ ...initialTraceState });
                 },
 
@@ -190,12 +235,27 @@ export const useLogStore = create<ExtendedLogStore>()(
                         return;
                     }
 
+                    // Check cache first — instant switch if available
+                    const cached = traceCache.get(flow.id);
+                    if (cached) {
+                        pendingComputeId = null; // cancel any pending deferred compute
+                        const flowLogs = getLogsForFlow(logs, flow.id, userFlows);
+                        set({
+                            ...cached.traceState,
+                            selectedFlow: cached.enrichedFlow,
+                            selectedLog: flowLogs[0] ?? null,
+                            traceLoading: false,
+                        });
+                        return;
+                    }
+
+                    // Cache miss — fall back to deferred computation
                     const flowLogs = getLogsForFlow(logs, flow.id, userFlows);
 
                     pendingComputeId = Symbol();
                     const computeId = pendingComputeId;
 
-                    // Phase 1 — instant: visual state + loading flag (keep stale trace for smooth transition)
+                    // Phase 1 — instant: visual state + loading flag
                     set({
                         selectedFlow: flow,
                         selectedLog: flowLogs[0] ?? null,
@@ -204,14 +264,19 @@ export const useLogStore = create<ExtendedLogStore>()(
 
                     // Phase 2 — deferred: heavy trace computation
                     setTimeout(() => {
-                        if (pendingComputeId !== computeId) return; // stale — cancelled
+                        if (pendingComputeId !== computeId) return;
                         try {
                             const traceState = generateTraceStateFromLogs(flowLogs);
-                            set({ ...traceState, traceLoading: false });
+                            const enrichedFlow = enrichUserFlow(flow, traceState);
+                            const { userFlows: currentFlows } = get();
+                            const enrichedFlows = currentFlows.map(f => f.id === enrichedFlow.id ? enrichedFlow : f);
+
+                            // Cache for future instant switching
+                            traceCache.set(flow.id, { traceState, enrichedFlow });
+
+                            set({ ...traceState, traceLoading: false, selectedFlow: enrichedFlow, userFlows: enrichedFlows });
                         } catch (error) {
                             const message = error instanceof Error ? error.message : "Trace computation failed";
-                            // Reset only trace-specific fields — preserve userFlows,
-                            // selectedFlow and searchText so the flow picker stays usable.
                             set({
                                 traceSteps: [],
                                 executionMap: {},
@@ -223,6 +288,7 @@ export const useLogStore = create<ExtendedLogStore>()(
                                 finalClaims: {},
                                 traceErrors: [message],
                                 traceLoading: false,
+                                sessions: [],
                             });
                         }
                     }, 0);
