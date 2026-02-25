@@ -6,8 +6,8 @@ import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import { cn } from "@/lib/utils";
 import { transitionColors } from "@/lib/styles";
 
-const scrollAreaRootStyles = "relative overflow-hidden";
-const scrollAreaViewportStyles = "rounded-[inherit]";
+const scrollAreaRootStyles = "flex-1 h-full min-h-0 relative overflow-hidden";
+const scrollAreaViewportStyles = "h-full rounded-[inherit]";
 const scrollAreaContentStyles = "";
 const scrollBarBase = cn("flex touch-none select-none", transitionColors);
 const scrollBarVerticalStyles = "h-full w-2.5 border-l border-l-transparent p-px";

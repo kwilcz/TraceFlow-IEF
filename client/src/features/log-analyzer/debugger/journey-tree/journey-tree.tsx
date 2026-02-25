@@ -198,7 +198,7 @@ export function JourneyTree() {
             </div>
 
             {/* Tree content */}
-            <scroll.Root className="flex-1">
+            <scroll.Root>
                 <scroll.Viewport>
                     <scroll.Content>
                         <div
