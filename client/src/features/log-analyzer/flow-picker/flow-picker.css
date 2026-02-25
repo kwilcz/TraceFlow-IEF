@@ -1,8 +1,0 @@
-/* TODO: §4.1 — Selected row should be exempt from edge fade.
-   CSS mask-image applies uniformly and cannot exclude individual rows.
-   Options: Use IntersectionObserver to detect if selected row is near fade boundary
-   and apply opacity:1 override, or switch to per-row opacity fallback. */
-.flow-picker-scroll {
-    mask-image: linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%);
-    -webkit-mask-image: linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%);
-}
