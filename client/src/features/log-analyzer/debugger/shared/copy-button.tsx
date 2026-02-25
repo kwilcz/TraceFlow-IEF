@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from "react";
  * "Copied!" for 2 seconds, then reverts. No toast — the inline feedback
  * is sufficient and avoids sonner coupling.
  */
-export const CopyButton: React.FC<{ value: string; label?: string }> = ({ value, label }) => {
+export const CopyButton: React.FC<{ value: string; label?: string; className?: string }> = ({ value, label, className }) => {
     const [copied, setCopied] = useState(false);
     const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
     useEffect(() => () => clearTimeout(timerRef.current), []);
@@ -35,7 +35,7 @@ export const CopyButton: React.FC<{ value: string; label?: string }> = ({ value,
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-xs" onClick={handleCopy}>
+                <Button variant="ghost" size="icon-xs" onClick={handleCopy} className={className}>
                     {copied ? (
                         <CheckIcon className="text-success" />
                     ) : (
