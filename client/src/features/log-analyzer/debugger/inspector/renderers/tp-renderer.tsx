@@ -1,6 +1,13 @@
 import { GearIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import {
+    FlowNodeType,
+    type StepFlowData,
+    type TechnicalProfileFlowData,
+    type ClaimsTransformationFlowData,
+} from "@/types/flow-node";
+import { findChildNode } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorErrorBanner } from "../inspector-error-banner";
@@ -20,24 +27,36 @@ import { RawDataToggle } from "../raw-data-toggle";
 // ============================================================================
 
 interface TpRendererProps {
-    step: TraceStep;
+    stepNode: FlowNode;
     selection: Selection;
     dispatch: (action: SelectionAction) => void;
 }
 
-export function TpRenderer({ step, selection, dispatch }: TpRendererProps) {
+export function TpRenderer({ stepNode, selection, dispatch }: TpRendererProps) {
+    const stepData = stepNode.data as StepFlowData;
     const tpId = selection.itemId ?? "";
-    const tpDetail = step.technicalProfileDetails?.find((d) => d.id === tpId);
+    const tpNode = findChildNode(stepNode, FlowNodeType.TechnicalProfile, tpId);
+    const tpData = tpNode?.data as TechnicalProfileFlowData | undefined;
 
     // Convert claimsSnapshot to output claims format
-    const outputClaims = tpDetail?.claimsSnapshot
-        ? Object.entries(tpDetail.claimsSnapshot).map(([claimType, value]) => ({ claimType, value }))
+    const outputClaims = tpData?.claimsSnapshot
+        ? Object.entries(tpData.claimsSnapshot).map(([claimType, value]) => ({ claimType, value }))
         : undefined;
+
+    // Extract ClaimsTransformationFlowData from TP's CT children
+    const cts = (tpNode?.children
+        .filter((c) => c.type === FlowNodeType.ClaimsTransformation)
+        .map((c) => c.data as ClaimsTransformationFlowData)) ?? [];
+
+    // Build validation TP IDs from TP's nested TP children
+    const validationTps = tpNode?.children
+        .filter((c) => c.type === FlowNodeType.TechnicalProfile)
+        .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId) ?? [];
 
     // Breadcrumb segments
     const segments: BreadcrumbSegment[] = [
         {
-            label: `Step ${step.stepOrder}`,
+            label: `Step ${stepData.stepOrder}`,
             onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
         },
         { label: tpId },
@@ -49,17 +68,17 @@ export function TpRenderer({ step, selection, dispatch }: TpRendererProps) {
             <InspectorHeader
                 icon={<GearIcon className="w-4 h-4" />}
                 name={tpId}
-                result={step.result}
-                duration={step.duration}
-                statebag={step.statebagSnapshot}
+                result={stepData.result}
+                duration={stepData.duration}
+                statebag={stepNode.context.statebagSnapshot}
             />
 
             {/* 2. Error banner */}
-            {step.errorMessage && (
+            {stepData.errorMessage && (
                 <div className="px-3">
                     <InspectorErrorBanner
-                        message={step.errorMessage}
-                        hResult={step.errorHResult}
+                        message={stepData.errorMessage}
+                        hResult={stepData.errorHResult}
                     />
                 </div>
             )}
@@ -71,35 +90,35 @@ export function TpRenderer({ step, selection, dispatch }: TpRendererProps) {
 
             {/* 4. Metadata badges */}
             <div className="flex flex-wrap gap-1.5 px-3">
-                {tpDetail?.providerType && (
+                {tpData?.providerType && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {tpDetail.providerType}
+                        {tpData.providerType}
                     </Badge>
                 )}
-                {tpDetail?.protocolType && (
+                {tpData?.protocolType && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {tpDetail.protocolType}
+                        {tpData.protocolType}
                     </Badge>
                 )}
                 <Badge variant="outline" className="text-xs font-mono">
-                    Step {step.stepOrder}
+                    Step {stepData.stepOrder}
                 </Badge>
             </div>
 
             {/* 5. Provider details */}
-            {tpDetail && (
+            {tpData && (
                 <div className="px-3">
                     <ProviderDetailsSection
-                        providerType={tpDetail.providerType}
-                        protocolType={tpDetail.protocolType}
+                        providerType={tpData.providerType}
+                        protocolType={tpData.protocolType}
                     />
                 </div>
             )}
 
             {/* 6. Claims transformations list */}
-            {tpDetail?.claimsTransformations && tpDetail.claimsTransformations.length > 0 && (
+            {cts.length > 0 && (
                 <div className="px-3">
-                    <CtListSection claimsTransformations={tpDetail.claimsTransformations} />
+                    <CtListSection claimsTransformations={cts} />
                 </div>
             )}
 
@@ -109,20 +128,20 @@ export function TpRenderer({ step, selection, dispatch }: TpRendererProps) {
             </div>
 
             {/* 8. Validation TPs */}
-            {step.validationTechnicalProfiles && step.validationTechnicalProfiles.length > 0 && (
+            {validationTps.length > 0 && (
                 <div className="px-3">
-                    <ValidationTpsSection validationTps={step.validationTechnicalProfiles} />
+                    <ValidationTpsSection validationTps={validationTps} />
                 </div>
             )}
 
             {/* 9. Statebag */}
             <div className="px-3">
-                <StatebagSection statebag={step.statebagSnapshot} />
+                <StatebagSection statebag={stepNode.context.statebagSnapshot} />
             </div>
 
             {/* 10. Raw data */}
             <div className="px-3">
-                <RawDataToggle data={step} />
+                <RawDataToggle data={tpNode?.data ?? stepNode.data} />
             </div>
         </div>
     );

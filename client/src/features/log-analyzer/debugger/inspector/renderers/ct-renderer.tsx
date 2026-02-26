@@ -1,5 +1,12 @@
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import {
+    FlowNodeType,
+    type StepFlowData,
+    type ClaimsTransformationFlowData,
+    type TechnicalProfileFlowData,
+} from "@/types/flow-node";
+import { findChildNode, findParentNode } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorBreadcrumb } from "../inspector-breadcrumb";
@@ -15,37 +22,38 @@ import { RawDataToggle } from "../raw-data-toggle";
 // ============================================================================
 
 interface CtRendererProps {
-    step: TraceStep;
+    stepNode: FlowNode;
     selection: Selection;
     dispatch: (action: SelectionAction) => void;
 }
 
-export function CtRenderer({ step, selection, dispatch }: CtRendererProps) {
+export function CtRenderer({ stepNode, selection, dispatch }: CtRendererProps) {
+    const stepData = stepNode.data as StepFlowData;
     const ctId = selection.itemId ?? "";
 
-    // Find ctDetail: first in step-level, then in TP-level
-    const ctDetail =
-        step.claimsTransformationDetails.find((ct) => ct.id === ctId) ??
-        step.technicalProfileDetails
-            ?.flatMap((tp) => tp.claimsTransformations ?? [])
-            .find((ct) => ct.id === ctId);
+    // Find CT node recursively (could be under step or under a TP child)
+    const ctNode = findChildNode(stepNode, FlowNodeType.ClaimsTransformation, ctId);
+    const ctData = ctNode?.data as ClaimsTransformationFlowData | undefined;
 
-    // Find parent TP for breadcrumb
-    const parentTp = step.technicalProfileDetails?.find((tp) =>
-        tp.claimsTransformations?.some((ct) => ct.id === ctId),
-    );
+    // Find parent TP for breadcrumb — if CT's parent is a TP node
+    const parentNode = ctNode ? findParentNode(stepNode, ctNode) : null;
+    const parentTp =
+        parentNode?.type === FlowNodeType.TechnicalProfile
+            ? (parentNode.data as TechnicalProfileFlowData)
+            : null;
+    const parentTpId = parentTp?.technicalProfileId;
 
     // Build breadcrumb segments
     const segments: BreadcrumbSegment[] = [
         {
-            label: `Step ${step.stepOrder}`,
+            label: `Step ${stepData.stepOrder}`,
             onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
         },
     ];
-    if (parentTp) {
+    if (parentTpId) {
         segments.push({
-            label: parentTp.id,
-            onClick: () => dispatch({ type: "select-tp", stepIndex: selection.stepIndex, tpId: parentTp.id }),
+            label: parentTpId,
+            onClick: () => dispatch({ type: "select-tp", stepIndex: selection.stepIndex, tpId: parentTpId }),
         });
     }
     segments.push({ label: ctId });
@@ -56,8 +64,8 @@ export function CtRenderer({ step, selection, dispatch }: CtRendererProps) {
             <InspectorHeader
                 icon={<ArrowsLeftRightIcon className="w-4 h-4" />}
                 name={ctId}
-                result={step.result}
-                statebag={step.statebagSnapshot}
+                result={stepData.result}
+                statebag={stepNode.context.statebagSnapshot}
             />
 
             {/* 2. Breadcrumb */}
@@ -66,24 +74,24 @@ export function CtRenderer({ step, selection, dispatch }: CtRendererProps) {
             </div>
 
             {/* 3. Claims I/O */}
-            {ctDetail && (
+            {ctData && (
                 <div className="px-3">
                     <ClaimsIoSection
-                        inputClaims={ctDetail.inputClaims}
-                        inputParameters={ctDetail.inputParameters}
-                        outputClaims={ctDetail.outputClaims}
+                        inputClaims={[...ctData.inputClaims]}
+                        inputParameters={[...ctData.inputParameters]}
+                        outputClaims={[...ctData.outputClaims]}
                     />
                 </div>
             )}
 
             {/* 4. Statebag */}
             <div className="px-3">
-                <StatebagSection statebag={step.statebagSnapshot} />
+                <StatebagSection statebag={stepNode.context.statebagSnapshot} />
             </div>
 
             {/* 5. Raw data */}
             <div className="px-3">
-                <RawDataToggle data={step} />
+                <RawDataToggle data={ctNode?.data ?? stepNode.data} />
             </div>
         </div>
     );

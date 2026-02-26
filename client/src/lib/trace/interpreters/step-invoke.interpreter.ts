@@ -113,10 +113,6 @@ export class StepInvokeInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            selectableOptions: isInteractive ? selectableOptions : undefined,
-            technicalProfiles: technicalProfiles.length > 0 ? technicalProfiles : undefined,
-            technicalProfileDetails: initiatingExchange ? [initiatingExchange] : undefined,
-            isInteractive,
         });
     }
 

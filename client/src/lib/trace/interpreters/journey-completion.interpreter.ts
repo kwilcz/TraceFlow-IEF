@@ -61,7 +61,6 @@ export class JourneyCompletionInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles: technicalProfile ? [technicalProfile] : undefined,
         });
     }
 

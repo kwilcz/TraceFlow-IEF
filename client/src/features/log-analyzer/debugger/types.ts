@@ -1,4 +1,5 @@
-import type { TraceStep } from "@/types/trace";
+import type { StepResult } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
 
 // ============================================================================
 // Selection State
@@ -35,6 +36,7 @@ export type TreeNodeType =
     | "technicalProfile"
     | "transformation"
     | "hrd"
+    | "hrdOption"
     | "selectedOption"
     | "displayControl"
     | "dcTechnicalProfile"
@@ -42,11 +44,10 @@ export type TreeNodeType =
 
 /** Metadata carried by tree nodes for rendering badges and icons. */
 export interface TreeNodeMetadata {
-    result?: TraceStep["result"];
+    result?: StepResult;
     isInteractive?: boolean;
     isHrdStep?: boolean;
     isFinalStep?: boolean;
-    isVerificationStep?: boolean;
     duration?: number;
     tpCount?: number;
     ctCount?: number;
@@ -70,8 +71,8 @@ export interface TreeNode {
     label: string;
     type: TreeNodeType;
     children?: TreeNode[];
-    /** Reference to the full TraceStep (for step nodes). */
-    step?: TraceStep;
     stepIndex?: number;
+    /** The FlowNode this tree node was built from. */
+    flowNode?: FlowNode;
     metadata?: TreeNodeMetadata;
 }

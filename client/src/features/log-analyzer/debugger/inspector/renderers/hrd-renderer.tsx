@@ -1,6 +1,11 @@
 import { ShuffleAngularIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import {
+    FlowNodeType,
+    type StepFlowData,
+    type HomeRealmDiscoveryFlowData,
+} from "@/types/flow-node";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorBreadcrumb } from "../inspector-breadcrumb";
@@ -15,20 +20,26 @@ import { RawDataToggle } from "../raw-data-toggle";
 // ============================================================================
 
 interface HrdRendererProps {
-    step: TraceStep;
+    stepNode: FlowNode;
     selection: Selection;
     dispatch: (action: SelectionAction) => void;
 }
 
-export function HrdRenderer({ step, selection, dispatch }: HrdRendererProps) {
+export function HrdRenderer({ stepNode, selection, dispatch }: HrdRendererProps) {
+    const stepData = stepNode.data as StepFlowData;
+
+    // Find the HRD child node
+    const hrdNode = stepNode.children.find((c) => c.type === FlowNodeType.HomeRealmDiscovery);
+    const hrdData = hrdNode?.data as HomeRealmDiscoveryFlowData | undefined;
+
     return (
         <div className="space-y-3">
             {/* 1. Header */}
             <InspectorHeader
                 icon={<ShuffleAngularIcon className="w-4 h-4" />}
                 name="Home Realm Discovery"
-                result={step.result}
-                statebag={step.statebagSnapshot}
+                result={stepData.result}
+                statebag={stepNode.context.statebagSnapshot}
             />
 
             {/* 2. Breadcrumb */}
@@ -36,7 +47,7 @@ export function HrdRenderer({ step, selection, dispatch }: HrdRendererProps) {
                 <InspectorBreadcrumb
                     segments={[
                         {
-                            label: `Step ${step.stepOrder}`,
+                            label: `Step ${stepData.stepOrder}`,
                             onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
                         },
                         { label: "HRD" },
@@ -46,19 +57,19 @@ export function HrdRenderer({ step, selection, dispatch }: HrdRendererProps) {
 
             {/* 3. Metadata badges */}
             <div className="flex flex-wrap gap-1.5 px-3">
-                {step.uiSettings?.pageType && (
+                {hrdData?.uiSettings?.pageType && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {step.uiSettings.pageType}
+                        {hrdData.uiSettings.pageType}
                     </Badge>
                 )}
-                {step.uiSettings?.contentDefinition && (
+                {hrdData?.uiSettings?.contentDefinition && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {step.uiSettings.contentDefinition}
+                        {hrdData.uiSettings.contentDefinition}
                     </Badge>
                 )}
-                {step.uiSettings?.language && (
+                {hrdData?.uiSettings?.language && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {step.uiSettings.language}
+                        {hrdData.uiSettings.language}
                     </Badge>
                 )}
             </div>
@@ -66,19 +77,19 @@ export function HrdRenderer({ step, selection, dispatch }: HrdRendererProps) {
             {/* 4. Available providers */}
             <div className="px-3">
                 <AvailableProvidersSection
-                    providers={step.selectableOptions}
-                    selectedOption={step.selectedOption}
+                    providers={hrdData?.selectableOptions ?? []}
+                    selectedOption={hrdData?.selectedOption}
                 />
             </div>
 
             {/* 5. Statebag */}
             <div className="px-3">
-                <StatebagSection statebag={step.statebagSnapshot} />
+                <StatebagSection statebag={stepNode.context.statebagSnapshot} />
             </div>
 
             {/* 6. Raw data */}
             <div className="px-3">
-                <RawDataToggle data={step} />
+                <RawDataToggle data={hrdNode?.data ?? stepNode.data} />
             </div>
         </div>
     );

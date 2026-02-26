@@ -113,15 +113,11 @@ export type {
  */
 export type {
     StepResult,
-    TraceStep,
-    NodeExecutionStatus,
     TraceExecutionMap,
-    JourneyContext,
     TraceLogInput,
     TraceParseResult,
     ClaimsDiff,
 } from "./trace";
-export { computeClaimsDiff } from "./trace";
 
 /**
  * Arguments for fetching logs from Application Insights.

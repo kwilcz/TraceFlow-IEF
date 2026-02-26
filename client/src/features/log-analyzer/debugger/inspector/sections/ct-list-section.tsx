@@ -1,14 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { InspectorSection } from "../inspector-section";
 import { CopyButton } from "../../shared";
-import type { ClaimsTransformationDetail } from "@/types/trace";
+import type { ClaimsTransformationFlowData } from "@/types/flow-node";
 
 // ============================================================================
 // CT List Section — claims transformations with inline input/output claims
 // ============================================================================
 
 interface CtListSectionProps {
-    claimsTransformations: ClaimsTransformationDetail[];
+    claimsTransformations: ClaimsTransformationFlowData[];
 }
 
 export function CtListSection({ claimsTransformations }: CtListSectionProps) {
@@ -17,13 +17,13 @@ export function CtListSection({ claimsTransformations }: CtListSectionProps) {
     return (
         <InspectorSection title="Claims Transformations" count={claimsTransformations.length}>
             {claimsTransformations.map((ct) => (
-                <div key={ct.id} className="rounded-md border border-border p-2 mb-1.5 last:mb-0">
+                <div key={ct.transformationId} className="rounded-md border border-border p-2 mb-1.5 last:mb-0">
                     {/* CT Header */}
                     <div className="flex items-center justify-between">
                         <span className="text-xs font-mono text-cyan-700 dark:text-cyan-300 font-medium">
-                            {ct.id}
+                            {ct.transformationId}
                         </span>
-                        <CopyButton value={ct.id} label="CT ID" />
+                        <CopyButton value={ct.transformationId} label="CT ID" />
                     </div>
 
                     {/* Input Claims */}

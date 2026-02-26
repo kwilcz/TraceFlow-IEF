@@ -58,8 +58,6 @@ export function FlowStatusDot({
  * 2. `cancelled`  → Cancelled (warning)
  * 3. `completed`  → Completed (success)
  * 4. default      → Abandoned (warning)
- *
- * @reserved Phase 4+ inspector detail views
  */
 export function FlowStatusCell({
     flow,

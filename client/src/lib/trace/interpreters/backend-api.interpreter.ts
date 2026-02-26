@@ -48,7 +48,7 @@ export class BackendApiInterpreter extends BaseInterpreter {
     ] as const;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerName, handlerResult } = context;
+        const { handlerName, handlerResult, stepBuilder } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -69,13 +69,23 @@ export class BackendApiInterpreter extends BaseInterpreter {
         // This prevents HRD options from leaking to steps where a TP was definitively triggered.
         const hasTechnicalProfiles = technicalProfiles.length > 0;
 
+        // Apply directly to step builder
+        if (hasTechnicalProfiles) {
+            stepBuilder.clearSelectableOptions();
+            stepBuilder.addTechnicalProfiles(technicalProfiles);
+        }
+
+        for (const detail of technicalProfileDetails) {
+            stepBuilder.addTechnicalProfileDetail(detail);
+        }
+
+        for (const call of backendApiCalls) {
+            stepBuilder.addBackendApiCall(call);
+        }
+
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            backendApiCalls: backendApiCalls.length > 0 ? backendApiCalls : undefined,
-            technicalProfileDetails: technicalProfileDetails.length > 0 ? technicalProfileDetails : undefined,
-            technicalProfiles: hasTechnicalProfiles ? technicalProfiles : undefined,
-            clearSelectableOptions: hasTechnicalProfiles,
         });
     }
 

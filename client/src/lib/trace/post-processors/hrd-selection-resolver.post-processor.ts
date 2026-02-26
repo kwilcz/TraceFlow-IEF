@@ -23,9 +23,8 @@ export class HrdSelectionResolverPostProcessor extends BasePostProcessor {
     process(context: PostProcessorContext): PostProcessorResult {
         const { traceSteps } = context;
 
-        for (let i = 0; i < traceSteps.length - 1; i++) {
+        for (let i = 0; i < traceSteps.length; i++) {
             const currentStep = traceSteps[i];
-            const nextStep = traceSteps[i + 1];
 
             // Skip non-HRD steps (HRD steps have multiple selectable options)
             if (currentStep.selectableOptions.length < 2) {
@@ -41,29 +40,39 @@ export class HrdSelectionResolverPostProcessor extends BasePostProcessor {
                 continue;
             }
 
-            // Look at next step's triggered TP to find the match
-            // The next step should have exactly one TP that matches a selectableOption
-            this.resolveFromNextStep(currentStep, nextStep);
+            // First, check the current step's own TPs — when CTP resolves to one
+            // of the selectable options in the same step (e.g., CombinedSigninAndSignup
+            // flows where the TP is set within the same orchestration step)
+            if (this.resolveFromTechnicalProfiles(currentStep, currentStep)) {
+                continue;
+            }
+
+            // Fall back to the next step's triggered TP
+            const nextStep = traceSteps[i + 1];
+            if (nextStep) {
+                this.resolveFromTechnicalProfiles(currentStep, nextStep);
+            }
         }
 
         return this.success();
     }
 
     /**
-     * Attempts to resolve the selected option by matching next step's TPs
-     * against current step's selectable options.
+     * Attempts to resolve the selected option by matching a step's TPs
+     * against the current step's selectable options.
+     * Returns true if a match was found.
      */
-    private resolveFromNextStep(
+    private resolveFromTechnicalProfiles(
         currentStep: { selectableOptions: string[]; selectedOption?: string },
-        nextStep: { technicalProfiles: string[] }
-    ): void {
-        for (const tp of nextStep.technicalProfiles) {
+        sourceStep: { technicalProfiles: string[] }
+    ): boolean {
+        for (const tp of sourceStep.technicalProfiles) {
             if (currentStep.selectableOptions.includes(tp)) {
-                // Found the match - update selectedOption to actual TP ID
                 currentStep.selectedOption = tp;
-                return;
+                return true;
             }
         }
+        return false;
     }
 }
 

@@ -30,7 +30,7 @@ export class UiSettingsInterpreter extends BaseInterpreter {
     readonly handlerNames = [API_UI_MANAGER];
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, statebag } = context;
+        const { handlerResult, statebag, stepBuilder } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -47,10 +47,12 @@ export class UiSettingsInterpreter extends BaseInterpreter {
             return this.successNoOp({ statebagUpdates, claimsUpdates });
         }
 
+        // Apply UI settings directly to step builder
+        stepBuilder.withUiSettings(uiSettings);
+
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            uiSettings,
         });
     }
 

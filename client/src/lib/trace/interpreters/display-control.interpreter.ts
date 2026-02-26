@@ -96,11 +96,6 @@ export class DisplayControlInterpreter extends BaseInterpreter {
                     }
                 }
 
-                // Also add legacy single technicalProfileId if set
-                if (displayControlAction.technicalProfileId && !allTechnicalProfileIds.includes(displayControlAction.technicalProfileId)) {
-                    allTechnicalProfileIds.push(displayControlAction.technicalProfileId);
-                }
-
                 // Add all TPs to the step
                 if (allTechnicalProfileIds.length > 0) {
                     stepBuilder.addTechnicalProfiles(allTechnicalProfileIds);
@@ -114,8 +109,6 @@ export class DisplayControlInterpreter extends BaseInterpreter {
                 return this.successNoOp({
                     statebagUpdates,
                     claimsUpdates,
-                    technicalProfiles: allTechnicalProfileIds.length > 0 ? allTechnicalProfileIds : undefined,
-                    claimsTransformations: allClaimsTransformationDetails.length > 0 ? allClaimsTransformationDetails : undefined,
                 });
             }
         }
@@ -185,13 +178,9 @@ export class DisplayControlInterpreter extends BaseInterpreter {
             return null;
         }
 
-        // Set the legacy technicalProfileId to the first one for backward compatibility
-        const firstTechnicalProfileId = technicalProfiles.length > 0 ? technicalProfiles[0].technicalProfileId : undefined;
-
         return {
             displayControlId,
             action,
-            technicalProfileId: firstTechnicalProfileId,
             technicalProfiles: technicalProfiles.length > 0 ? technicalProfiles : undefined,
             resultCode,
             claimMappings: globalClaimMappings.length > 0 ? globalClaimMappings : undefined,

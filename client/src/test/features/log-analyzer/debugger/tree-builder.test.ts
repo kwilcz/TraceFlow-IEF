@@ -1,35 +1,159 @@
 import { describe, expect, it } from "vitest";
 import { buildStepNode, buildTreeStructure } from "@/features/log-analyzer/debugger/journey-tree/tree-builder";
-import type { TraceStep } from "@/types/trace";
 import type { TreeNode } from "@/features/log-analyzer/debugger/types";
+import type { FlowNode, FlowNodeContext, StepFlowData } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
+import type { StepResult, UiSettings } from "@/types/trace";
 
 // ============================================================================
-// Factory helper
+// Factory helpers
 // ============================================================================
 
-function makeTraceStep(overrides: Partial<TraceStep> = {}): TraceStep {
+const defaultContext: FlowNodeContext = {
+    timestamp: new Date("2024-01-01"),
+    sequenceNumber: 0,
+    logId: "",
+    eventType: "AUTH",
+    statebagSnapshot: {},
+    claimsSnapshot: {},
+};
+
+function makeFlowNode(overrides: Partial<FlowNode> & Pick<FlowNode, "id" | "type" | "data">): FlowNode {
     return {
-        sequenceNumber: 1,
-        timestamp: new Date("2026-01-01T00:00:00Z"),
-        logId: "log-1",
-        duration: 100,
-        eventType: "AUTH",
-        graphNodeId: "Main-Step1",
-        journeyContextId: "MainJourney",
-        currentJourneyName: "B2C_1A_signup_signin",
-        stepOrder: 1,
-        result: "Success",
-        statebagSnapshot: {},
-        claimsSnapshot: {},
-        technicalProfiles: [],
-        selectableOptions: [],
-        isInteractiveStep: false,
-        claimsTransformations: [],
-        claimsTransformationDetails: [],
-        displayControls: [],
-        displayControlActions: [],
+        name: overrides.id,
+        triggeredAtStep: 0,
+        lastStep: 0,
+        children: [],
+        context: defaultContext,
         ...overrides,
     };
+}
+
+function makeRootFlowNode(name: string, children: FlowNode[] = []): FlowNode {
+    return makeFlowNode({
+        id: "root",
+        name,
+        type: FlowNodeType.Root,
+        data: { type: FlowNodeType.Root, policyId: name },
+        children,
+    });
+}
+
+function makeSubJourneyFlowNode(journeyId: string, children: FlowNode[] = []): FlowNode {
+    return makeFlowNode({
+        id: `sj-${journeyId}`,
+        name: journeyId,
+        type: FlowNodeType.SubJourney,
+        data: { type: FlowNodeType.SubJourney, journeyId },
+        children,
+    });
+}
+
+function makeStepFlowNode(
+    stepIndex: number,
+    stepOrder: number,
+    overrides?: {
+        sequenceNumber?: number;
+        result?: StepResult;
+        duration?: number;
+        selectableOptions?: string[];
+        selectedOption?: string;
+        actionHandler?: string;
+        uiSettings?: UiSettings;
+        currentJourneyName?: string;
+        children?: FlowNode[];
+    },
+): FlowNode {
+    const seq = overrides?.sequenceNumber ?? stepIndex;
+    return makeFlowNode({
+        id: `step-${stepIndex}`,
+        type: FlowNodeType.Step,
+        name: `Step ${stepOrder}`,
+        triggeredAtStep: stepOrder,
+        lastStep: stepOrder,
+        context: {
+            ...defaultContext,
+            sequenceNumber: seq,
+        },
+        data: {
+            type: FlowNodeType.Step,
+            stepIndex,
+            stepOrder,
+            result: overrides?.result ?? "Success",
+            currentJourneyName: overrides?.currentJourneyName ?? "B2C_1A_signup_signin",
+            actionHandler: overrides?.actionHandler,
+            uiSettings: overrides?.uiSettings,
+            selectableOptions: overrides?.selectableOptions ?? [],
+            selectedOption: overrides?.selectedOption,
+            duration: overrides?.duration,
+        } satisfies StepFlowData,
+        children: overrides?.children ?? [],
+    });
+}
+
+function makeTpFlowNode(tpId: string, overrides?: {
+    providerType?: string;
+    protocolType?: string;
+    children?: FlowNode[];
+}): FlowNode {
+    return makeFlowNode({
+        id: `tp-${tpId}`,
+        type: FlowNodeType.TechnicalProfile,
+        name: tpId,
+        data: {
+            type: FlowNodeType.TechnicalProfile,
+            technicalProfileId: tpId,
+            providerType: overrides?.providerType ?? "ClaimsTransformationProtocolProvider",
+            protocolType: overrides?.protocolType,
+        },
+        children: overrides?.children ?? [],
+    });
+}
+
+function makeCtFlowNode(ctId: string): FlowNode {
+    return makeFlowNode({
+        id: `ct-${ctId}`,
+        type: FlowNodeType.ClaimsTransformation,
+        name: ctId,
+        data: {
+            type: FlowNodeType.ClaimsTransformation,
+            transformationId: ctId,
+            inputClaims: [],
+            inputParameters: [],
+            outputClaims: [],
+        },
+    });
+}
+
+function makeHrdFlowNode(selectableOptions: string[], selectedOption?: string): FlowNode {
+    return makeFlowNode({
+        id: "hrd",
+        type: FlowNodeType.HomeRealmDiscovery,
+        name: "HomeRealmDiscovery",
+        data: {
+            type: FlowNodeType.HomeRealmDiscovery,
+            selectableOptions,
+            selectedOption,
+        },
+    });
+}
+
+function makeDcFlowNode(dcId: string, action: string, overrides?: {
+    resultCode?: string;
+    children?: FlowNode[];
+}): FlowNode {
+    return makeFlowNode({
+        id: `dc-${dcId}-${action}`,
+        type: FlowNodeType.DisplayControl,
+        name: dcId,
+        data: {
+            type: FlowNodeType.DisplayControl,
+            displayControlId: dcId,
+            action,
+            resultCode: overrides?.resultCode,
+        },
+        children: overrides?.children ?? [],
+    });
 }
 
 // ============================================================================
@@ -37,107 +161,165 @@ function makeTraceStep(overrides: Partial<TraceStep> = {}): TraceStep {
 // ============================================================================
 
 describe("buildTreeStructure", () => {
-    it("returns empty array for empty input", () => {
-        expect(buildTreeStructure([])).toEqual([]);
+    it("returns empty array for null flowTree", () => {
+        expect(buildTreeStructure(null)).toEqual([]);
     });
 
-    it("single main journey: wraps steps in root userjourney node", () => {
-        const steps = [
-            makeTraceStep({ sequenceNumber: 1, stepOrder: 1 }),
-            makeTraceStep({ sequenceNumber: 2, stepOrder: 2 }),
-        ];
+    it("returns empty array for flowTree with no children", () => {
+        const flowTree = makeRootFlowNode("RootJ");
+        expect(buildTreeStructure(flowTree)).toEqual([]);
+    });
 
-        const tree = buildTreeStructure(steps);
-
-        // Root is a single userjourney node
+    it("single step produces root + step", () => {
+        const flowTree = makeRootFlowNode("RootJ", [makeStepFlowNode(0, 1)]);
+        const tree = buildTreeStructure(flowTree);
         expect(tree).toHaveLength(1);
         expect(tree[0].type).toBe("userjourney");
-        expect(tree[0].label).toBe("B2C_1A_signup_signin");
-        expect(tree[0].id).toBe("userjourney-MainJourney");
-        // Step children inside the root node
-        expect(tree[0].children).toHaveLength(2);
+        expect(tree[0].children).toHaveLength(1);
         expect(tree[0].children![0].type).toBe("step");
-        expect(tree[0].children![1].type).toBe("step");
     });
 
-    it("multiple sub-journeys: wraps subjourneys under root userjourney node", () => {
-        const steps = [
-            makeTraceStep({ sequenceNumber: 1, journeyContextId: "MainJourney", subJourneyId: undefined }),
-            makeTraceStep({ sequenceNumber: 2, journeyContextId: "SubJourney-MFA", subJourneyId: "MFA" }),
-        ];
-
-        const tree = buildTreeStructure(steps);
-
-        // Root is a single userjourney node
+    it("steps with different journeyContextId produce root + SJ nodes", () => {
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeStepFlowNode(0, 1),
+            makeSubJourneyFlowNode("SubJourney-A", [
+                makeStepFlowNode(1, 1, { result: "Error", children: [makeTpFlowNode("TP-A"), makeTpFlowNode("TP-B")] }),
+                makeStepFlowNode(2, 2, { children: [makeTpFlowNode("TP-C")] }),
+            ]),
+            makeSubJourneyFlowNode("SubJourney-B", [
+                makeStepFlowNode(3, 1),
+            ]),
+        ]);
+        const tree = buildTreeStructure(flowTree);
         expect(tree).toHaveLength(1);
-        expect(tree[0].type).toBe("userjourney");
-        // Contains two subjourney groups
-        expect(tree[0].children).toHaveLength(2);
-        expect(tree[0].children![0].type).toBe("subjourney");
-        expect(tree[0].children![1].type).toBe("subjourney");
-        expect(tree[0].children![0].children).toHaveLength(1);
-        expect(tree[0].children![1].children).toHaveLength(1);
-    });
-
-    it("journey node metadata aggregates TP count and error status", () => {
-        const steps = [
-            makeTraceStep({
-                sequenceNumber: 1,
-                journeyContextId: "SubJourney-A",
-                subJourneyId: "A",
-                technicalProfiles: ["TP-1", "TP-2"],
-                result: "Success",
-            }),
-            makeTraceStep({
-                sequenceNumber: 2,
-                journeyContextId: "SubJourney-A",
-                subJourneyId: "A",
-                technicalProfiles: ["TP-3"],
-                result: "Error",
-            }),
-            makeTraceStep({
-                sequenceNumber: 3,
-                journeyContextId: "SubJourney-B",
-                subJourneyId: "B",
-                technicalProfiles: [],
-                result: "Success",
-            }),
-        ];
-
-        const tree = buildTreeStructure(steps);
-
-        // Subjourney nodes are children of the root userjourney node
         const root = tree[0];
         expect(root.type).toBe("userjourney");
+        // Step 0, SJ-A, SJ-B
+        expect(root.children).toHaveLength(3);
+        expect(root.children![0].type).toBe("step");
 
-        const journeyA = root.children!.find((n) => n.id === "journey-SubJourney-A")!;
+        const journeyA = root.children![1];
+        expect(journeyA).toBeDefined();
+        expect(journeyA.type).toBe("subjourney");
         expect(journeyA.metadata?.tpCount).toBe(3);
         expect(journeyA.metadata?.result).toBe("Error");
 
-        const journeyB = root.children!.find((n) => n.id === "journey-SubJourney-B")!;
+        const journeyB = root.children![2];
+        expect(journeyB).toBeDefined();
+        expect(journeyB.type).toBe("subjourney");
         expect(journeyB.metadata?.tpCount).toBe(0);
         expect(journeyB.metadata?.result).toBe("Success");
     });
 
-    it("root userjourney node uses currentJourneyName as label", () => {
-        const steps = [
-            makeTraceStep({ currentJourneyName: "B2C_1A_custom_policy" }),
-        ];
+    it("step that invokes SubJourney collects following non-root steps into SJ group", () => {
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeStepFlowNode(0, 1),
+            makeSubJourneyFlowNode("MFA", [
+                makeStepFlowNode(1, 1),
+                makeStepFlowNode(2, 2),
+            ]),
+            makeStepFlowNode(3, 3),
+        ]);
+        const tree = buildTreeStructure(flowTree);
+        const root = tree[0];
+        expect(root.type).toBe("userjourney");
+        // Step 1, SJ:MFA, Step 3
+        expect(root.children).toHaveLength(3);
+        expect(root.children![0].type).toBe("step");
+        expect(root.children![1].type).toBe("subjourney");
+        expect(root.children![1].label).toBe("MFA");
+        expect(root.children![1].children).toHaveLength(2);
+        expect(root.children![2].type).toBe("step");
+    });
 
-        const tree = buildTreeStructure(steps);
+    it("nested SubJourneys: parent SJ wraps child SJ groups", () => {
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeStepFlowNode(0, 1),
+            makeSubJourneyFlowNode("AuthN-LocalOnly", [
+                makeSubJourneyFlowNode("Child1", [makeStepFlowNode(1, 1)]),
+                makeSubJourneyFlowNode("Child2", [makeStepFlowNode(2, 1)]),
+            ]),
+            makeStepFlowNode(3, 3),
+        ]);
+        const tree = buildTreeStructure(flowTree);
+        const root = tree[0];
+        expect(root.type).toBe("userjourney");
+        expect(root.children).toHaveLength(3);
+        expect(root.children![0].type).toBe("step");
 
+        const sjNode = root.children![1];
+        expect(sjNode.type).toBe("subjourney");
+        expect(sjNode.label).toBe("AuthN-LocalOnly");
+        expect(sjNode.children).toHaveLength(2);
+        expect(sjNode.children![0].type).toBe("subjourney");
+        expect(sjNode.children![0].label).toBe("Child1");
+        expect(sjNode.children![0].children).toHaveLength(1);
+        expect(sjNode.children![1].type).toBe("subjourney");
+        expect(sjNode.children![1].label).toBe("Child2");
+        expect(sjNode.children![1].children).toHaveLength(1);
+
+        expect(root.children![2].type).toBe("step");
+    });
+
+    it("sibling SJ after pop is not nested inside preceding SJ", () => {
+        const flowTree = makeRootFlowNode("AuthN-LocalOnly", [
+            makeSubJourneyFlowNode("AuthN-InitSignIn", [
+                makeStepFlowNode(0, 1),
+                makeStepFlowNode(1, 2),
+            ]),
+            makeSubJourneyFlowNode("AuthN-RouteLocal", [
+                makeStepFlowNode(2, 1),
+            ]),
+            makeSubJourneyFlowNode("AuthN-ReadUser", [
+                makeStepFlowNode(3, 1),
+            ]),
+        ]);
+        const tree = buildTreeStructure(flowTree);
+        const root = tree[0];
+        expect(root.type).toBe("userjourney");
+        expect(root.children).toHaveLength(3);
+
+        expect(root.children![0].type).toBe("subjourney");
+        expect(root.children![0].label).toBe("AuthN-InitSignIn");
+        expect(root.children![0].children).toHaveLength(2);
+
+        expect(root.children![1].type).toBe("subjourney");
+        expect(root.children![1].label).toBe("AuthN-RouteLocal");
+        expect(root.children![1].children).toHaveLength(1);
+
+        expect(root.children![2].type).toBe("subjourney");
+        expect(root.children![2].label).toBe("AuthN-ReadUser");
+        expect(root.children![2].children).toHaveLength(1);
+    });
+
+    it("virtual SJ node created when subJourneyId step has no following non-root steps", () => {
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeSubJourneyFlowNode("EmptySJ"),
+            makeStepFlowNode(1, 2),
+        ]);
+        const tree = buildTreeStructure(flowTree);
+        const root = tree[0];
+        // SJ:EmptySJ (no children), Step 2
+        expect(root.children).toHaveLength(2);
+        expect(root.children![0].type).toBe("subjourney");
+        expect(root.children![0].label).toBe("EmptySJ");
+        expect(root.children![0].children).toBeUndefined();
+        expect(root.children![1].type).toBe("step");
+    });
+
+    it("root userjourney node uses flowTree name as label", () => {
+        const flowTree = makeRootFlowNode("B2C_1A_custom_policy", [makeStepFlowNode(0, 1)]);
+        const tree = buildTreeStructure(flowTree);
         expect(tree[0].type).toBe("userjourney");
         expect(tree[0].label).toBe("B2C_1A_custom_policy");
     });
 
     it("root userjourney node metadata aggregates tpCount and result", () => {
-        const steps = [
-            makeTraceStep({ sequenceNumber: 1, technicalProfiles: ["TP-1", "TP-2"], result: "Success" }),
-            makeTraceStep({ sequenceNumber: 2, technicalProfiles: ["TP-3"], result: "Error" }),
-        ];
-
-        const tree = buildTreeStructure(steps);
-
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeStepFlowNode(0, 1, { children: [makeTpFlowNode("TP-1"), makeTpFlowNode("TP-2")] }),
+            makeStepFlowNode(1, 2, { result: "Error", children: [makeTpFlowNode("TP-3")] }),
+        ]);
+        const tree = buildTreeStructure(flowTree);
         const root = tree[0];
         expect(root.type).toBe("userjourney");
         expect(root.metadata?.tpCount).toBe(3);
@@ -145,13 +327,11 @@ describe("buildTreeStructure", () => {
     });
 
     it("root userjourney node result is Success when no steps errored", () => {
-        const steps = [
-            makeTraceStep({ sequenceNumber: 1, result: "Success" }),
-            makeTraceStep({ sequenceNumber: 2, result: "Success" }),
-        ];
-
-        const tree = buildTreeStructure(steps);
-
+        const flowTree = makeRootFlowNode("RootJ", [
+            makeStepFlowNode(0, 1),
+            makeStepFlowNode(1, 2),
+        ]);
+        const tree = buildTreeStructure(flowTree);
         expect(tree[0].metadata?.result).toBe("Success");
     });
 });
@@ -162,8 +342,12 @@ describe("buildTreeStructure", () => {
 
 describe("buildStepNode", () => {
     it("creates basic step node with label and metadata", () => {
-        const step = makeTraceStep({ sequenceNumber: 5, stepOrder: 3, result: "Skipped", duration: 250 });
-        const node = buildStepNode(step, 5);
+        const stepNode = makeStepFlowNode(5, 3, {
+            sequenceNumber: 5,
+            result: "Skipped",
+            duration: 250,
+        });
+        const node = buildStepNode(stepNode);
 
         expect(node.id).toBe("step-5");
         expect(node.label).toBe("Step 3 — Unknown");
@@ -174,10 +358,13 @@ describe("buildStepNode", () => {
     });
 
     it("step with TPs creates technicalProfile children", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["TP-Read", "TP-Write"],
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("TP-Read"),
+                makeTpFlowNode("TP-Write"),
+            ],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.children).toHaveLength(2);
         expect(node.children![0].type).toBe("technicalProfile");
@@ -186,10 +373,13 @@ describe("buildStepNode", () => {
     });
 
     it("step with CTs creates transformation children", () => {
-        const step = makeTraceStep({
-            claimsTransformations: ["CT-Email", "CT-Phone"],
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeCtFlowNode("CT-Email"),
+                makeCtFlowNode("CT-Phone"),
+            ],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.children).toHaveLength(2);
         expect(node.children![0].type).toBe("transformation");
@@ -197,15 +387,18 @@ describe("buildStepNode", () => {
     });
 
     it("HRD step adds HRD node with selectable options", () => {
-        const step = makeTraceStep({
-            isInteractiveStep: true,
+        const stepNode = makeStepFlowNode(1, 1, {
             selectableOptions: ["google.com", "facebook.com"],
-            actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
             selectedOption: "google.com",
-            technicalProfiles: ["google.com", "facebook.com"],
+            actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
+            children: [
+                makeHrdFlowNode(["google.com", "facebook.com"], "google.com"),
+                makeTpFlowNode("google.com"),
+                makeTpFlowNode("facebook.com"),
+            ],
         });
 
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
         const hrdNode = node.children?.find((c) => c.type === "hrd");
 
         expect(hrdNode).toBeDefined();
@@ -215,15 +408,18 @@ describe("buildStepNode", () => {
     });
 
     it("HRD step filters selected option from TP children", () => {
-        const step = makeTraceStep({
-            isInteractiveStep: true,
+        const stepNode = makeStepFlowNode(1, 1, {
             selectableOptions: ["google.com", "facebook.com"],
-            actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
             selectedOption: "google.com",
-            technicalProfiles: ["google.com", "facebook.com"],
+            actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
+            children: [
+                makeHrdFlowNode(["google.com", "facebook.com"], "google.com"),
+                makeTpFlowNode("google.com"),
+                makeTpFlowNode("facebook.com"),
+            ],
         });
 
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
         const tpLabels = node.children?.filter((c) => c.type === "technicalProfile").map((c) => c.label) ?? [];
 
         // selected option "google.com" should be excluded from TP children
@@ -232,22 +428,19 @@ describe("buildStepNode", () => {
     });
 
     it("DisplayControl step creates nested DC nodes with TPs and CTs", () => {
-        const step = makeTraceStep({
-            displayControlActions: [
-                {
-                    displayControlId: "captcha",
-                    action: "GetChallenge",
-                    technicalProfiles: [
-                        {
-                            technicalProfileId: "TP-Captcha",
-                            claimsTransformations: [{ id: "CT-Captcha", inputClaims: [], inputParameters: [], outputClaims: [] }],
-                        },
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeDcFlowNode("captcha", "GetChallenge", {
+                    children: [
+                        makeTpFlowNode("TP-Captcha", {
+                            children: [makeCtFlowNode("CT-Captcha")],
+                        }),
                     ],
-                },
+                }),
             ],
         });
 
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // DC node at root (no main SelfAsserted TP)
         const dcNode = node.children?.find((c) => c.type === "displayControl");
@@ -267,22 +460,23 @@ describe("buildStepNode", () => {
     });
 
     it("SelfAsserted step nests DCs and validation TPs under main SA TP", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["SelfAsserted-LocalAccount"],
-            technicalProfileDetails: [
-                { id: "SelfAsserted-LocalAccount", providerType: "SelfAssertedAttributeProvider" },
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("SelfAsserted-LocalAccount", {
+                    providerType: "SelfAssertedAttributeProvider",
+                    children: [
+                        makeTpFlowNode("TP-Validate"),
+                    ],
+                }),
+                makeDcFlowNode("emailVerification", "SendCode", {
+                    children: [
+                        makeTpFlowNode("TP-SendOtp"),
+                    ],
+                }),
             ],
-            displayControlActions: [
-                {
-                    displayControlId: "emailVerification",
-                    action: "SendCode",
-                    technicalProfileId: "TP-SendOtp",
-                },
-            ],
-            validationTechnicalProfiles: ["TP-Validate"],
         });
 
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // Main SA TP is a child
         const saNode = node.children?.find((c) => c.label === "SelfAsserted-LocalAccount");
@@ -293,62 +487,65 @@ describe("buildStepNode", () => {
         expect(nestedDc).toBeDefined();
         expect(nestedDc!.metadata?.displayControlId).toBe("emailVerification");
 
-        // Validation TPs nested under SA TP
+        // Validation TPs nested under SA TP (from FlowNode children)
         const vtpNode = saNode!.children?.find((c) => c.label === "TP-Validate");
         expect(vtpNode).toBeDefined();
         expect(vtpNode!.type).toBe("technicalProfile");
     });
 
-    it("step with validation TPs (no SelfAsserted) adds them at step level", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["TP-Main"],
-            validationTechnicalProfiles: ["TP-Validate-1"],
-        });
-
-        const node = buildStepNode(step, 1);
-
-        const labels = node.children?.map((c) => c.label) ?? [];
-        expect(labels).toContain("TP-Main");
-        expect(labels).toContain("TP-Validate-1");
-    });
-
-    it("orphan CTs nest under single primary TP", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["TP-Only"],
-            claimsTransformations: ["CT-Orphan-1", "CT-Orphan-2"],
-        });
-
-        const node = buildStepNode(step, 1);
-
-        // Only one child: the TP
-        const tpChildren = node.children?.filter((c) => c.type === "technicalProfile") ?? [];
-        expect(tpChildren).toHaveLength(1);
-
-        // Orphan CTs nested under single TP
-        const orphanCts = tpChildren[0].children?.filter((c) => c.type === "transformation") ?? [];
-        expect(orphanCts).toHaveLength(2);
-        expect(orphanCts[0].label).toBe("CT-Orphan-1");
-
-        // No top-level CT children
-        const topLevelCts = node.children?.filter((c) => c.type === "transformation") ?? [];
-        expect(topLevelCts).toHaveLength(0);
-    });
-
-    it("CTs with known parent TP are nested under that TP", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["TP-A", "TP-B"],
-            claimsTransformations: ["CT-Nested"],
-            technicalProfileDetails: [
-                {
-                    id: "TP-A",
-                    providerType: "ClaimsTransformationProtocolProvider",
-                    claimsTransformations: [{ id: "CT-Nested", inputClaims: [], inputParameters: [], outputClaims: [] }],
-                },
-                { id: "TP-B", providerType: "AzureActiveDirectoryProvider" },
+    it("step with validation TPs nested under parent TP", () => {
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("TP-Main", {
+                    children: [makeTpFlowNode("TP-Validate-1")],
+                }),
             ],
         });
 
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
+
+        expect(node.children).toHaveLength(1);
+        const tpMain = node.children![0];
+        expect(tpMain.label).toBe("TP-Main");
+        expect(tpMain.children).toHaveLength(1);
+        expect(tpMain.children![0].label).toBe("TP-Validate-1");
+        expect(tpMain.children![0].type).toBe("technicalProfile");
+    });
+
+    it("orphan CTs appear at step level", () => {
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("TP-Only"),
+                makeCtFlowNode("CT-Orphan-1"),
+                makeCtFlowNode("CT-Orphan-2"),
+            ],
+        });
+
+        const node = buildStepNode(stepNode);
+
+        // TP + 2 orphan CTs
+        expect(node.children).toHaveLength(3);
+
+        const tpChildren = node.children?.filter((c) => c.type === "technicalProfile") ?? [];
+        expect(tpChildren).toHaveLength(1);
+
+        // Orphan CTs at step level
+        const topLevelCts = node.children?.filter((c) => c.type === "transformation") ?? [];
+        expect(topLevelCts).toHaveLength(2);
+        expect(topLevelCts[0].label).toBe("CT-Orphan-1");
+    });
+
+    it("CTs with known parent TP are nested under that TP", () => {
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("TP-A", {
+                    children: [makeCtFlowNode("CT-Nested")],
+                }),
+                makeTpFlowNode("TP-B", { providerType: "AzureActiveDirectoryProvider" }),
+            ],
+        });
+
+        const node = buildStepNode(stepNode);
 
         const tpA = node.children?.find((c) => c.label === "TP-A");
         expect(tpA!.children).toHaveLength(1);
@@ -360,8 +557,8 @@ describe("buildStepNode", () => {
     });
 
     it("step with no children has undefined children prop", () => {
-        const step = makeTraceStep();
-        const node = buildStepNode(step, 1);
+        const stepNode = makeStepFlowNode(1, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.children).toBeUndefined();
     });
@@ -388,62 +585,48 @@ function flattenLabels(node: TreeNode): string[] {
 
 describe("semantic labels", () => {
     it("should include primary TP name in step label", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["AAD-UserRead"],
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [makeTpFlowNode("AAD-UserRead")],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.label).toBe("Step 1 — AAD-UserRead");
     });
 
     it("should fall back to actionHandler when no TPs", () => {
-        const step = makeTraceStep({
-            technicalProfiles: [],
+        const stepNode = makeStepFlowNode(1, 1, {
             actionHandler: "ClaimsExchangeHandler",
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.label).toBe("Step 1 — ClaimsExchangeHandler");
     });
 
     it("should fall back to Unknown when no TPs and no actionHandler", () => {
-        const step = makeTraceStep({
-            technicalProfiles: [],
-        });
-        const node = buildStepNode(step, 1);
+        const stepNode = makeStepFlowNode(1, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.label).toBe("Step 1 — Unknown");
     });
 
     it("should include isFinalStep in metadata", () => {
-        const step = makeTraceStep({
-            isFinalStep: true,
-        });
-        const node = buildStepNode(step, 1);
+        const stepNode = makeStepFlowNode(1, 1, { actionHandler: "SendClaims" });
+        const node = buildStepNode(stepNode);
 
         expect(node.metadata?.isFinalStep).toBe(true);
-    });
-
-    it("should include isVerificationStep in metadata", () => {
-        const step = makeTraceStep({
-            isVerificationStep: true,
-        });
-        const node = buildStepNode(step, 1);
-
-        expect(node.metadata?.isVerificationStep).toBe(true);
     });
 });
 
 // ============================================================================
-// Ownership-chain dedup (ISS-006) (4a-2)
+// FlowNode-driven hierarchy (ISS-006)
 // ============================================================================
 
-describe("ownership-chain dedup (ISS-006)", () => {
+describe("FlowNode-driven hierarchy (ISS-006)", () => {
     it("simple 1-TP step: single TP child, no orphan CTs", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["AAD-UserRead"],
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [makeTpFlowNode("AAD-UserRead")],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         expect(node.children).toHaveLength(1);
         expect(node.children![0].type).toBe("technicalProfile");
@@ -455,14 +638,15 @@ describe("ownership-chain dedup (ISS-006)", () => {
     });
 
     it("SelfAsserted with validation TPs: VTPs nested under SA TP", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["SelfAsserted-ProfileEdit", "AAD-UserWrite"],
-            technicalProfileDetails: [
-                { id: "SelfAsserted-ProfileEdit", providerType: "SelfAssertedAttributeProvider" },
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("SelfAsserted-ProfileEdit", {
+                    providerType: "SelfAssertedAttributeProvider",
+                    children: [makeTpFlowNode("AAD-UserWrite", { providerType: "AzureActiveDirectoryProvider" })],
+                }),
             ],
-            validationTechnicalProfiles: ["AAD-UserWrite"],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // SelfAsserted TP is a child of the step
         const saNode = node.children?.find((c) => c.label === "SelfAsserted-ProfileEdit");
@@ -479,20 +663,17 @@ describe("ownership-chain dedup (ISS-006)", () => {
     });
 
     it("DC with nested TPs: REST-Verify under DC node, DC nested under SelfAsserted TP", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["SelfAsserted-SA", "REST-Verify"],
-            technicalProfileDetails: [
-                { id: "SelfAsserted-SA", providerType: "SelfAssertedAttributeProvider" },
-            ],
-            displayControlActions: [
-                {
-                    displayControlId: "emailVerify",
-                    action: "Send",
-                    technicalProfiles: [{ technicalProfileId: "REST-Verify" }],
-                },
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("SelfAsserted-SA", {
+                    providerType: "SelfAssertedAttributeProvider",
+                }),
+                makeDcFlowNode("emailVerify", "Send", {
+                    children: [makeTpFlowNode("REST-Verify")],
+                }),
             ],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // SelfAsserted-SA is a child of the step
         const saNode = node.children?.find((c) => c.label === "SelfAsserted-SA");
@@ -514,19 +695,20 @@ describe("ownership-chain dedup (ISS-006)", () => {
     });
 
     it("each component appears exactly once", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["SA", "VTP-1", "VTP-2"],
-            technicalProfileDetails: [
-                {
-                    id: "SA",
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("SA", {
                     providerType: "SelfAssertedAttributeProvider",
-                    claimsTransformations: [{ id: "CT-A", inputClaims: [], inputParameters: [], outputClaims: [] }],
-                },
+                    children: [
+                        makeTpFlowNode("VTP-1"),
+                        makeTpFlowNode("VTP-2"),
+                        makeCtFlowNode("CT-A"),
+                    ],
+                }),
+                makeCtFlowNode("CT-B"),
             ],
-            validationTechnicalProfiles: ["VTP-1", "VTP-2"],
-            claimsTransformations: ["CT-A", "CT-B"],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         const allLabels = flattenLabels(node);
 
@@ -538,14 +720,17 @@ describe("ownership-chain dedup (ISS-006)", () => {
     });
 
     it("HRD step excludes selected option from TP children", () => {
-        const step = makeTraceStep({
-            isInteractiveStep: true,
+        const stepNode = makeStepFlowNode(1, 1, {
             selectableOptions: ["Google", "Facebook"],
             selectedOption: "Google",
-            technicalProfiles: ["Google", "Facebook"],
             actionHandler: "ClaimsProviderSelection-HomeRealmDiscovery",
+            children: [
+                makeHrdFlowNode(["Google", "Facebook"], "Google"),
+                makeTpFlowNode("Google"),
+                makeTpFlowNode("Facebook"),
+            ],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // HRD node exists
         const hrdNode = node.children?.find((c) => c.type === "hrd");
@@ -559,13 +744,16 @@ describe("ownership-chain dedup (ISS-006)", () => {
     });
 
     it("orphan CTs appear at step level when multiple TPs exist", () => {
-        const step = makeTraceStep({
-            technicalProfiles: ["TP-A", "TP-B"],
-            claimsTransformations: ["CT-Orphan"],
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeTpFlowNode("TP-A"),
+                makeTpFlowNode("TP-B", { providerType: "AzureActiveDirectoryProvider" }),
+                makeCtFlowNode("CT-Orphan"),
+            ],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
-        // CT-Orphan is at step level (not under any TP) since multiple TPs exist
+        // CT-Orphan is at step level (direct FlowNode child)
         const topLevelCts = node.children?.filter((c) => c.type === "transformation") ?? [];
         expect(topLevelCts).toHaveLength(1);
         expect(topLevelCts[0].label).toBe("CT-Orphan");
@@ -579,19 +767,19 @@ describe("ownership-chain dedup (ISS-006)", () => {
         expect(tpBCts).toHaveLength(0);
     });
 
-    it("DC with legacy technicalProfileId creates nested TP with CTs", () => {
-        const step = makeTraceStep({
-            displayControlActions: [
-                {
-                    displayControlId: "captcha",
-                    action: "Verify",
-                    technicalProfileId: "TP-Captcha",
-                },
+    it("DC with nested TP and CT creates correct hierarchy", () => {
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [
+                makeDcFlowNode("captcha", "Verify", {
+                    children: [
+                        makeTpFlowNode("TP-Captcha", {
+                            children: [makeCtFlowNode("CT-Cap")],
+                        }),
+                    ],
+                }),
             ],
-            technicalProfileDetails: [{ id: "TP-Captcha", providerType: "Claimsransformation", claimsTransformations: [{ id: "CT-Cap", inputClaims: [], inputParameters: [], outputClaims: [] }] }],
-            claimsTransformations: ["CT-Cap"],
         });
-        const node = buildStepNode(step, 1);
+        const node = buildStepNode(stepNode);
 
         // DC node exists
         const dcNode = node.children?.find((c) => c.type === "displayControl");
@@ -609,5 +797,59 @@ describe("ownership-chain dedup (ISS-006)", () => {
         // CT-Cap does NOT appear at step level
         const stepCtNodes = node.children?.filter((c) => c.type === "transformation") ?? [];
         expect(stepCtNodes).toHaveLength(0);
+    });
+
+    it("HRD step nests validation TPs under the selected option", () => {
+        const stepNode = makeStepFlowNode(1, 1, {
+            selectableOptions: ["SelfAsserted-LocalAccountSignin-Email", "ForgotPassword"],
+            selectedOption: "SelfAsserted-LocalAccountSignin-Email",
+            actionHandler: "SendResponseHandler",
+            uiSettings: { pageType: "CombinedSigninAndSignup" },
+            children: [
+                makeHrdFlowNode(
+                    ["SelfAsserted-LocalAccountSignin-Email", "ForgotPassword"],
+                    "SelfAsserted-LocalAccountSignin-Email",
+                ),
+                makeTpFlowNode("SelfAsserted-LocalAccountSignin-Email", {
+                    providerType: "SelfAssertedAttributeProvider",
+                    children: [
+                        makeTpFlowNode("login-NonInteractive"),
+                    ],
+                }),
+            ],
+        });
+
+        const node = buildStepNode(stepNode);
+        const hrdNode = node.children?.find((c) => c.type === "hrd");
+        expect(hrdNode).toBeDefined();
+
+        // Selected option has VTP as child
+        const selectedChild = hrdNode!.children?.find((c) => c.type === "selectedOption");
+        expect(selectedChild).toBeDefined();
+        expect(selectedChild!.label).toBe("SelfAsserted-LocalAccountSignin-Email");
+        expect(selectedChild!.children).toHaveLength(1);
+        expect(selectedChild!.children![0].label).toBe("login-NonInteractive");
+        expect(selectedChild!.children![0].type).toBe("technicalProfile");
+
+        // Non-selected option has no children and is hrdOption type
+        const nonSelected = hrdNode!.children?.find((c) => c.type === "hrdOption");
+        expect(nonSelected).toBeDefined();
+        expect(nonSelected!.label).toBe("ForgotPassword");
+        expect(nonSelected!.children).toBeUndefined();
+
+        // VTP does NOT appear at step level
+        const stepTpNodes = node.children?.filter((c) => c.type === "technicalProfile") ?? [];
+        expect(stepTpNodes.map((n) => n.label)).not.toContain("login-NonInteractive");
+    });
+
+    it("flowNode reference is carried on step and child TreeNodes", () => {
+        const tpFlowNode = makeTpFlowNode("TP-Read");
+        const stepNode = makeStepFlowNode(1, 1, {
+            children: [tpFlowNode],
+        });
+        const node = buildStepNode(stepNode);
+
+        expect(node.flowNode).toBe(stepNode);
+        expect(node.children![0].flowNode).toBe(tpFlowNode);
     });
 });

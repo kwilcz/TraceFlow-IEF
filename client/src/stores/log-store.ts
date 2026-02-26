@@ -278,6 +278,7 @@ export const useLogStore = create<ExtendedLogStore>()(
                         } catch (error) {
                             const message = error instanceof Error ? error.message : "Trace computation failed";
                             set({
+                                flowTree: null,
                                 traceSteps: [],
                                 executionMap: {},
                                 activeStepIndex: null,

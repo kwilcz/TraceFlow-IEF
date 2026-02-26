@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/table";
 import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollBar } from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
+import { findStepFlowNode, collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
+import type { StepFlowData } from "@/types/flow-node";
 import { useDebuggerContext } from "../debugger-context";
 import { CLAIM_STATUSES, useClaimsDiff, type ClaimDiffRow, type ClaimRowStatus } from "../use-claims-diff";
 import { claimsDiffColumns } from "./claims-diff-columns";
@@ -43,11 +45,20 @@ const ALL_STATUSES = new Set(CLAIM_STATUSES);
 
 export function ClaimsDiffTable() {
     const { selection } = useDebuggerContext();
-    const traceSteps = useLogStore(useShallow((s) => s.traceSteps));
+    const flowTree = useLogStore(useShallow((s) => s.flowTree));
 
-    const { rows } = useClaimsDiff(selection, traceSteps);
+    const { rows } = useClaimsDiff(selection, flowTree);
     const stepIndex = selection?.stepIndex ?? -1;
-    const activeStep = stepIndex >= 0 ? traceSteps[stepIndex] : undefined;
+
+    const activeStepNode = useMemo(
+        () => (flowTree && stepIndex >= 0 ? findStepFlowNode(flowTree, stepIndex) : null),
+        [flowTree, stepIndex],
+    );
+    const stepCount = useMemo(
+        () => (flowTree ? collectStepNodes(flowTree).length : 0),
+        [flowTree],
+    );
+    const activeStepData = activeStepNode?.data as StepFlowData | undefined;
 
     // ── Filter state ───────────────────────────────────────────────────
     const [activeStatuses, setActiveStatuses] = useState<Set<ClaimRowStatus>>(new Set(ALL_STATUSES));
@@ -116,7 +127,7 @@ export function ClaimsDiffTable() {
     const duration = shouldReduce ? 0 : 0.12;
 
     // ── Empty states ───────────────────────────────────────────────────
-    if (!selection || !activeStep) {
+    if (!selection || !activeStepData) {
         return <ClaimsDiffEmpty hasSelection={false} />;
     }
 
@@ -124,7 +135,7 @@ export function ClaimsDiffTable() {
         return (
             <div className="flex flex-col h-full overflow-hidden">
                 <ClaimsDiffFilterBar
-                    stepOrder={activeStep.stepOrder}
+                    stepOrder={activeStepData.stepOrder}
                     totalCount={0}
                     changedCount={0}
                     statusCounts={statusCounts}
@@ -145,7 +156,7 @@ export function ClaimsDiffTable() {
     return (
         <div className="flex flex-col h-full overflow-hidden min-h-0">
             <ClaimsDiffFilterBar
-                stepOrder={activeStep.stepOrder}
+                stepOrder={activeStepData.stepOrder}
                 totalCount={rows.length}
                 changedCount={changedCount}
                 statusCounts={statusCounts}
@@ -166,7 +177,7 @@ export function ClaimsDiffTable() {
                                 animate={{ opacity: 1 }}
                                 transition={{ duration }}
                             >
-                                <Table className="table-fixed" aria-label={`Claims diff for step ${activeStep.stepOrder}`}>
+                                <Table className="table-fixed" aria-label={`Claims diff for step ${activeStepData.stepOrder}`}>
                                     <colgroup>
                                         <col className="w-[20%]" />
                                         <col className="w-[10%]" />
@@ -234,7 +245,7 @@ export function ClaimsDiffTable() {
                     {rows.length} claims • {changedCount} changed
                 </span>
                 <span>
-                    Step {activeStep.stepOrder}/{traceSteps.length}
+                    Step {activeStepData.stepOrder}/{stepCount}
                 </span>
             </div>
         </div>

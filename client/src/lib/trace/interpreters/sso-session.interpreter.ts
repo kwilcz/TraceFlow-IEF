@@ -14,6 +14,7 @@
  */
 
 import type { HandlerResultContent } from "@/types/journey-recorder";
+import type { TraceStepBuilder } from "../domain/trace-step-builder";
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import {
     SSO_PARTICIPANT,
@@ -30,7 +31,7 @@ export class SsoSessionInterpreter extends BaseInterpreter {
     readonly handlerNames = SSO_HANDLERS;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerName, handlerResult } = context;
+        const { handlerName, handlerResult, stepBuilder } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -41,16 +42,16 @@ export class SsoSessionInterpreter extends BaseInterpreter {
 
         switch (handlerName) {
             case SSO_PARTICIPANT:
-                return this.handleSsoParticipant(handlerResult, statebagUpdates, claimsUpdates);
+                return this.handleSsoParticipant(stepBuilder, handlerResult, statebagUpdates, claimsUpdates);
 
             case SSO_SESSION:
                 return this.handleSsoSession(handlerResult, statebagUpdates, claimsUpdates);
 
             case SSO_ACTIVATE:
-                return this.handleSsoActivate(handlerResult, statebagUpdates, claimsUpdates);
+                return this.handleSsoActivate(stepBuilder, handlerResult, statebagUpdates, claimsUpdates);
 
             case SSO_RESET:
-                return this.handleSsoReset(handlerResult, statebagUpdates, claimsUpdates);
+                return this.handleSsoReset(stepBuilder, handlerResult, statebagUpdates, claimsUpdates);
 
             default:
                 return this.successNoOp({ statebagUpdates, claimsUpdates });
@@ -63,6 +64,7 @@ export class SsoSessionInterpreter extends BaseInterpreter {
      * PredicateResult "False" means no valid SSO session.
      */
     private handleSsoParticipant(
+        stepBuilder: TraceStepBuilder,
         handlerResult: HandlerResultContent,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>
@@ -70,10 +72,11 @@ export class SsoSessionInterpreter extends BaseInterpreter {
         const predicateResult = handlerResult.PredicateResult;
         const isParticipant = predicateResult === "True";
 
+        stepBuilder.withSsoSessionParticipant(isParticipant);
+
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            ssoSessionParticipant: isParticipant,
         });
     }
 
@@ -95,6 +98,7 @@ export class SsoSessionInterpreter extends BaseInterpreter {
      * Handles ActivateSSOSessionHandler - activates SSO session after auth.
      */
     private handleSsoActivate(
+        stepBuilder: TraceStepBuilder,
         handlerResult: HandlerResultContent,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>
@@ -102,10 +106,11 @@ export class SsoSessionInterpreter extends BaseInterpreter {
         // SSO activation is marked by a successful Result
         const isActivated = handlerResult.Result === true;
 
+        stepBuilder.withSsoSessionActivated(isActivated);
+
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            ssoSessionActivated: isActivated,
         });
     }
 
@@ -113,15 +118,16 @@ export class SsoSessionInterpreter extends BaseInterpreter {
      * Handles ResetSSOSessionHandler - resets SSO session.
      */
     private handleSsoReset(
+        stepBuilder: TraceStepBuilder,
         handlerResult: HandlerResultContent,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>
     ): InterpretResult {
+        stepBuilder.withSsoSessionParticipant(false);
+
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            // Reset implies session was invalidated
-            ssoSessionParticipant: false,
         });
     }
 }

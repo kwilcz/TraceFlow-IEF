@@ -5,7 +5,7 @@
  * UserJourneys and SubJourneys in B2C policies.
  *
  * Responsibilities:
- * - Detects SubJourney entry and exit
+ * - Detects SubJourney entry
  * - Manages the journey stack context
  * - Tracks SubJourney nesting
  */
@@ -13,9 +13,6 @@
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import {
     ENQUEUE_NEW_JOURNEY,
-    SUBJOURNEY_DISPATCH,
-    SUBJOURNEY_TRANSFER,
-    SUBJOURNEY_EXIT,
     SUBJOURNEY_HANDLERS,
 } from "../constants/handlers";
 import { RecorderRecordKey } from "../constants/keys";
@@ -43,14 +40,7 @@ export class SubJourneyInterpreter extends BaseInterpreter {
 
         switch (handlerName) {
             case ENQUEUE_NEW_JOURNEY:
-            case SUBJOURNEY_DISPATCH:
                 return this.handleDispatch(context, statebagUpdates, claimsUpdates);
-
-            case SUBJOURNEY_TRANSFER:
-                return this.handleTransfer(context, statebagUpdates, claimsUpdates);
-
-            case SUBJOURNEY_EXIT:
-                return this.handleExit(context, statebagUpdates, claimsUpdates);
 
             default:
                 return this.successNoOp({ statebagUpdates, claimsUpdates });
@@ -68,7 +58,8 @@ export class SubJourneyInterpreter extends BaseInterpreter {
         const subJourneyId = this.extractSubJourneyId(context);
 
         if (subJourneyId) {
-            context.stepBuilder.withActionHandler(SUBJOURNEY_DISPATCH);
+          context.stepBuilder
+            .withSubJourneyId(subJourneyId);
 
             return this.successNoOp({
                 statebagUpdates,
@@ -77,55 +68,10 @@ export class SubJourneyInterpreter extends BaseInterpreter {
                     journeyId: subJourneyId,
                     journeyName: subJourneyId,
                 },
-                subJourneyId,
             });
         }
 
         return this.successNoOp({ statebagUpdates, claimsUpdates });
-    }
-
-    /**
-     * Handles SubJourney transfer - similar to dispatch but used in different contexts.
-     */
-    private handleTransfer(
-        context: InterpretContext,
-        statebagUpdates: Record<string, string>,
-        claimsUpdates: Record<string, string>
-    ): InterpretResult {
-        const subJourneyId = this.extractSubJourneyId(context);
-
-        if (subJourneyId) {
-            context.stepBuilder.withActionHandler(SUBJOURNEY_TRANSFER);
-
-            return this.successNoOp({
-                statebagUpdates,
-                claimsUpdates,
-                pushSubJourney: {
-                    journeyId: subJourneyId,
-                    journeyName: subJourneyId,
-                },
-                subJourneyId,
-            });
-        }
-
-        return this.successNoOp({ statebagUpdates, claimsUpdates });
-    }
-
-    /**
-     * Handles SubJourney exit - returning to parent journey.
-     */
-    private handleExit(
-        context: InterpretContext,
-        statebagUpdates: Record<string, string>,
-        claimsUpdates: Record<string, string>
-    ): InterpretResult {
-        context.stepBuilder.withActionHandler(SUBJOURNEY_EXIT);
-
-        return this.successNoOp({
-            statebagUpdates,
-            claimsUpdates,
-            popSubJourney: true,
-        });
     }
 
     /**

@@ -11,8 +11,10 @@ import type { TraceLogInput, TraceParseResult } from "@/types/trace";
 
 import { SUPPORTED_EVENT_INSTANCES } from "./constants/keys";
 import { JourneyStack } from "./domain/journey-stack";
+import { FlowTreeBuilder } from "./domain/flow-tree-builder";
 import { getInterpreterRegistry } from "./interpreters";
 import { runPostProcessors } from "./post-processors";
+import { syncFlowTreeFromSteps } from "./post-processors/flow-tree-sync";
 import { ExecutionMapBuilder } from "./services/execution-map-builder";
 import { StatebagAccumulator } from "./services/statebag-accumulator";
 import {
@@ -47,7 +49,8 @@ export class TraceParser {
         const journeyStack = new JourneyStack("", "");
         const statebag = new StatebagAccumulator();
         const executionMap = new ExecutionMapBuilder();
-        const ctx = createInitialContext(journeyStack, statebag, executionMap);
+        const flowTreeBuilder = new FlowTreeBuilder();
+        const ctx = createInitialContext(journeyStack, statebag, executionMap, flowTreeBuilder);
 
         const traceLogs = this.filterTraceLogs();
 
@@ -86,8 +89,12 @@ export class TraceParser {
             ctx.errors.push(...postProcessingResult.errors);
         }
 
+        // Sync post-processor mutations back to the FlowNode tree
+        syncFlowTreeFromSteps(ctx.flowTreeBuilder.getTree(), ctx.traceSteps);
+
         return {
             traceSteps: ctx.traceSteps,
+            flowTree: ctx.flowTreeBuilder.getTree(),
             executionMap: ctx.executionMap.build(),
             mainJourneyId: ctx.mainJourneyId,
             success: ctx.errors.length === 0,
@@ -124,6 +131,9 @@ export class TraceParser {
                 const root = ctx.journeyStack.root();
                 root.journeyId = headers.PolicyId;
                 root.journeyName = headers.PolicyId;
+
+                // Set root info on the flow tree builder
+                ctx.flowTreeBuilder.setRootInfo(headers.PolicyId, headers.PolicyId);
                 return;
             }
         }
@@ -147,6 +157,7 @@ export class TraceParser {
     private createEmptyResult(error: string): TraceParseResult {
         return {
             traceSteps: [],
+            flowTree: new FlowTreeBuilder().getTree(),
             executionMap: {},
             mainJourneyId: "",
             success: false,

@@ -194,6 +194,13 @@ export function buildOrchestrationManagerAction(): ActionClip {
     return { Kind: "Action", Content: "Web.TPEngine.OrchestrationManager" };
 }
 
+export function pushOrchestrationStep(step: number): ClipsArray {
+    return [
+        buildOrchestrationManagerAction(),
+        buildOrchestrationResult(step),
+    ];
+}
+
 export function buildOrchestrationResult(
     orchStep: number,
     additionalStatebag?: Partial<Statebag>

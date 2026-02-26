@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { InspectorSection } from "../inspector-section";
 import { CopyButton } from "../../shared";
-import type { DisplayControlAction, BackendApiCall } from "@/types/trace";
+import type { DisplayControlFlowData } from "@/types/flow-node";
+import type { BackendApiCall } from "@/types/trace";
 
 // ============================================================================
 // Components Section — lists TPs, CTs, DCs, selectable options, API calls
@@ -17,7 +18,7 @@ import type { DisplayControlAction, BackendApiCall } from "@/types/trace";
 interface ComponentsSectionProps {
     technicalProfiles: string[];
     claimsTransformations: string[];
-    displayControlActions: DisplayControlAction[];
+    displayControlActions: DisplayControlFlowData[];
     selectableOptions: string[];
     backendApiCalls?: BackendApiCall[];
     selectedOption?: string;

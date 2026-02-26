@@ -510,6 +510,7 @@ export function FlowPicker({ userFlows, selectedFlow, onSelectFlow }: FlowPicker
                     size="sm"
                     variant={"outline"}
                     onClick={toggle}
+                    data-testid="flow-picker-toggle"
                     aria-label={expanded ? "Collapse flow list" : "Expand flow list"}
                     title={expanded ? "Collapse" : "Expand"}
                     className={cn(

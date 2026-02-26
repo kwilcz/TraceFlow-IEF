@@ -13,7 +13,18 @@
 import type { TraceStep } from "@/types/trace";
 import type { InterpretResult } from "../interpreters/base-interpreter";
 import type { ClipProcessingContext } from "./clip-processing-context";
-import { DEDUP_THRESHOLD_MS } from "../constants/keys";
+import type {
+    FlowNode,
+    FlowNodeContext,
+    StepFlowData,
+    TechnicalProfileFlowData,
+    ClaimsTransformationFlowData,
+    HomeRealmDiscoveryFlowData,
+    DisplayControlFlowData,
+} from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
+import type { FlowTreeBuilder } from "../domain/flow-tree-builder";
+import { DEDUP_THRESHOLD_MS, StatebagKey, extractTechnicalProfileFromCTP } from "../constants/keys";
 import { TraceStepBuilder } from "../domain/trace-step-builder";
 
 export class ResultApplicator {
@@ -29,17 +40,26 @@ export class ResultApplicator {
             return;
         }
 
-        // Handle step creation BEFORE applying statebag updates
-        // This ensures the step gets the statebag state from BEFORE the current handler
+        const needsPop = result.popSubJourney != null && result.popSubJourney > 0;
+
+        // ─── Step creation path ─────────────────────────────────────────
         if (result.createStep) {
-            // Finalize current step if it has a valid stepOrder
+            // 1. Finalize the PREVIOUS step in its CURRENT context (before any pops)
+            //    This ensures the previous step is placed in the correct FlowTree parent.
             this.finalizeCurrentStep(ctx);
 
-            // Clear the statebag but keep claims - B2C statebag is step-scoped
-            // but claims (Complex-CLMS) persist across steps
+            // 2. Pop SubJourneys AFTER finalizing (Rules 2/3).
+            //    The NEW step belongs to the parent context.
+            if (needsPop) {
+                this.popSubJourneys(result.popSubJourney!, ctx);
+            }
+
+            // 3. Sync orchStep from ORCH_CS (after pops, before step creation)
+            this.syncOrchStepFromStatebag(result, ctx);
+
+            // 4. Clear statebag and create new step
             ctx.statebag.clearStatebagKeepClaims();
 
-            // Now apply statebag updates for this new step
             if (result.statebagUpdates) {
                 ctx.statebag.applyUpdates(result.statebagUpdates);
             }
@@ -48,7 +68,6 @@ export class ResultApplicator {
                 ctx.statebag.applyClaimsUpdates(result.claimsUpdates);
             }
 
-            // Create the new step builder with the data from the interpreter
             const context = ctx.journeyStack.current();
             ctx.currentStepBuilder = TraceStepBuilder.create()
                 .withSequence(ctx.sequenceNumber++)
@@ -60,14 +79,23 @@ export class ResultApplicator {
                 .withActionHandler(result.actionHandler ?? "")
                 .calculateGraphNodeId();
 
-            // Apply any error from the result
+            if (result.statebagUpdates) {
+                const ctpValue = result.statebagUpdates[StatebagKey.CTP];
+                if (ctpValue) {
+                    const tp = extractTechnicalProfileFromCTP(ctpValue);
+                    if (tp) {
+                        ctx.currentStepBuilder.addTechnicalProfile(tp);
+                    }
+                }
+            }
+
             if (result.stepResult === "Error" && result.error) {
                 ctx.currentStepBuilder.withError(result.error, result.errorHResult);
             } else if (result.stepResult) {
                 ctx.currentStepBuilder.withResult(result.stepResult);
             }
         } else {
-            // For non-step-creating results, apply statebag updates normally
+            // ─── Non-step-creating: apply statebag updates ──────────────
             if (result.statebagUpdates) {
                 ctx.statebag.applyUpdates(result.statebagUpdates);
             }
@@ -76,7 +104,6 @@ export class ResultApplicator {
                 ctx.statebag.applyClaimsUpdates(result.claimsUpdates);
             }
 
-            // Apply error state to current step even without creating a new step
             if (ctx.currentStepBuilder && result.stepResult === "Error") {
                 if (result.error) {
                     ctx.currentStepBuilder.withError(result.error, result.errorHResult);
@@ -86,108 +113,29 @@ export class ResultApplicator {
             }
         }
 
+        // ─── Push SubJourney ────────────────────────────────────────────
         if (result.pushSubJourney) {
+            // Finalize the current step BEFORE pushing so it's placed in
+            // the correct FlowTree parent (the current context, not the
+            // SubJourney we're about to enter).
+            this.finalizeCurrentStep(ctx);
+
             ctx.journeyStack.push({
                 journeyId: result.pushSubJourney.journeyId,
                 journeyName: result.pushSubJourney.journeyName,
                 timestamp: ctx.currentTimestamp,
             });
+
+            const sjContext = ctx.journeyStack.current();
+            ctx.flowTreeBuilder.pushSubJourney(
+                result.pushSubJourney.journeyId,
+                result.pushSubJourney.journeyName,
+                sjContext.lastOrchStep,
+                this.buildFlowNodeContext(ctx),
+            );
         }
 
-        if (result.popSubJourney) {
-            ctx.journeyStack.pop();
-        }
-
-        // Apply technical profiles and selectable options to current step
-        if (ctx.currentStepBuilder) {
-            // Clear selectable options when a TP is definitively triggered
-            // This prevents HRD options from leaking to ClaimsExchange steps
-            if (result.clearSelectableOptions) {
-                ctx.currentStepBuilder.clearSelectableOptions();
-            }
-
-            if (result.technicalProfiles) {
-                const tpSnapshot = ctx.statebag.getClaimsSnapshot();
-                for (const tp of result.technicalProfiles) {
-                    ctx.currentStepBuilder.addTechnicalProfile(tp);
-                    // Auto-create detail with snapshot so per-TP diff works
-                    // even for interpreters that don't produce full details.
-                    // addTechnicalProfileDetail handles merge if detail already exists.
-                    ctx.currentStepBuilder.addTechnicalProfileDetail({
-                        id: tp,
-                        providerType: "",
-                        claimsSnapshot: tpSnapshot,
-                    });
-                }
-            }
-
-            if (result.selectableOptions) {
-                for (const option of result.selectableOptions) {
-                    ctx.currentStepBuilder.addSelectableOption(option);
-                }
-                if (result.selectableOptions.length > 1) {
-                    ctx.currentStepBuilder.asInteractiveStep();
-                }
-            }
-
-            if (result.isInteractive) {
-                ctx.currentStepBuilder.asInteractiveStep();
-            }
-
-            if (result.subJourneyId) {
-                ctx.currentStepBuilder.withSubJourneyId(result.subJourneyId);
-            }
-
-            // Apply new fields for backend API calls, UI settings, SSO, and verification
-            if (result.backendApiCalls) {
-                for (const call of result.backendApiCalls) {
-                    ctx.currentStepBuilder.addBackendApiCall(call);
-                }
-            }
-
-            if (result.uiSettings) {
-                ctx.currentStepBuilder.withUiSettings(result.uiSettings);
-            }
-
-            if (result.ssoSessionParticipant !== undefined) {
-                ctx.currentStepBuilder.withSsoSessionParticipant(result.ssoSessionParticipant);
-            }
-
-            if (result.ssoSessionActivated !== undefined) {
-                ctx.currentStepBuilder.withSsoSessionActivated(result.ssoSessionActivated);
-            }
-
-            if (result.isVerificationStep) {
-                ctx.currentStepBuilder.asVerificationStep();
-            }
-
-            if (result.hasVerificationContext !== undefined) {
-                ctx.currentStepBuilder.withVerificationContext(result.hasVerificationContext);
-            }
-
-            if (result.interactionResult) {
-                ctx.currentStepBuilder.withInteractionResult(result.interactionResult);
-            }
-
-            if (result.submittedClaims) {
-                ctx.currentStepBuilder.withSubmittedClaims(result.submittedClaims);
-            }
-
-            if (result.technicalProfileDetails) {
-                const snapshot = ctx.statebag.getClaimsSnapshot();
-                for (const detail of result.technicalProfileDetails) {
-                    detail.claimsSnapshot = snapshot;
-                    ctx.currentStepBuilder.addTechnicalProfileDetail(detail);
-                }
-            }
-
-            if (result.claimsTransformations) {
-                for (const ct of result.claimsTransformations) {
-                    ctx.currentStepBuilder.addClaimsTransformationDetail(ct);
-                }
-            }
-        }
-
+        // ─── Finalize step ──────────────────────────────────────────────
         if (result.finalizeStep && ctx.currentStepBuilder) {
             if (result.stepResult) {
                 ctx.currentStepBuilder.withResult(result.stepResult);
@@ -196,6 +144,45 @@ export class ResultApplicator {
                 ctx.currentStepBuilder.withError(result.error, result.errorHResult);
             }
             this.finalizeCurrentStep(ctx);
+        }
+
+        // ─── Pop-after-finalize: for finalizeStep + pop (Rule 1) ────────
+        if (needsPop && !result.createStep) {
+            this.popSubJourneys(result.popSubJourney!, ctx);
+        }
+    }
+
+    /**
+     * Pops N SubJourney levels from both JourneyStack and FlowTreeBuilder.
+     * After all pops, the parent inherits the last popped child's orchStep
+     * because B2C ORCH_CS is a global shared statebag value.
+     */
+    private popSubJourneys(count: number, ctx: ClipProcessingContext): void {
+        let lastPoppedOrchStep = 0;
+        for (let i = 0; i < count; i++) {
+            const popped = ctx.journeyStack.pop();
+            ctx.flowTreeBuilder.popSubJourney();
+            if (popped) {
+                lastPoppedOrchStep = popped.lastOrchStep;
+            }
+        }
+        ctx.journeyStack.current().lastOrchStep = lastPoppedOrchStep;
+    }
+
+    /**
+     * Updates the journey stack's orchStep from ORCH_CS in the result's statebag updates.
+     * Replaces the direct `journeyStack.updateOrchStep()` that was previously called
+     * by OrchestrationInterpreter. Must run AFTER pops and BEFORE step creation.
+     */
+    private syncOrchStepFromStatebag(result: InterpretResult, ctx: ClipProcessingContext): void {
+        if (result.statebagUpdates) {
+            const orchCSValue = result.statebagUpdates[StatebagKey.ORCH_CS];
+            if (orchCSValue) {
+                const orchStep = parseInt(orchCSValue, 10);
+                if (!isNaN(orchStep) && orchStep > 0) {
+                    ctx.journeyStack.updateOrchStep(orchStep);
+                }
+            }
         }
     }
 
@@ -239,6 +226,16 @@ export class ResultApplicator {
             ctx.lastStepTimestamps.set(stepKey, currentTimestamp);
             ctx.traceSteps.push(step);
             ctx.executionMap.addStep(step);
+
+            // Record this step in the flow tree.
+            // Skip steps that are SubJourney invocations — the SubJourney
+            // node represents that step in the tree.
+            if (!step.subJourneyId) {
+                const flowCtx = this.buildFlowNodeContext(ctx);
+                const stepData = this.buildStepFlowData(step, ctx.traceSteps.length - 1);
+                const stepNode = ctx.flowTreeBuilder.addStep(stepData, flowCtx);
+                this.populateStepChildren(stepNode, step, ctx.flowTreeBuilder, flowCtx);
+            }
         }
 
         ctx.currentStepBuilder = null;
@@ -275,5 +272,191 @@ export class ResultApplicator {
 
         existing.statebagSnapshot = step.statebagSnapshot;
         existing.claimsSnapshot = step.claimsSnapshot;
+    }
+
+    /**
+     * Creates a FlowNodeContext snapshot from the current processing context.
+     */
+    private buildFlowNodeContext(ctx: ClipProcessingContext): FlowNodeContext {
+        return {
+            timestamp: ctx.currentTimestamp,
+            sequenceNumber: ctx.sequenceNumber,
+            logId: ctx.currentLogId,
+            eventType: ctx.currentEventType,
+            statebagSnapshot: ctx.statebag.getStatebagSnapshot(),
+            claimsSnapshot: ctx.statebag.getClaimsSnapshot(),
+        };
+    }
+
+    /**
+     * Transcribes a TraceStep into a StepFlowData payload for the FlowNode tree.
+     */
+    private buildStepFlowData(step: TraceStep, stepIndex: number): StepFlowData {
+        return {
+            type: FlowNodeType.Step,
+            stepIndex,
+            stepOrder: step.stepOrder,
+            currentJourneyName: step.currentJourneyName,
+            result: step.result,
+            duration: step.duration,
+            errorMessage: step.errorMessage,
+            errorHResult: step.errorHResult,
+            actionHandler: step.actionHandler,
+            uiSettings: step.uiSettings,
+            selectableOptions: [...step.selectableOptions],
+            selectedOption: step.selectedOption,
+            backendApiCalls: step.backendApiCalls,
+        };
+    }
+
+    /**
+     * Builds child FlowNodes (TP, CT, HRD, DC) from TraceStep data
+     * and attaches them to the step FlowNode.
+     */
+    private populateStepChildren(
+        stepNode: FlowNode,
+        step: TraceStep,
+        builder: FlowTreeBuilder,
+        context: FlowNodeContext,
+    ): void {
+        // Build TechnicalProfile children from technicalProfileDetails
+        if (step.technicalProfileDetails) {
+            for (const tpDetail of step.technicalProfileDetails) {
+                const tpData: TechnicalProfileFlowData = {
+                    type: FlowNodeType.TechnicalProfile,
+                    technicalProfileId: tpDetail.id,
+                    providerType: tpDetail.providerType,
+                    protocolType: tpDetail.protocolType,
+                    claimsSnapshot: tpDetail.claimsSnapshot,
+                    claimMappings: undefined,
+                };
+                const tpNode = builder.addTechnicalProfile(stepNode, tpData, context);
+
+                // Nested CTs under this TP
+                if (tpDetail.claimsTransformations) {
+                    for (const ct of tpDetail.claimsTransformations) {
+                        builder.addClaimsTransformation(tpNode, {
+                            type: FlowNodeType.ClaimsTransformation,
+                            transformationId: ct.id,
+                            inputClaims: ct.inputClaims,
+                            inputParameters: ct.inputParameters,
+                            outputClaims: ct.outputClaims,
+                        }, context);
+                    }
+                }
+            }
+        }
+
+        // Build Validation TP children (as TechnicalProfile FlowNodes nested under their parent TP)
+        // Note: validationTechnicalProfiles are TP IDs, they don't have full detail yet
+        // They will become richer when interpreters are enhanced
+        if (step.validationTechnicalProfiles) {
+            // Find the parent TP node (the self-asserted TP that invoked validations)
+            // Typically, the last TP in the step is the self-asserted one
+            const parentTpNode = stepNode.children.find(
+                (c) => c.type === FlowNodeType.TechnicalProfile
+            );
+            if (parentTpNode) {
+                for (const vtpId of step.validationTechnicalProfiles) {
+                    // Only add if not already present (some vtps may already be in technicalProfileDetails)
+                    const alreadyExists = parentTpNode.children.some(
+                        (c) => c.data.type === FlowNodeType.TechnicalProfile
+                              && c.data.technicalProfileId === vtpId
+                    );
+                    if (!alreadyExists) {
+                        builder.addTechnicalProfile(parentTpNode, {
+                            type: FlowNodeType.TechnicalProfile,
+                            technicalProfileId: vtpId,
+                            providerType: "Unknown", // will be enriched when interpreters improve
+                        }, context);
+                    }
+                }
+            }
+        }
+
+        // Build orphan ClaimsTransformation children (CTs not under a TP)
+        // These are CTs in claimsTransformationDetails that aren't nested in any TP
+        const tpCTIds = new Set<string>();
+        if (step.technicalProfileDetails) {
+            for (const tp of step.technicalProfileDetails) {
+                if (tp.claimsTransformations) {
+                    for (const ct of tp.claimsTransformations) {
+                        tpCTIds.add(ct.id);
+                    }
+                }
+            }
+        }
+        for (const ct of step.claimsTransformationDetails) {
+            if (!tpCTIds.has(ct.id)) {
+                builder.addClaimsTransformation(stepNode, {
+                    type: FlowNodeType.ClaimsTransformation,
+                    transformationId: ct.id,
+                    inputClaims: ct.inputClaims,
+                    inputParameters: ct.inputParameters,
+                    outputClaims: ct.outputClaims,
+                }, context);
+            }
+        }
+
+        // Build HRD child if step has selectable options
+        if (step.selectableOptions.length > 0) {
+            builder.addHomeRealmDiscovery(stepNode, {
+                type: FlowNodeType.HomeRealmDiscovery,
+                selectableOptions: [...step.selectableOptions],
+                selectedOption: step.selectedOption,
+                uiSettings: step.uiSettings,
+            }, context);
+        }
+
+        // Build DisplayControl children
+        for (const dcAction of step.displayControlActions) {
+            const dcData: DisplayControlFlowData = {
+                type: FlowNodeType.DisplayControl,
+                displayControlId: dcAction.displayControlId,
+                action: dcAction.action,
+                resultCode: dcAction.resultCode,
+                claimMappings: dcAction.claimMappings,
+            };
+            const dcNode = builder.addDisplayControl(stepNode, dcData, context);
+
+            // Build TP children under DC
+            if (dcAction.technicalProfiles) {
+                for (const dcTp of dcAction.technicalProfiles) {
+                    const dcTpNode = builder.addTechnicalProfile(dcNode, {
+                        type: FlowNodeType.TechnicalProfile,
+                        technicalProfileId: dcTp.technicalProfileId,
+                        providerType: "DisplayControlProvider",
+                        claimMappings: dcTp.claimMappings,
+                    }, context);
+
+                    // CTs under DC TP
+                    if (dcTp.claimsTransformations) {
+                        for (const ct of dcTp.claimsTransformations) {
+                            builder.addClaimsTransformation(dcTpNode, {
+                                type: FlowNodeType.ClaimsTransformation,
+                                transformationId: ct.id,
+                                inputClaims: ct.inputClaims,
+                                inputParameters: ct.inputParameters,
+                                outputClaims: ct.outputClaims,
+                            }, context);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Build claim mappings on step-level TP nodes (from validationTechnicalProfile results)
+        if (step.claimMappings && step.claimMappings.length > 0) {
+            // Find the primary TP or last validation TP to attach mappings
+            const tpNodes = stepNode.children.filter(
+                (c) => c.type === FlowNodeType.TechnicalProfile
+            );
+            if (tpNodes.length > 0) {
+                const lastTp = tpNodes[tpNodes.length - 1];
+                if (lastTp.data.type === FlowNodeType.TechnicalProfile) {
+                    (lastTp.data as { claimMappings: typeof step.claimMappings }).claimMappings = step.claimMappings;
+                }
+            }
+        }
     }
 }

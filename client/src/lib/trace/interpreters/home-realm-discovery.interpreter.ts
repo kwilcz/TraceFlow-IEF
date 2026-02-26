@@ -68,8 +68,6 @@ export class HomeRealmDiscoveryInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            selectableOptions,
-            isInteractive: true,
         });
     }
 

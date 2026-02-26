@@ -35,6 +35,7 @@ vi.mock("@/features/log-analyzer/query-controls.tsx", () => ({
 
 vi.mock("motion/react", () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    animate: () => ({ stop: () => {} }),
     motion: {
         div: (props: Record<string, unknown> & { children?: React.ReactNode }) => {
             const { initial, animate, exit, transition, ...htmlProps } = props;

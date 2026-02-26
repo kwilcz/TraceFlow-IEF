@@ -8,11 +8,10 @@ import {
     LightningIcon,
     MonitorIcon,
     MonitorPlayIcon,
-    ShieldCheckIcon,
     ShuffleIcon,
     TreeStructureIcon,
 } from "@phosphor-icons/react";
-import type { TraceStep } from "@/types/trace";
+import type { StepResult } from "@/types/trace";
 import type { TreeNodeMetadata, TreeNodeType } from "../types";
 import { StepStatusIcon } from "../shared/step-status";
 
@@ -22,7 +21,7 @@ import { StepStatusIcon } from "../shared/step-status";
 
 interface TreeNodeIconProps {
     type: TreeNodeType;
-    result?: TraceStep["result"];
+    result?: StepResult;
     metadata?: TreeNodeMetadata;
 }
 
@@ -40,9 +39,6 @@ function StepTypeIcon({ result, metadata }: Pick<TreeNodeIconProps, "result" | "
     }
     if (metadata?.isFinalStep) {
         return <FlagCheckeredIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" weight="duotone" />;
-    }
-    if (metadata?.isVerificationStep) {
-        return <ShieldCheckIcon className="w-4 h-4 text-sky-600 dark:text-sky-400" weight="duotone" />;
     }
     if (metadata?.isInteractive && !metadata?.isHrdStep) {
         return <MonitorIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" weight="duotone" />;

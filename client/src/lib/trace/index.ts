@@ -38,16 +38,6 @@ export function logsToTraceInput(logs: LogRecord[]): TraceLogInput[] {
 }
 
 /**
- * Get trace step by sequence number.
- */
-export function getTraceStepBySequence(
-    result: TraceParseResult,
-    sequenceNumber: number
-): TraceStep | undefined {
-    return result.traceSteps.find((s) => s.sequenceNumber === sequenceNumber);
-}
-
-/**
  * Get all trace steps for a specific node.
  */
 export function getTraceStepsForNode(

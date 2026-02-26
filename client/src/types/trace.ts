@@ -6,6 +6,8 @@
  * into a coherent timeline for visualization.
  */
 
+import type { FlowNode } from "./flow-node";
+
 /**
  * Result of a trace step execution.
  */
@@ -68,11 +70,6 @@ export interface DisplayControlAction {
     displayControlId: string;
     /** The action performed (e.g., "GetChallenge", "VerifyCode", "SendCode") */
     action: string;
-    /** 
-     * @deprecated Use technicalProfiles array instead for multiple TPs
-     * The technical profile invoked by this action (kept for backward compatibility)
-     */
-    technicalProfileId?: string;
     /** All technical profiles invoked by this action (in execution order) */
     technicalProfiles?: DisplayControlTechnicalProfile[];
     /** HTTP result code if applicable */
@@ -456,6 +453,8 @@ export interface SessionInfo {
 export interface TraceParseResult {
     /** Linear array of trace steps */
     traceSteps: TraceStep[];
+    /** Hierarchical flow tree built during pipeline processing */
+    flowTree: FlowNode;
     /** Map of node IDs to execution status */
     executionMap: TraceExecutionMap;
     /** The main journey ID */

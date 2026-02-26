@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { TraceStep } from "@/types/trace";
+import type { StepResult } from "@/types/trace";
 import {
     CheckCircleIcon,
     ClockIcon,
@@ -29,7 +29,7 @@ const sizeClasses: Record<IconSize, string> = {
  * did not include an icon component, only a badge.
  */
 export const StepStatusIcon: React.FC<{
-    result: TraceStep["result"];
+    result: StepResult;
     size?: IconSize;
 }> = ({ result, size = "md" }) => {
     const cls = sizeClasses[size];
@@ -59,7 +59,7 @@ export const StepStatusIcon: React.FC<{
  * `step-panel.tsx` (2 variants, text-only). The trace-timeline version is
  * chosen because it handles all result types and embeds `StepStatusIcon`.
  */
-const badgeVariants: Record<TraceStep["result"], string> = {
+const badgeVariants: Record<StepResult, string> = {
     Success:
         "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700",
     Error: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700",
@@ -72,7 +72,7 @@ const badgeVariants: Record<TraceStep["result"], string> = {
 /**
  * Pill-style badge showing a colored icon + label for a step result.
  */
-export const StepStatusBadge: React.FC<{ result: TraceStep["result"] }> = ({ result }) => (
+export const StepStatusBadge: React.FC<{ result: StepResult }> = ({ result }) => (
     <Badge variant="outline" className={cn("text-xs gap-1", badgeVariants[result])}>
         <StepStatusIcon result={result} size="sm" />
         {result}

@@ -13,12 +13,8 @@
  */
 
 import type { Clip, ClipsArray, HandlerResultContent } from "@/types/journey-recorder";
-import type { 
-    TraceStep, 
-    ClaimsTransformationDetail, 
-    TechnicalProfileDetail, 
-    BackendApiCall, 
-    UiSettings 
+import type {
+    TraceStep,
 } from "@/types/trace";
 import type { JourneyStack } from "../domain/journey-stack";
 import type { TraceStepBuilder } from "../domain/trace-step-builder";
@@ -90,8 +86,8 @@ export interface InterpretResult {
     /** SubJourney to push onto stack */
     pushSubJourney?: { journeyId: string; journeyName: string };
 
-    /** Whether to pop current SubJourney from stack */
-    popSubJourney?: boolean;
+    /** Number of SubJourney levels to pop from the stack (0 or undefined = no pop) */
+    popSubJourney?: number;
 
     /** Error message if interpretation failed */
     error?: string;
@@ -99,59 +95,11 @@ export interface InterpretResult {
     /** HResult error code (hex string without 0x prefix) */
     errorHResult?: string;
 
-    /** Technical profiles extracted */
-    technicalProfiles?: string[];
-
-    /** Selectable options extracted (for HRD) */
-    selectableOptions?: string[];
-
-    /** Clear selectable options (user has made their choice) */
-    clearSelectableOptions?: boolean;
-
-    /** Claims transformations extracted */
-    claimsTransformations?: ClaimsTransformationDetail[];
-
-    /** Technical profile details (including provider type) */
-    technicalProfileDetails?: TechnicalProfileDetail[];
-
-    /** Display controls extracted */
-    displayControls?: string[];
-
-    /** Whether this is an interactive step */
-    isInteractive?: boolean;
-
     /** Step result override */
     stepResult?: TraceStep["result"];
 
     /** Action handler name for the step */
     actionHandler?: string;
-
-    /** SubJourney ID when this step invokes a SubJourney */
-    subJourneyId?: string;
-
-    /** Backend API calls extracted from PROT statebag */
-    backendApiCalls?: BackendApiCall[];
-
-    /** UI settings extracted from ApiUiManagerInfo */
-    uiSettings?: UiSettings;
-
-    /** Whether SSO session participation was detected */
-    ssoSessionParticipant?: boolean;
-
-    /** Whether SSO session was activated */
-    ssoSessionActivated?: boolean;
-
-    /** Whether this is a verification step */
-    isVerificationStep?: boolean;
-
-    /** Whether this step has a verification context */
-    hasVerificationContext?: boolean;
-
-    /** Interaction result (Continue, Cancelled, Error) */
-    interactionResult?: "Continue" | "Cancelled" | "Error";
-
-    /** Submitted claims from self-asserted form */
-    submittedClaims?: Record<string, string>;
 }
 
 /**
@@ -366,7 +314,7 @@ export abstract class BaseInterpreter implements IClipInterpreter {
         for (const entry of handlerResult.RecorderRecord.Values) {
             if (entry.Key === outerKey && entry.Value) {
                 const value = entry.Value as { Values?: Array<{ Key: string; Value: unknown }> };
-                
+
                 if (value.Values) {
                     for (const innerEntry of value.Values) {
                         if (innerKey === null || innerEntry.Key === innerKey) {

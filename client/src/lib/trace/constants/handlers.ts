@@ -197,14 +197,6 @@ export const SELF_ASSERTED_ACTION = "Web.TPEngine.StateMachineHandlers.SelfAsser
 /** Self-asserted redirect handler */
 export const SELF_ASSERTED_REDIRECT = "Web.TPEngine.StateMachineHandlers.SelfAssertedAttributeProviderRedirectHandler";
 
-/** SubJourney dispatch handler */
-export const SUBJOURNEY_DISPATCH = "Web.TPEngine.StateMachineHandlers.SubJourneyDispatchActionHandler";
-
-/** SubJourney transfer handler */
-export const SUBJOURNEY_TRANSFER = "Web.TPEngine.StateMachineHandlers.SubJourneyTransferActionHandler";
-
-/** SubJourney exit handler */
-export const SUBJOURNEY_EXIT = "Web.TPEngine.StateMachineHandlers.SubJourneyExitActionHandler";
 
 // ============================================================================
 // HANDLER GROUPS - For categorization and filtering
@@ -250,9 +242,6 @@ export const SELF_ASSERTED_HANDLERS = [
 /** All SubJourney handlers */
 export const SUBJOURNEY_HANDLERS = [
     ENQUEUE_NEW_JOURNEY,
-    SUBJOURNEY_DISPATCH,
-    SUBJOURNEY_TRANSFER,
-    SUBJOURNEY_EXIT,
 ] as const;
 
 /** All SSO-related handlers */
@@ -276,7 +265,7 @@ export const STEP_COMPLETION_HANDLERS = [
 // ============================================================================
 
 /** Type for all known handler names */
-export type HandlerName = 
+export type HandlerName =
     | typeof ORCHESTRATION_MANAGER
     | typeof SHOULD_STEP_BE_INVOKED
     | typeof CLAIMS_EXCHANGE_SERVICE_CALL
@@ -304,9 +293,6 @@ export type HandlerName =
     | typeof CLAIM_VERIFICATION_REQUEST
     | typeof API_UI_MANAGER
     | typeof ENQUEUE_NEW_JOURNEY
-    | typeof SUBJOURNEY_DISPATCH
-    | typeof SUBJOURNEY_TRANSFER
-    | typeof SUBJOURNEY_EXIT
     | typeof JOURNEY_RESTART
     | typeof SEND_CLAIMS
     | typeof SEND_CLAIMS_ACTION

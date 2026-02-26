@@ -1,6 +1,11 @@
 import { ListNumbersIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import {
+    FlowNodeType,
+    type StepFlowData,
+    type DisplayControlFlowData,
+} from "@/types/flow-node";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorErrorBanner } from "../inspector-error-banner";
@@ -10,20 +15,28 @@ import {
     StatebagSection,
 } from "../sections";
 import { RawDataToggle } from "../raw-data-toggle";
+import { getStepTpNames, getStepCtNames, isStepFinal, isStepInteractive } from "@/lib/trace/domain/flow-node-utils";
 
 // ============================================================================
 // Step Renderer — type-adaptive renderer for step-level selection
 // ============================================================================
 
 interface StepRendererProps {
-    step: TraceStep;
+    stepNode: FlowNode;
     selection: Selection;
     dispatch: (action: SelectionAction) => void;
 }
 
-export function StepRenderer({ step }: StepRendererProps) {
-    const primaryTP = step.technicalProfiles[0] || step.actionHandler || "Unknown";
-    const stepLabel = `Step ${step.stepOrder} — ${primaryTP}`;
+export function StepRenderer({ stepNode }: StepRendererProps) {
+    const stepData = stepNode.data as StepFlowData;
+    const tpNames = getStepTpNames(stepNode);
+    const primaryTP = tpNames[0] || stepData.actionHandler || "Unknown";
+    const stepLabel = `Step ${stepData.stepOrder} — ${primaryTP}`;
+
+    // Extract DisplayControlFlowData from DC children for ComponentsSection
+    const dcActions: DisplayControlFlowData[] = stepNode.children
+        .filter((c) => c.type === FlowNodeType.DisplayControl)
+        .map((c) => c.data as DisplayControlFlowData);
 
     return (
         <div className="space-y-3">
@@ -31,17 +44,17 @@ export function StepRenderer({ step }: StepRendererProps) {
             <InspectorHeader
                 icon={<ListNumbersIcon className="w-4 h-4" />}
                 name={stepLabel}
-                result={step.result}
-                duration={step.duration}
-                statebag={step.statebagSnapshot}
+                result={stepData.result}
+                duration={stepData.duration}
+                statebag={stepNode.context.statebagSnapshot}
             />
 
             {/* 2. Error banner */}
-            {step.errorMessage && (
+            {stepData.errorMessage && (
                 <div className="px-3">
                     <InspectorErrorBanner
-                        message={step.errorMessage}
-                        hResult={step.errorHResult}
+                        message={stepData.errorMessage}
+                        hResult={stepData.errorHResult}
                     />
                 </div>
             )}
@@ -50,8 +63,8 @@ export function StepRenderer({ step }: StepRendererProps) {
             <div className="px-3">
                 <InspectorBreadcrumb
                     segments={[
-                        { label: step.currentJourneyName },
-                        { label: `Step ${step.stepOrder}` },
+                        { label: stepData.currentJourneyName },
+                        { label: `Step ${stepData.stepOrder}` },
                     ]}
                 />
             </div>
@@ -59,53 +72,53 @@ export function StepRenderer({ step }: StepRendererProps) {
             {/* 4. Metadata badges */}
             <div className="flex flex-wrap gap-1.5 px-3">
                 <Badge variant="outline" className="text-xs font-mono">
-                    {step.eventType}
+                    {stepNode.context.eventType}
                 </Badge>
-                {step.isInteractiveStep && (
+                {isStepInteractive(stepNode) && (
                     <Badge variant="outline" className="text-xs font-mono">
                         Interactive 🖥
                     </Badge>
                 )}
-                {step.isFinalStep && (
+                {isStepFinal(stepData) && (
                     <Badge variant="outline" className="text-xs font-mono">
                         Final
                     </Badge>
                 )}
-                {step.uiSettings?.pageType && (
+                {stepData.uiSettings?.pageType && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {step.uiSettings.pageType}
+                        {stepData.uiSettings.pageType}
                     </Badge>
                 )}
-                {step.uiSettings?.language && (
+                {stepData.uiSettings?.language && (
                     <Badge variant="outline" className="text-xs font-mono">
-                        {step.uiSettings.language}
+                        {stepData.uiSettings.language}
                     </Badge>
                 )}
                 <Badge variant="outline" className="text-xs font-mono">
-                    {new Date(step.timestamp).toLocaleTimeString()}
+                    {new Date(stepNode.context.timestamp).toLocaleTimeString()}
                 </Badge>
             </div>
 
             {/* 5. Components */}
             <div className="px-3">
                 <ComponentsSection
-                    technicalProfiles={step.technicalProfiles}
-                    claimsTransformations={step.claimsTransformations}
-                    displayControlActions={step.displayControlActions}
-                    selectableOptions={step.selectableOptions}
-                    backendApiCalls={step.backendApiCalls}
-                    selectedOption={step.selectedOption}
+                    technicalProfiles={tpNames}
+                    claimsTransformations={getStepCtNames(stepNode)}
+                    displayControlActions={dcActions}
+                    selectableOptions={stepData.selectableOptions}
+                    backendApiCalls={stepData.backendApiCalls}
+                    selectedOption={stepData.selectedOption}
                 />
             </div>
 
             {/* 6. Statebag */}
             <div className="px-3">
-                <StatebagSection statebag={step.statebagSnapshot} />
+                <StatebagSection statebag={stepNode.context.statebagSnapshot} />
             </div>
 
             {/* 7. Raw data */}
             <div className="px-3">
-                <RawDataToggle data={step} />
+                <RawDataToggle data={stepNode.data} />
             </div>
         </div>
     );

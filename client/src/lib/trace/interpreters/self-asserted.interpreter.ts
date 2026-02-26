@@ -133,8 +133,6 @@ export class SelfAssertedInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
-            isInteractive: true,
         });
     }
 
@@ -163,8 +161,6 @@ export class SelfAssertedInterpreter extends BaseInterpreter {
             return this.successNoOp({
                 statebagUpdates,
                 claimsUpdates,
-                technicalProfiles,
-                isInteractive: true,
                 stepResult: "Error",
                 error: errorInfo.message,
                 errorHResult: errorInfo.hResult,
@@ -174,8 +170,6 @@ export class SelfAssertedInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
-            isInteractive: true,
         });
     }
 
@@ -203,9 +197,6 @@ export class SelfAssertedInterpreter extends BaseInterpreter {
         return this.successFinalizeStep({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
-            claimsTransformations,
-            isInteractive: true,
             stepResult: "Success",
         });
     }

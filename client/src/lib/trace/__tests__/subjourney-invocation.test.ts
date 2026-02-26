@@ -50,32 +50,6 @@ describe("SubJourney Invocation", () => {
             const step4 = result.traceSteps.find((s) => s.stepOrder === 4);
             expect(step4?.subJourneyId).toBe(fixture.subJourneys.passwordReset);
         });
-
-        it("should detect SubJourney invocation from SubJourneyDispatchActionHandler", () => {
-            const logs = [
-                buildTraceLogInput(
-                    fixture,
-                    [
-                        buildHeadersClip(fixture, "Event:AUTH"),
-                        buildOrchestrationManagerAction(),
-                        buildOrchestrationResult(3),
-                        buildActionClip("SubJourneyDispatchActionHandler"),
-                        buildActionResult(true, {
-                            Values: [
-                                { Key: "SubJourney", Value: fixture.subJourneys.mfa },
-                                { Key: "SubJourneyId", Value: fixture.subJourneys.mfa },
-                            ],
-                        }),
-                        buildOrchestrationManagerAction(),
-                    ],
-                    0
-                ),
-            ];
-
-            const result = parseTrace(logs);
-
-            expect(result.traceSteps[0].subJourneyId).toBe(fixture.subJourneys.mfa);
-        });
     });
 
     describe("Step Counter Reset", () => {

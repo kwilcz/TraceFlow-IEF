@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react";
 import * as scroll from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
@@ -42,6 +41,18 @@ function collectStepIds(nodes: TreeNode[]): Set<string> {
     return ids;
 }
 
+/** Count step nodes in the tree. */
+function countStepNodes(nodes: TreeNode[]): number {
+    let count = 0;
+    const stack = [...nodes];
+    while (stack.length > 0) {
+        const node = stack.pop()!;
+        if (node.type === "step") count++;
+        if (node.children) stack.push(...node.children);
+    }
+    return count;
+}
+
 /** Determines whether a tree node matches the current selection. */
 function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
     if (!selection) return false;
@@ -82,8 +93,8 @@ function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
 // ============================================================================
 
 export function JourneyTree() {
-    const traceSteps = useLogStore(useShallow((s) => s.traceSteps));
-    const tree = useMemo(() => buildTreeStructure(traceSteps), [traceSteps]);
+    const flowTree = useLogStore((s) => s.flowTree);
+    const tree = useMemo(() => buildTreeStructure(flowTree), [flowTree]);
 
     const { selection, dispatch } = useDebuggerContext();
 
@@ -230,7 +241,7 @@ export function JourneyTree() {
 
             {/* Footer */}
             <div className="flex items-center justify-between px-3 py-1.5 border-t border-border text-[10px] text-muted-foreground shrink-0">
-                <span>{traceSteps.length} steps</span>
+                <span>{countStepNodes(tree)} steps</span>
             </div>
         </div>
     );

@@ -108,7 +108,6 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
         });
     }
 
@@ -130,7 +129,6 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         return this.successFinalizeStep({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
             stepResult: "Success",
         });
     }
@@ -155,7 +153,6 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            selectableOptions,
         });
     }
 
@@ -176,7 +173,6 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles,
         });
     }
 

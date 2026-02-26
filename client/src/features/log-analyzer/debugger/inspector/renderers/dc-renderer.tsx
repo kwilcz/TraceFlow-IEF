@@ -1,5 +1,13 @@
 import { AppWindowIcon } from "@phosphor-icons/react";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import {
+    FlowNodeType,
+    type StepFlowData,
+    type DisplayControlFlowData,
+    type TechnicalProfileFlowData,
+    type ClaimsTransformationFlowData,
+} from "@/types/flow-node";
+import { findChildNode } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorErrorBanner } from "../inspector-error-banner";
@@ -18,39 +26,46 @@ import { RawDataToggle } from "../raw-data-toggle";
 // ============================================================================
 
 interface DcRendererProps {
-    step: TraceStep;
+    stepNode: FlowNode;
     selection: Selection;
     dispatch: (action: SelectionAction) => void;
 }
 
-export function DcRenderer({ step, selection, dispatch }: DcRendererProps) {
+export function DcRenderer({ stepNode, selection, dispatch }: DcRendererProps) {
+    const stepData = stepNode.data as StepFlowData;
     const dcId = (selection.metadata?.displayControlId as string) ?? "";
-    const dcActionName = (selection.metadata?.action as string) ?? undefined;
-    const dcAction = step.displayControlActions.find(
-        (a) => a.displayControlId === dcId && (!dcActionName || a.action === dcActionName),
-    );
+    const dcNode = findChildNode(stepNode, FlowNodeType.DisplayControl, dcId);
+    const dcData = dcNode?.data as DisplayControlFlowData | undefined;
 
     // Claims from claimMappings
-    const claims = dcAction?.claimMappings?.map((m) => ({
+    const claims = dcData?.claimMappings?.map((m) => ({
         claimType: m.policyClaimType,
         value: m.partnerClaimType,
     }));
 
-    // CTs from nested TPs
+    // Extract ClaimsTransformationFlowData from DC's nested TP → CT children
     const cts =
-        dcAction?.technicalProfiles?.flatMap((tp) => tp.claimsTransformations ?? []) ?? [];
+        dcNode?.children
+            .filter((c) => c.type === FlowNodeType.TechnicalProfile)
+            .flatMap((tp) =>
+                tp.children
+                    .filter((c) => c.type === FlowNodeType.ClaimsTransformation)
+                    .map((c) => c.data as ClaimsTransformationFlowData),
+            ) ?? [];
 
-    // Validation-type TPs from nested TPs (all DC TPs treated as validation candidates)
+    // Validation-type TPs from DC's TP children
     const validationTps =
-        dcAction?.technicalProfiles?.map((tp) => tp.technicalProfileId) ?? [];
+        dcNode?.children
+            .filter((c) => c.type === FlowNodeType.TechnicalProfile)
+            .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId) ?? [];
 
     // Primary TP for breadcrumb (first TP in step)
-    const mainTpId = step.technicalProfiles[0];
+    const mainTpId = stepData.technicalProfileNames[0];
 
     // Build breadcrumb segments
     const segments: BreadcrumbSegment[] = [
         {
-            label: `Step ${step.stepOrder}`,
+            label: `Step ${stepData.stepOrder}`,
             onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
         },
     ];
@@ -69,16 +84,16 @@ export function DcRenderer({ step, selection, dispatch }: DcRendererProps) {
             <InspectorHeader
                 icon={<AppWindowIcon className="w-4 h-4" />}
                 name={dcId}
-                result={step.result}
-                statebag={step.statebagSnapshot}
+                result={stepData.result}
+                statebag={stepNode.context.statebagSnapshot}
             />
 
             {/* 2. Error banner */}
-            {step.errorMessage && (
+            {stepData.errorMessage && (
                 <div className="px-3">
                     <InspectorErrorBanner
-                        message={step.errorMessage}
-                        hResult={step.errorHResult}
+                        message={stepData.errorMessage}
+                        hResult={stepData.errorHResult}
                     />
                 </div>
             )}
@@ -111,12 +126,12 @@ export function DcRenderer({ step, selection, dispatch }: DcRendererProps) {
 
             {/* 7. Statebag */}
             <div className="px-3">
-                <StatebagSection statebag={step.statebagSnapshot} />
+                <StatebagSection statebag={stepNode.context.statebagSnapshot} />
             </div>
 
             {/* 8. Raw data */}
             <div className="px-3">
-                <RawDataToggle data={step} />
+                <RawDataToggle data={dcNode?.data ?? stepNode.data} />
             </div>
         </div>
     );

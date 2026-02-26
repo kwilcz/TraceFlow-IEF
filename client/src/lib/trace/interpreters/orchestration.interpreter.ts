@@ -11,6 +11,23 @@
  * - Extracts statebag and claims snapshots
  * - Detects errors from Exception in HandlerResult
  * - Handles retries (same step, new timestamp) as new interactions
+ * - Detects SubJourney completion via ORCH_CS signals and pops the journey stack
+ *
+ * SubJourney Pop Detection:
+ *
+ * Rule 1 — "No ORCH_CS" pop:
+ *   When OrchestrationManager fires with NO ORCH_CS in its HandlerResult
+ *   AND we're in a SubJourney, the SubJourney has completed. Pop it and
+ *   inherit the child's lastOrchStep into the parent (B2C ORCH_CS is global).
+ *
+ * Rule 2 — Gap detection (ORCH_CS increases, diff > 1):
+ *   Walk up ancestors looking for one where currentOrchStep - ancestor.lastOrchStep == 1.
+ *   If found, pop down to that ancestor. If not found, assume steps were skipped
+ *   (preconditions etc.) at the current level.
+ *
+ * Rule 3 — ORCH_CS decrease:
+ *   Pop the current SubJourney, then keep popping while currentOrchStep < parent.lastOrchStep.
+ *   Step belongs to the first context where currentOrchStep >= lastOrchStep.
  */
 
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
@@ -31,15 +48,15 @@ const NEW_INTERACTION_THRESHOLD_MS = 1000;
  * 2. Managing the overall journey flow
  * 3. Coordinating between different step types
  * 4. Detecting retries based on timestamp gaps
+ * 5. Detecting SubJourney completions and popping the journey stack
  */
 export class OrchestrationInterpreter extends BaseInterpreter {
     readonly handlerNames = [ORCHESTRATION_MANAGER] as const;
 
-    private lastOrchStep = 0;
     private lastTimestamp: number | null = null;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, journeyStack, timestamp } = context;
+        const { handlerResult, journeyStack, timestamp, stepBuilder } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -47,6 +64,17 @@ export class OrchestrationInterpreter extends BaseInterpreter {
 
         const statebagUpdates = this.extractStatebagFromResult(handlerResult);
         const claimsUpdates = this.extractClaimsFromResult(handlerResult);
+
+        // ─── Rule 1: "No ORCH_CS" → SubJourney completed ────────────────────
+        // When OrchestrationManager fires with NO ORCH_CS in its result AND we're
+        // inside a SubJourney, the current SubJourney has no more steps → pop it.
+        // The parent inherits the global ORCH_CS (child's last value) because
+        // B2C statebag ORCH_CS is a single shared value across all contexts.
+        const hasNewOrchCS = StatebagKey.ORCH_CS in statebagUpdates;
+
+        if (!hasNewOrchCS && journeyStack.isInSubJourney()) {
+            return this.successFinalizeStep({ statebagUpdates, claimsUpdates, popSubJourney: 1 });
+        }
 
         const currentOrchStep = this.extractOrchStep({
             ...context.statebag,
@@ -68,17 +96,39 @@ export class OrchestrationInterpreter extends BaseInterpreter {
         const isNewInteraction = this.lastTimestamp !== null && 
             (currentTimestamp - this.lastTimestamp) > NEW_INTERACTION_THRESHOLD_MS;
         
-        // Reset state if this is a new interaction
+        // Reset state if this is a new interaction (scoped to current context)
         if (isNewInteraction) {
-            this.lastOrchStep = 0;
+            journeyStack.current().lastOrchStep = 0;
         }
 
-        const stepChanged = currentOrchStep > 0 && currentOrchStep !== this.lastOrchStep;
+        const contextLastOrchStep = journeyStack.current().lastOrchStep;
+        const stepChanged = currentOrchStep > 0 && currentOrchStep !== contextLastOrchStep;
 
         if (stepChanged) {
-            this.lastOrchStep = currentOrchStep;
+            let popCount = 0;
+
+            // ─── Rule 3: ORCH_CS decrease → pop until valid context ──────────
+            if (currentOrchStep < contextLastOrchStep && journeyStack.isInSubJourney()) {
+                const fullStack = journeyStack.getFullStack();
+                popCount = 1; // At least pop the current SubJourney
+                // Walk upward: keep popping while the ancestor's lastOrchStep > currentOrchStep
+                for (let i = fullStack.length - 2; i >= 1; i--) {
+                    if (currentOrchStep < fullStack[i].lastOrchStep) {
+                        popCount++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            // ─── Rule 2: Gap detection (increase, diff > 1) ─────────────────
+            else if (currentOrchStep > contextLastOrchStep) {
+                const diff = currentOrchStep - contextLastOrchStep;
+                if (diff > 1 && journeyStack.isInSubJourney()) {
+                    popCount = this.computeGapPopCount(journeyStack, currentOrchStep);
+                }
+            }
+
             this.lastTimestamp = currentTimestamp;
-            journeyStack.updateOrchStep(currentOrchStep);
 
             return this.successCreateStep({
                 statebagUpdates,
@@ -86,12 +136,17 @@ export class OrchestrationInterpreter extends BaseInterpreter {
                 actionHandler: ORCHESTRATION_MANAGER,
                 stepResult: hasException ? "Error" : "Success",
                 error: errorMessage,
-                technicalProfiles: technicalProfile ? [technicalProfile] : undefined,
+                popSubJourney: popCount > 0 ? popCount : undefined,
             });
         }
 
         // Update timestamp even if step didn't change
         this.lastTimestamp = currentTimestamp;
+
+        // Apply technical profile directly to step builder for non-createStep cases
+        if (technicalProfile) {
+            stepBuilder.addTechnicalProfile(technicalProfile);
+        }
 
         // Even if step didn't change, check for error on current step
         if (hasException) {
@@ -100,15 +155,30 @@ export class OrchestrationInterpreter extends BaseInterpreter {
                 claimsUpdates,
                 stepResult: "Error",
                 error: errorMessage,
-                technicalProfiles: technicalProfile ? [technicalProfile] : undefined,
             });
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            technicalProfiles: technicalProfile ? [technicalProfile] : undefined,
         });
+    }
+
+    /**
+     * Rule 2 implementation: walk the stack read-only looking for an ancestor where
+     * `currentOrchStep - ancestor.lastOrchStep == 1`. Returns the number of levels to pop.
+     */
+    private computeGapPopCount(
+        journeyStack: InterpretContext["journeyStack"],
+        currentOrchStep: number,
+    ): number {
+        const fullStack = journeyStack.getFullStack();
+        for (let i = fullStack.length - 2; i >= 0; i--) {
+            if (currentOrchStep - fullStack[i].lastOrchStep === 1) {
+                return fullStack.length - 1 - i;
+            }
+        }
+        return 0; // No ancestor matched → assume skipped steps, don't pop
     }
 
     /**
@@ -139,7 +209,6 @@ export class OrchestrationInterpreter extends BaseInterpreter {
     }
 
     reset(): void {
-        this.lastOrchStep = 0;
         this.lastTimestamp = null;
     }
 }

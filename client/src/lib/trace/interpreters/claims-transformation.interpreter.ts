@@ -15,7 +15,7 @@
  */
 
 import type { HandlerResultContent } from "@/types/journey-recorder";
-import type { ClaimsTransformationDetail, BackendApiCall, TechnicalProfileDetail } from "@/types/trace";
+import type { ClaimsTransformationDetail, BackendApiCall } from "@/types/trace";
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import {
     CLAIMS_TRANSFORMATION_ACTION,
@@ -39,7 +39,7 @@ export class ClaimsTransformationInterpreter extends BaseInterpreter {
     readonly handlerNames = CLAIMS_TRANSFORMATION_HANDLERS;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult } = context;
+        const { handlerResult, stepBuilder } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -52,24 +52,30 @@ export class ClaimsTransformationInterpreter extends BaseInterpreter {
 
         // Extract TP context and associate CTs with it
         const tpContext = this.extractTechnicalProfileContext(handlerResult);
-        let technicalProfileDetails: TechnicalProfileDetail[] | undefined;
 
         if (tpContext && claimsTransformations.length > 0) {
             // Create TechnicalProfileDetail with associated CTs
-            technicalProfileDetails = [{
+            stepBuilder.addTechnicalProfileDetail({
                 id: tpContext.technicalProfileId,
                 providerType: tpContext.providerType || "Unknown",
                 protocolType: tpContext.protocolType,
                 claimsTransformations,
-            }];
+            });
+        }
+
+        // Apply claims transformations directly to step builder
+        for (const ct of claimsTransformations) {
+            stepBuilder.addClaimsTransformationDetail(ct);
+        }
+
+        // Apply backend API calls directly to step builder
+        for (const call of backendApiCalls) {
+            stepBuilder.addBackendApiCall(call);
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
-            claimsTransformations,
-            technicalProfileDetails,
-            backendApiCalls: backendApiCalls.length > 0 ? backendApiCalls : undefined,
             actionHandler: CLAIMS_TRANSFORMATION_ACTION,
         });
     }

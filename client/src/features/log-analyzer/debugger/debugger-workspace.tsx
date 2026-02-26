@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useLogStore } from "@/stores/log-store";
 import { DebuggerProvider, useDebuggerContext } from "./debugger-context";
@@ -43,9 +42,7 @@ function SelectionSync() {
  * `--split-ratio` CSS custom property on the container.
  */
 export function DebuggerWorkspace() {
-    const { traceSteps, traceLoading } = useLogStore(
-        useShallow((s) => ({ traceSteps: s.traceSteps, traceLoading: s.traceLoading })),
-    );
+    const traceLoading = useLogStore((s) => s.traceLoading);
     const { splitRatio, resizerProps, containerRef } = useResizer();
 
     const topBasis = `calc(var(--split-ratio) * 100%)`;

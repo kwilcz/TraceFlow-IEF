@@ -1,5 +1,9 @@
 import { useMemo } from "react";
-import { computeClaimsDiff, type ClaimsDiff, type TraceStep } from "@/types/trace";
+import { computeClaimsDiff, type ClaimsDiff } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
+import type { TechnicalProfileFlowData, ClaimsTransformationFlowData } from "@/types/flow-node";
+import { findStepFlowNode, findPreviousStepNode } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection } from "./types";
 
 // ============================================================================
@@ -84,24 +88,26 @@ function buildRows(
  * TP[0] diffs against the previous step; TP[i] diffs against TP[i-1].
  */
 function resolveTpSnapshots(
-    currentStep: TraceStep,
-    prevStep: TraceStep | undefined,
+    currentNode: FlowNode,
+    prevNode: FlowNode | null,
     itemId: string | undefined,
 ): { before: Record<string, string>; after: Record<string, string> } | null {
-    const details = currentStep.technicalProfileDetails;
-    if (!details?.length || !itemId) return null;
+    const tpChildren = currentNode.children.filter((c) => c.type === FlowNodeType.TechnicalProfile);
+    if (!tpChildren.length || !itemId) return null;
 
-    const tpIndex = details.findIndex((d) => d.id === itemId);
+    const tpIndex = tpChildren.findIndex(
+        (c) => (c.data as TechnicalProfileFlowData).technicalProfileId === itemId,
+    );
     if (tpIndex < 0) return null;
 
-    const tp = details[tpIndex];
-    if (!tp.claimsSnapshot) return null;
+    const tpData = tpChildren[tpIndex].data as TechnicalProfileFlowData;
+    if (!tpData.claimsSnapshot) return null;
 
-    const after = tp.claimsSnapshot;
+    const after = tpData.claimsSnapshot;
     const before =
         tpIndex > 0
-            ? details[tpIndex - 1].claimsSnapshot ?? EMPTY_SNAPSHOT
-            : prevStep?.claimsSnapshot ?? EMPTY_SNAPSHOT;
+            ? (tpChildren[tpIndex - 1].data as TechnicalProfileFlowData).claimsSnapshot ?? EMPTY_SNAPSHOT
+            : prevNode?.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
 
     return { before, after };
 }
@@ -111,26 +117,30 @@ function resolveTpSnapshots(
  * Finds the parent TP containing the CT and uses that TP's snapshot.
  */
 function resolveCtSnapshots(
-    currentStep: TraceStep,
-    prevStep: TraceStep | undefined,
+    currentNode: FlowNode,
+    prevNode: FlowNode | null,
     itemId: string | undefined,
 ): { before: Record<string, string>; after: Record<string, string> } | null {
-    const details = currentStep.technicalProfileDetails;
-    if (!details?.length || !itemId) return null;
+    const tpChildren = currentNode.children.filter((c) => c.type === FlowNodeType.TechnicalProfile);
+    if (!tpChildren.length || !itemId) return null;
 
-    const tpIndex = details.findIndex(
-        (d) => d.claimsTransformations?.some((ct) => ct.id === itemId),
+    const tpIndex = tpChildren.findIndex((tp) =>
+        tp.children.some(
+            (c) =>
+                c.type === FlowNodeType.ClaimsTransformation &&
+                (c.data as ClaimsTransformationFlowData).transformationId === itemId,
+        ),
     );
     if (tpIndex < 0) return null;
 
-    const tp = details[tpIndex];
-    if (!tp.claimsSnapshot) return null;
+    const tpData = tpChildren[tpIndex].data as TechnicalProfileFlowData;
+    if (!tpData.claimsSnapshot) return null;
 
-    const after = tp.claimsSnapshot;
+    const after = tpData.claimsSnapshot;
     const before =
         tpIndex > 0
-            ? details[tpIndex - 1].claimsSnapshot ?? EMPTY_SNAPSHOT
-            : prevStep?.claimsSnapshot ?? EMPTY_SNAPSHOT;
+            ? (tpChildren[tpIndex - 1].data as TechnicalProfileFlowData).claimsSnapshot ?? EMPTY_SNAPSHOT
+            : prevNode?.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
 
     return { before, after };
 }
@@ -154,50 +164,56 @@ const EMPTY_RESULT: ClaimsDiffResult = { diff: null, rows: [] };
  */
 export function useClaimsDiff(
     selection: Selection | null,
-    traceSteps: TraceStep[],
+    flowTree: FlowNode | null,
 ): ClaimsDiffResult {
     const stepIndex = selection?.stepIndex ?? -1;
     const selectionType = selection?.type;
     const selectionItemId = selection?.itemId;
 
-    // Extract the two relevant steps OUTSIDE the useMemo
-    const currentStep = traceSteps[stepIndex] as TraceStep | undefined;
-    const prevStep = stepIndex > 0 ? traceSteps[stepIndex - 1] : undefined;
+    // Resolve the current and previous step nodes from the flow tree
+    const currentNode = useMemo(
+        () => (flowTree ? findStepFlowNode(flowTree, stepIndex) : null),
+        [flowTree, stepIndex],
+    );
+    const prevNode = useMemo(
+        () => (flowTree && stepIndex > 0 ? findPreviousStepNode(flowTree, stepIndex) : null),
+        [flowTree, stepIndex],
+    );
 
     return useMemo(() => {
-        if (!currentStep) return EMPTY_RESULT;
+        if (!currentNode) return EMPTY_RESULT;
 
         let before: Record<string, string>;
         let after: Record<string, string>;
 
         if (selectionType === "technicalProfile") {
-            const resolved = resolveTpSnapshots(currentStep, prevStep, selectionItemId);
+            const resolved = resolveTpSnapshots(currentNode, prevNode, selectionItemId);
             if (resolved) {
                 before = resolved.before;
                 after = resolved.after;
             } else {
                 // Fall back to step-level diff
-                after = currentStep.claimsSnapshot ?? EMPTY_SNAPSHOT;
-                before = prevStep?.claimsSnapshot ?? EMPTY_SNAPSHOT;
+                after = currentNode.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
+                before = prevNode?.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
             }
         } else if (selectionType === "transformation") {
-            const resolved = resolveCtSnapshots(currentStep, prevStep, selectionItemId);
+            const resolved = resolveCtSnapshots(currentNode, prevNode, selectionItemId);
             if (resolved) {
                 before = resolved.before;
                 after = resolved.after;
             } else {
                 // Fall back to step-level diff
-                after = currentStep.claimsSnapshot ?? EMPTY_SNAPSHOT;
-                before = prevStep?.claimsSnapshot ?? EMPTY_SNAPSHOT;
+                after = currentNode.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
+                before = prevNode?.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
             }
         } else {
             // step, hrd, displayControl — step-level diff
-            after = currentStep.claimsSnapshot ?? EMPTY_SNAPSHOT;
-            before = prevStep?.claimsSnapshot ?? EMPTY_SNAPSHOT;
+            after = currentNode.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
+            before = prevNode?.context.claimsSnapshot ?? EMPTY_SNAPSHOT;
         }
 
         const diff = computeClaimsDiff(before, after);
         const rows = buildRows(diff, before, after);
         return { diff, rows };
-    }, [currentStep, prevStep, selectionType, selectionItemId]);
+    }, [currentNode, prevNode, selectionType, selectionItemId]);
 }

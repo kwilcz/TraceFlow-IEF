@@ -114,7 +114,7 @@ import type { IClipInterpreter } from "./base-interpreter";
  * Array of all interpreter factory functions.
  * Use with registerInterpreters() for bulk registration.
  */
-export const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
+const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
     createOrchestrationInterpreter,
     createStepInvokeInterpreter,
     createClaimsExchangeInterpreter,
@@ -134,16 +134,8 @@ export const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
 /**
  * Creates all interpreters and returns them as an array.
  */
-export function createAllInterpreters(): IClipInterpreter[] {
+function createAllInterpreters(): IClipInterpreter[] {
     return ALL_INTERPRETER_FACTORIES.map((factory) => factory());
-}
-
-/**
- * Initializes the global interpreter registry with all interpreters.
- * @deprecated Use getInterpreterRegistry() instead for synchronous access.
- */
-export function initializeInterpreterRegistry(): InterpreterRegistry {
-    return getInterpreterRegistry();
 }
 
 import { InterpreterRegistry } from "./interpreter-registry";

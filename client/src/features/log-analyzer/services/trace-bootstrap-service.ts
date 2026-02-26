@@ -7,6 +7,7 @@ import { initialTraceState } from "@/features/log-analyzer/model/trace-state";
 export function generateTraceStateFromLogs(logs: LogRecord[]): Partial<TraceState> {
     if (logs.length === 0) {
         return {
+            flowTree: null,
             traceSteps: initialTraceState.traceSteps,
             executionMap: initialTraceState.executionMap,
             activeStepIndex: initialTraceState.activeStepIndex,
@@ -25,6 +26,7 @@ export function generateTraceStateFromLogs(logs: LogRecord[]): Partial<TraceStat
     const correlationId = logs[0]?.correlationId ?? "";
 
     return {
+        flowTree: result.flowTree,
         traceSteps: result.traceSteps,
         executionMap: result.executionMap,
         mainJourneyId: result.mainJourneyId,
@@ -49,7 +51,7 @@ export function enrichUserFlow(flow: UserFlow, tracePatch: Partial<TraceState>):
     return {
         ...flow,
         stepCount: steps.length,
-        completed: steps.some(s => s.isFinalStep === true),
+        completed: steps.some(s => s.actionHandler === "SendClaims"),
         hasErrors: steps.some(s => s.result === "Error"),
         cancelled: steps.some(s => s.interactionResult === "Cancelled"),
         subJourneys: [...new Set(steps.filter(s => s.subJourneyId).map(s => s.subJourneyId!))],

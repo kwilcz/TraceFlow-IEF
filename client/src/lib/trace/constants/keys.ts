@@ -199,7 +199,7 @@ export const SUPPORTED_EVENT_INSTANCES = new Set<string>([
 export const DEDUP_THRESHOLD_MS = 1000;
 
 /**
- * Event type values used in TraceStep.
+ * Event type values used in TraceStep and FlowNodeContext.
  */
 export type EventType = "AUTH" | "API" | "SELFASSERTED" | "ClaimsExchange";
 

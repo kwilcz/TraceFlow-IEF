@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
+import { buildFlowNodeIndex } from "@/lib/trace/domain/flow-node-utils";
+import { FlowNodeType } from "@/types/flow-node";
 import { useDebuggerContext } from "./debugger-context";
 import {
     StepRenderer,
@@ -24,7 +27,12 @@ import {
  */
 export function InspectorPanel() {
     const { selection, dispatch } = useDebuggerContext();
-    const traceSteps = useLogStore(useShallow((s) => s.traceSteps));
+    const flowTree = useLogStore(useShallow((s) => s.flowTree));
+
+    const nodeIndex = useMemo(
+        () => (flowTree ? buildFlowNodeIndex(flowTree) : new Map()),
+        [flowTree],
+    );
 
     if (!selection) {
         return (
@@ -34,26 +42,26 @@ export function InspectorPanel() {
         );
     }
 
-    const step = traceSteps[selection.stepIndex];
-    if (!step) return null;
+    const stepNode = nodeIndex.get(selection.stepIndex);
+    if (!stepNode || stepNode.data.type !== FlowNodeType.Step) return null;
 
     return (
         <ScrollArea className="h-full">
             <div className="px-3 pb-4">
                 {selection.type === "step" && (
-                    <StepRenderer step={step} selection={selection} dispatch={dispatch} />
+                    <StepRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
                 {selection.type === "technicalProfile" && (
-                    <TpRenderer step={step} selection={selection} dispatch={dispatch} />
+                    <TpRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
                 {selection.type === "transformation" && (
-                    <CtRenderer step={step} selection={selection} dispatch={dispatch} />
+                    <CtRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
                 {selection.type === "hrd" && (
-                    <HrdRenderer step={step} selection={selection} dispatch={dispatch} />
+                    <HrdRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
                 {selection.type === "displayControl" && (
-                    <DcRenderer step={step} selection={selection} dispatch={dispatch} />
+                    <DcRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
             </div>
         </ScrollArea>

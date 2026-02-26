@@ -2,7 +2,8 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { Selection } from "@/features/log-analyzer/debugger/types";
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode, FlowNodeContext, StepFlowData } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
 
 // ============================================================================
 // Mocks — must be declared before any import that touches them
@@ -92,38 +93,67 @@ function renderWithProvider(selection: Selection | null) {
     );
 }
 
-function makeStep(
-    index: number,
-    claimsSnapshot: Record<string, string>,
-): TraceStep {
+function makeFlowNodeContext(claimsSnapshot: Record<string, string> = {}): FlowNodeContext {
     return {
-        sequenceNumber: index,
         timestamp: new Date(),
-        logId: `log-${index}`,
+        sequenceNumber: 0,
+        logId: "test-log",
         eventType: "AUTH",
-        graphNodeId: `node-${index}`,
-        journeyContextId: "journey-1",
-        currentJourneyName: "TestJourney",
-        stepOrder: index,
-        result: "Success",
         statebagSnapshot: {},
         claimsSnapshot,
-        technicalProfiles: [],
-        selectableOptions: [],
-        isInteractiveStep: false,
-        claimsTransformations: [],
-        claimsTransformationDetails: [],
-        displayControls: [],
-        displayControlActions: [],
-    } as TraceStep;
+    };
+}
+
+function makeStepNode(
+    stepIndex: number,
+    claimsSnapshot: Record<string, string>,
+): FlowNode {
+    return {
+        id: `step-${stepIndex}`,
+        name: `Step ${stepIndex}`,
+        type: FlowNodeType.Step,
+        triggeredAtStep: stepIndex,
+        lastStep: stepIndex,
+        children: [],
+        data: {
+            type: FlowNodeType.Step,
+            stepIndex,
+            stepOrder: stepIndex,
+            journeyContextId: "journey-1",
+            currentJourneyName: "TestJourney",
+            graphNodeId: `node-${stepIndex}`,
+            result: "Success",
+            isInteractiveStep: false,
+            isFinalStep: false,
+            isVerificationStep: false,
+            technicalProfileNames: [],
+            claimsTransformationNames: [],
+            displayControlNames: [],
+            selectableOptions: [],
+        } as StepFlowData,
+        context: makeFlowNodeContext(claimsSnapshot),
+    };
+}
+
+function makeFlowTree(...steps: FlowNode[]): FlowNode {
+    return {
+        id: "root",
+        name: "Root",
+        type: FlowNodeType.Root,
+        triggeredAtStep: 0,
+        lastStep: 0,
+        children: steps,
+        data: { type: FlowNodeType.Root, policyId: "test-policy" },
+        context: makeFlowNodeContext(),
+    };
 }
 
 function resetStore() {
     useLogStore.setState(useLogStore.getInitialState());
 }
 
-function setTraceSteps(steps: TraceStep[]) {
-    useLogStore.setState({ traceSteps: steps });
+function setFlowTree(tree: FlowNode) {
+    useLogStore.setState({ flowTree: tree });
 }
 
 // ============================================================================
@@ -137,7 +167,7 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 1: No selection ──────────────────────────────────────────
     it("shows 'Select a step' message when no selection", () => {
-        setTraceSteps([makeStep(0, { a: "1" })]);
+        setFlowTree(makeFlowTree(makeStepNode(0, { a: "1" })));
         renderWithProvider(null);
 
         expect(screen.getByText("Select a step to view claims diff")).toBeTruthy();
@@ -145,7 +175,7 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 2: Step with 0 claims ────────────────────────────────────
     it("shows 'No claims at this step' when step has empty snapshot", () => {
-        setTraceSteps([makeStep(0, {})]);
+        setFlowTree(makeFlowTree(makeStepNode(0, {})));
         renderWithProvider({ type: "step", stepIndex: 0 });
 
         expect(screen.getByText("No claims at this step")).toBeTruthy();
@@ -153,7 +183,7 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 3: First step → all claims "Added" ──────────────────────
     it("marks all claims as ADDED on the first step", () => {
-        setTraceSteps([makeStep(0, { email: "user@test.com", name: "Joe" })]);
+        setFlowTree(makeFlowTree(makeStepNode(0, { email: "user@test.com", name: "Joe" })));
         renderWithProvider({ type: "step", stepIndex: 0 });
 
         const addedBadges = screen.getAllByText("ADDED");
@@ -162,10 +192,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 4: Step N → correct diff types ──────────────────────────
     it("renders correct diff statuses for step N", () => {
-        setTraceSteps([
-            makeStep(0, { keep: "v", changed: "old", gone: "bye" }),
-            makeStep(1, { keep: "v", changed: "new", fresh: "hello" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { keep: "v", changed: "old", gone: "bye" }),
+            makeStepNode(1, { keep: "v", changed: "new", fresh: "hello" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         expect(screen.getByText("ADDED")).toBeTruthy();
@@ -176,10 +206,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 5: Status toggle click → filters rows ───────────────────
     it("filters rows when status toggle is clicked", () => {
-        setTraceSteps([
-            makeStep(0, { a: "1" }),
-            makeStep(1, { a: "1", b: "new" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { a: "1" }),
+            makeStepNode(1, { a: "1", b: "new" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         // Initially both ADDED and UNCHANGED should be visible
@@ -198,7 +228,7 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 6: Text filter → filters by key ─────────────────────────
     it("filters rows by text input matching claim key", () => {
-        setTraceSteps([makeStep(0, { email: "user@test.com", name: "Joe", phone: "123" })]);
+        setFlowTree(makeFlowTree(makeStepNode(0, { email: "user@test.com", name: "Joe", phone: "123" })));
         renderWithProvider({ type: "step", stepIndex: 0 });
 
         // All 3 claims visible initially
@@ -214,10 +244,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 7: Sort order (Added → Modified → Removed → Unchanged) ─
     it("sorts rows by status priority then alphabetically", () => {
-        setTraceSteps([
-            makeStep(0, { beta: "old", zebra: "old", keep: "v" }),
-            makeStep(1, { keep: "v", zebra: "new", alpha: "new" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { beta: "old", zebra: "old", keep: "v" }),
+            makeStepNode(1, { keep: "v", zebra: "new", alpha: "new" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         // Get all key cells (font-mono text-xs)
@@ -237,10 +267,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 8: Modified row: old value line-through, new value displayed
     it("renders modified row with old value having line-through", () => {
-        setTraceSteps([
-            makeStep(0, { claim: "old-val" }),
-            makeStep(1, { claim: "new-val" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { claim: "old-val" }),
+            makeStepNode(1, { claim: "new-val" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         expect(screen.getByText("old-val")).toBeTruthy();
@@ -253,10 +283,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 9: Removed row: old value shown, new value "—" ──────────
     it("renders removed row with old value and em-dash placeholder", () => {
-        setTraceSteps([
-            makeStep(0, { gone: "old-val" }),
-            makeStep(1, {}),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { gone: "old-val" }),
+            makeStepNode(1, {}),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         expect(screen.getByText("old-val")).toBeTruthy();
@@ -265,10 +295,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 10: Change count badge shows correct count ──────────────
     it("shows change count badge with correct number", () => {
-        setTraceSteps([
-            makeStep(0, { a: "1", b: "2" }),
-            makeStep(1, { a: "changed", c: "new" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { a: "1", b: "2" }),
+            makeStepNode(1, { a: "changed", c: "new" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         // Changes: a modified, b removed, c added = 3 changed
@@ -277,10 +307,10 @@ describe("ClaimsDiffTable", () => {
 
     // ── Test 11: Row background tinting via data-attribute selectors ──
     it("applies data-status attributes for row tinting", () => {
-        setTraceSteps([
-            makeStep(0, { keep: "v", changed: "old", gone: "bye" }),
-            makeStep(1, { keep: "v", changed: "new", fresh: "hello" }),
-        ]);
+        setFlowTree(makeFlowTree(
+            makeStepNode(0, { keep: "v", changed: "old", gone: "bye" }),
+            makeStepNode(1, { keep: "v", changed: "new", fresh: "hello" }),
+        ));
         renderWithProvider({ type: "step", stepIndex: 1 });
 
         const table = screen.getByRole("table");

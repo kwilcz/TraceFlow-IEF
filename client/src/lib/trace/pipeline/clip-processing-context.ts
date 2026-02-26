@@ -2,6 +2,7 @@ import type { HeadersContent, HandlerResultContent } from "@/types/journey-recor
 import type { TraceStep } from "@/types/trace";
 import type { JourneyStack } from "../domain/journey-stack";
 import type { TraceStepBuilder } from "../domain/trace-step-builder";
+import type { FlowTreeBuilder } from "../domain/flow-tree-builder";
 import type { StatebagAccumulator } from "../services/statebag-accumulator";
 import type { ExecutionMapBuilder } from "../services/execution-map-builder";
 import { ClipKind } from "../constants/keys";
@@ -50,6 +51,7 @@ export interface ClipProcessingContext {
     journeyStack: JourneyStack;
     statebag: StatebagAccumulator;
     executionMap: ExecutionMapBuilder;
+    flowTreeBuilder: FlowTreeBuilder;
 
     // === Step Building ===
     currentStepBuilder: TraceStepBuilder | null;
@@ -108,6 +110,7 @@ export function createInitialContext(
     journeyStack: JourneyStack,
     statebag: StatebagAccumulator,
     executionMap: ExecutionMapBuilder,
+    flowTreeBuilder: FlowTreeBuilder,
 ): ClipProcessingContext {
     return {
         correlationId: "",
@@ -131,6 +134,7 @@ export function createInitialContext(
         journeyStack,
         statebag,
         executionMap,
+        flowTreeBuilder,
 
         currentStepBuilder: null,
 
@@ -177,9 +181,10 @@ export function beginNewSession(
     // Reset accumulated state
     ctx.statebag.reset();
 
-    // Pop all sub-journeys, returning to root
+    // Pop all sub-journeys, returning to root — keep FlowTreeBuilder in sync
     while (ctx.journeyStack.depth() > 0) {
         ctx.journeyStack.pop();
+        ctx.flowTreeBuilder.popSubJourney();
     }
     ctx.journeyStack.root().lastOrchStep = 0;
 

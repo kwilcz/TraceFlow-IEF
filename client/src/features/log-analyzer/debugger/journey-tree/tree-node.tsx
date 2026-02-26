@@ -35,7 +35,6 @@ function getStepTintClass(node: TreeNode): string | undefined {
     if (!m) return undefined;
     if (m.isHrdStep) return "bg-warning-soft/50";
     if (m.isFinalStep) return "bg-success-soft/50";
-    if (m.isVerificationStep) return "bg-accent-soft/50";
     if (m.isInteractive && !m.isHrdStep) return "bg-accent-soft/50";
     return undefined;
 }
@@ -47,6 +46,7 @@ const labelStyles: Record<string, string> = {
     userjourney: "font-medium text-sm text-foreground truncate",
     subjourney: "font-medium text-sm text-foreground truncate",
     hrd: "text-xs font-medium text-amber-700 dark:text-amber-300",
+    hrdOption: "text-xs text-muted-foreground/60 italic",
     selectedOption: "text-xs text-emerald-700 dark:text-emerald-300",
     technicalProfile: "text-xs break-all text-violet-700 dark:text-violet-300",
     dcTechnicalProfile: "text-xs break-all text-violet-600 dark:text-violet-400",
@@ -101,6 +101,12 @@ function NodeBadges({ node }: { node: TreeNode }) {
                         </Badge>
                     )}
                 </>
+            )}
+
+            {type === "selectedOption" && (
+                <Badge variant="outline" className="text-[10px] bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300">
+                    Selected
+                </Badge>
             )}
 
             {type === "step" && metadata?.result === "Error" && (

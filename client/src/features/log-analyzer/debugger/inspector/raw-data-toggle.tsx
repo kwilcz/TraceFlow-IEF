@@ -9,7 +9,7 @@ import { InspectorSection } from "./inspector-section";
 // Exact behavior, position, and rendering TBD in a future design session.
 
 interface RawDataToggleProps {
-    /** The TraceStep or sub-object to dump as raw JSON. */
+    /** The FlowNode data or sub-object to dump as raw JSON. */
     data: unknown;
 }
 

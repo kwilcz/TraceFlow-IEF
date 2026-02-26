@@ -327,22 +327,3 @@ export const createHrdSequence = (
         },
     },
 ];
-
-/**
- * Creates a SubJourney dispatch sequence.
- */
-export const createSubJourneyDispatchSequence = (
-    subJourneyId: string,
-    stepNumber: number
-): ClipsArray => [
-    createPredicateClip("PredicateTrue"),
-    createActionClip("SubJourneyDispatchActionHandler"),
-    {
-        Kind: "HandlerResult",
-        Content: {
-            Result: true,
-            Statebag: createStatebag(stepNumber),
-            RecorderRecord: createSubJourneyRecord(subJourneyId),
-        },
-    },
-];
