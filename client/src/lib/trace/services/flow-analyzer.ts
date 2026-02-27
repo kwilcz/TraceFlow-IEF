@@ -8,6 +8,7 @@
  */
 
 import type { LogRecord } from "@/types/logs";
+import { parseTrace } from "../trace-parser";
 import type { UserFlow } from "@/types/trace";
 
 /**
@@ -39,30 +40,88 @@ export class FlowAnalyzer {
         let index = 0;
 
         for (const [correlationId, group] of groups) {
-            const first = group[0];
-            const last = group[group.length - 1];
+            const parserResult = parseTrace(
+                group.map((log) => ({
+                    id: log.id,
+                    timestamp: log.timestamp,
+                    policyId: log.policyId,
+                    correlationId: log.correlationId,
+                    clips: log.clips,
+                }))
+            );
 
-            flows.push({
-                id: `${correlationId}-${index}`,
-                correlationId,
-                policyId: first.policyId,
-                startTime: first.timestamp,
-                endTime: last.timestamp,
-                stepCount: 0,
-                completed: false,
-                hasErrors: false,
-                cancelled: false,
-                subJourneys: [],
-                logIds: group.map((l) => l.id),
-                userEmail: undefined,
-                userObjectId: undefined,
-            });
+            const segments =
+                parserResult.sessions.length > 1
+                    ? splitByAuthSessionBoundaries(group)
+                    : [group];
 
-            index++;
+            for (const segment of segments) {
+                if (segment.length === 0) continue;
+
+                const first = segment[0];
+                const last = segment[segment.length - 1];
+
+                flows.push({
+                    id: `${correlationId}-${index}`,
+                    correlationId,
+                    policyId: first.policyId,
+                    startTime: first.timestamp,
+                    endTime: last.timestamp,
+                    stepCount: 0,
+                    completed: false,
+                    hasErrors: false,
+                    cancelled: false,
+                    subJourneys: [],
+                    logIds: segment.map((l) => l.id),
+                    userEmail: undefined,
+                    userObjectId: undefined,
+                });
+
+                index++;
+            }
         }
 
         return flows;
     }
+}
+
+function splitByAuthSessionBoundaries(logs: LogRecord[]): LogRecord[][] {
+    const segments: LogRecord[][] = [];
+    let current: LogRecord[] = [];
+    let hasSeenAuth = false;
+
+    for (const log of logs) {
+        const isAuthBoundary = isAuthHeadersEvent(log);
+
+        if (isAuthBoundary && hasSeenAuth && current.length > 0) {
+            segments.push(current);
+            current = [log];
+            continue;
+        }
+
+        if (isAuthBoundary) {
+            hasSeenAuth = true;
+        }
+
+        current.push(log);
+    }
+
+    if (current.length > 0) {
+        segments.push(current);
+    }
+
+    return segments;
+}
+
+function isAuthHeadersEvent(log: LogRecord): boolean {
+    return log.clips.some(
+        (clip) =>
+            clip.Kind === "Headers" &&
+            typeof clip.Content === "object" &&
+            clip.Content !== null &&
+            "EventInstance" in clip.Content &&
+            clip.Content.EventInstance === "Event:AUTH"
+    );
 }
 
 /**

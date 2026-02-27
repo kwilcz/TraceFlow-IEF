@@ -20,14 +20,15 @@ import type {
 
 function createHeadersClip(
     correlationId: string,
-    policyId: string
+    policyId: string,
+    eventInstance: "Event:AUTH" | "Event:API" | "Event:SELFASSERTED" | "Event:ClaimsExchange" = "Event:API"
 ): HeadersClip {
     return {
         Kind: "Headers",
         Content: {
             UserJourneyRecorderEndpoint: "urn:journeyrecorder:applicationinsights",
             CorrelationId: correlationId,
-            EventInstance: "Event:AUTH",
+            EventInstance: eventInstance,
             TenantId: "test.onmicrosoft.com",
             PolicyId: policyId,
         },

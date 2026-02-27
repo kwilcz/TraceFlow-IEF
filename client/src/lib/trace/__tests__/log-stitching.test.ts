@@ -7,6 +7,9 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
+import { groupLogsIntoFlows } from "@/lib/trace/services/flow-analyzer";
+import type { LogRecord } from "@/types/logs";
+import type { TraceLogInput } from "@/types/trace";
 import {
     createTestFixture,
     buildTraceLogInput,
@@ -22,6 +25,27 @@ import {
     buildClaimsStatebag,
     type TestFixture,
 } from "./fixtures";
+
+function toLogRecord(log: TraceLogInput): LogRecord {
+    return {
+        id: log.id,
+        timestamp: log.timestamp,
+        policyId: log.policyId,
+        correlationId: log.correlationId,
+        cloudRoleInstance: "test-instance",
+        rawIds: [log.id],
+        payloadText: JSON.stringify(log.clips),
+        parsedPayload: log.clips,
+        clips: log.clips,
+        customDimensions: {
+            correlationId: log.correlationId,
+            eventName: "Journey Recorder Event v1.0.0",
+            tenant: "test.onmicrosoft.com",
+            userJourney: log.policyId,
+            version: "1.0.0",
+        },
+    };
+}
 
 describe("Log Stitching", () => {
     let fixture: TestFixture;
@@ -296,6 +320,73 @@ describe("Log Stitching", () => {
             const result = parseTrace(logs);
 
             expect(result.success).toBe(true);
+        });
+    });
+
+    describe("Picker-facing flow grouping", () => {
+        it("should split same correlationId into two flow rows when a second AUTH session starts", () => {
+            const traceLogs: TraceLogInput[] = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:AUTH"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(1),
+                    ],
+                    0
+                ),
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                    ],
+                    300
+                ),
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:SELFASSERTED"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(3),
+                    ],
+                    600
+                ),
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:AUTH"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(1),
+                    ],
+                    900
+                ),
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                    ],
+                    1200
+                ),
+            ];
+
+            const logs = traceLogs.map(toLogRecord);
+            const flows = groupLogsIntoFlows(logs);
+
+            expect(flows).toHaveLength(2);
+            expect(flows[0].id).not.toBe(flows[1].id);
+            expect(flows[0].correlationId).toBe(fixture.correlationId);
+            expect(flows[1].correlationId).toBe(fixture.correlationId);
+
+            expect(flows[0].logIds).toEqual(traceLogs.slice(0, 3).map((l) => l.id));
+            expect(flows[1].logIds).toEqual(traceLogs.slice(3).map((l) => l.id));
+
+            const firstFlowIds = new Set(flows[0].logIds);
+            const overlappingIds = flows[1].logIds.filter((id) => firstFlowIds.has(id));
+            expect(overlappingIds).toHaveLength(0);
         });
     });
 });
