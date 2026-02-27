@@ -7,6 +7,7 @@ import type { TreeNode, Selection } from "../types";
 import { buildTreeStructure } from "./tree-builder";
 import { TreeNodeRow } from "./tree-node";
 import { useTreeKeyboard } from "./use-tree-keyboard";
+import { collectDefaultExpandedIds } from "./journey-tree.utils";
 
 // ============================================================================
 // Helpers
@@ -20,23 +21,6 @@ function collectAllIds(nodes: TreeNode[]): string[] {
         const n = stack.pop()!;
         ids.push(n.id);
         if (n.children) stack.push(...n.children);
-    }
-    return ids;
-}
-
-/** Collect default expanded node IDs (userjourney roots + all step nodes). */
-function collectStepIds(nodes: TreeNode[]): Set<string> {
-    const ids = new Set<string>();
-    const stack = [...nodes];
-    while (stack.length > 0) {
-        const node = stack.pop()!;
-        // Auto-expand userjourney root and step nodes
-        if (node.type === "userjourney" || node.type === "step") {
-            ids.add(node.id);
-        }
-        if (node.children) {
-            stack.push(...node.children);
-        }
     }
     return ids;
 }
@@ -94,12 +78,18 @@ function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
 
 export function JourneyTree() {
     const flowTree = useLogStore((s) => s.flowTree);
+    const selectedFlowId = useLogStore((s) => s.selectedFlow?.id ?? "no-flow");
     const tree = useMemo(() => buildTreeStructure(flowTree), [flowTree]);
+
+    return <JourneyTreeContent key={selectedFlowId} tree={tree} />;
+}
+
+function JourneyTreeContent({ tree }: { tree: TreeNode[] }) {
 
     const { selection, dispatch } = useDebuggerContext();
 
-    // Expand state — step nodes expanded by default
-    const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() => collectStepIds(tree));
+    // Expand state — journey containers and steps expanded by default
+    const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() => collectDefaultExpandedIds(tree));
 
     // ---- Expand / Collapse ----
 

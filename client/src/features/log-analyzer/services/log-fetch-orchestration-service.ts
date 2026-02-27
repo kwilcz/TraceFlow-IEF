@@ -8,6 +8,7 @@ import type {
     LogFetchOrchestrationInput,
     LogFetchOrchestrationResult,
 } from "@/features/log-analyzer/types/log-fetch-orchestration";
+import type { UserFlow } from "@/types/trace";
 
 const defaultDeps: LogFetchOrchestrationDeps = {
     client: applicationInsightsClient,
@@ -55,7 +56,7 @@ export async function runTwoPhaseLogFetchOrchestration(
     }
 
     const userFlows = deps.groupLogsIntoFlows(processed);
-    const selectedFlow = userFlows[0] ?? null;
+    const selectedFlow = selectInitialFlowByPickerOrder(userFlows);
     const selectedLog = selectedFlow
         ? (processed.find((log) => selectedFlow.logIds.includes(log.id)) ?? null)
         : null;
@@ -67,4 +68,19 @@ export async function runTwoPhaseLogFetchOrchestration(
         selectedLog,
         effectiveMaxRows: safeMaxRows,
     };
+}
+
+function selectInitialFlowByPickerOrder(userFlows: UserFlow[]): UserFlow | null {
+    if (userFlows.length === 0) {
+        return null;
+    }
+
+    return [...userFlows].sort((left, right) => {
+        const policyComparison = left.policyId.localeCompare(right.policyId);
+        if (policyComparison !== 0) {
+            return policyComparison;
+        }
+
+        return right.startTime.getTime() - left.startTime.getTime();
+    })[0];
 }

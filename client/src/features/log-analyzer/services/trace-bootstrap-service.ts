@@ -47,6 +47,7 @@ export function generateTraceStateFromLogs(logs: LogRecord[]): Partial<TraceStat
 export function enrichUserFlow(flow: UserFlow, tracePatch: Partial<TraceState>): UserFlow {
     const steps = tracePatch.traceSteps ?? [];
     const claims = tracePatch.finalClaims ?? {};
+    const latestEmail = resolveLatestEmail(steps, claims, flow.userEmail);
 
     return {
         ...flow,
@@ -55,7 +56,51 @@ export function enrichUserFlow(flow: UserFlow, tracePatch: Partial<TraceState>):
         hasErrors: steps.some(s => s.result === "Error"),
         cancelled: steps.some(s => s.interactionResult === "Cancelled"),
         subJourneys: [...new Set(steps.filter(s => s.subJourneyId).map(s => s.subJourneyId!))],
-        userEmail: claims.signInName ?? claims.email ?? flow.userEmail,
+        userEmail: latestEmail,
         userObjectId: claims.objectId ?? flow.userObjectId,
     };
+}
+
+function resolveLatestEmail(
+    steps: NonNullable<TraceState["traceSteps"]>,
+    finalClaims: Record<string, string>,
+    fallback?: string,
+): string | undefined {
+    for (let index = steps.length - 1; index >= 0; index--) {
+        const stepClaims = steps[index].claimsSnapshot ?? {};
+        const signInName = normalizeClaimValue(stepClaims.signInName);
+        if (signInName) {
+            return signInName;
+        }
+
+        const email = normalizeClaimValue(stepClaims.email);
+        if (email) {
+            return email;
+        }
+    }
+
+    const finalSignInName = normalizeClaimValue(finalClaims.signInName);
+    if (finalSignInName) {
+        return finalSignInName;
+    }
+
+    const finalEmail = normalizeClaimValue(finalClaims.email);
+    if (finalEmail) {
+        return finalEmail;
+    }
+
+    return fallback;
+}
+
+function normalizeClaimValue(value: string | undefined): string | undefined {
+    if (!value) {
+        return undefined;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "null") {
+        return undefined;
+    }
+
+    return trimmed;
 }
