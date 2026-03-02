@@ -1,10 +1,15 @@
 "use client";
 
+import { createContext, useContext } from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 import { noHighlight, focusRing, dataDisabledState, transitionAll } from "@/lib/styles";
+
+
+// ── Variant context — flows from TabsList to TabsTrigger ────────────────
+const TabsVariantContext = createContext<TabsVariant>("default");
 
 function Tabs({
     className,
@@ -26,7 +31,7 @@ function Tabs({
     );
 }
 
-type TabsVariant = "default" | "line";
+type TabsVariant = "default" | "flat" | "line";
 
 const tabsListVariants = cva(
     "relative inline-flex p-1",
@@ -34,6 +39,7 @@ const tabsListVariants = cva(
         variants: {
             variant: {
                 default: "bg-default rounded-[calc(var(--radius-2xl)+0.25rem)]",
+                flat: "bg-transparent p-0 rounded-none",
                 line: "bg-transparent p-0 rounded-none",
             },
             orientation: {
@@ -42,6 +48,16 @@ const tabsListVariants = cva(
             },
         },
         compoundVariants: [
+            {
+                variant: "flat",
+                orientation: "horizontal",
+                className: "border-b border-border max-w-full overflow-x-auto overflow-y-clip scrollbar-none",
+            },
+            {
+                variant: "flat",
+                orientation: "vertical",
+                className: "border-l border-border",
+            },
             {
                 variant: "line",
                 orientation: "horizontal",
@@ -78,35 +94,65 @@ function TabsList({
         "horizontal";
 
     return (
-        <TabsPrimitive.List
-            data-slot="tabs-list"
-            data-variant={variant}
-            data-hide-separator={hideSeparator ? "true" : undefined}
-            className={cn(tabsListVariants({ variant, orientation }), className)}
-            {...props}
-        >
-            <TabsIndicator variant={variant} />
-            {children}
-        </TabsPrimitive.List>
+        <TabsVariantContext.Provider value={variant ?? "default"}>
+            <TabsPrimitive.List
+                data-slot="tabs-list"
+                data-variant={variant}
+                data-hide-separator={hideSeparator ? "true" : undefined}
+                className={cn(tabsListVariants({ variant, orientation }), className)}
+                {...props}
+            >
+                <TabsIndicator variant={variant} />
+                {children}
+            </TabsPrimitive.List>
+        </TabsVariantContext.Provider>
     );
 }
 
-const tabsTriggerBaseStyles = cn(
-    "relative z-10 flex w-full items-center justify-center gap-1.5 px-4 py-1.5 rounded-3xl text-sm font-medium text-muted outline-none select-none cursor-pointer",
+const tabsTriggerBase = cn(
+    "relative z-10 flex w-full items-center justify-center gap-1.5 px-4 py-1.5 text-sm outline-none select-none cursor-pointer",
     noHighlight,
     transitionAll,
     "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-    "data-[selected=true]:text-segment-foreground aria-selected:text-segment-foreground",
-    "hover:not-data-[selected=true]:not-aria-selected:opacity-70",
     focusRing,
-    dataDisabledState
+    dataDisabledState,
+);
+
+const tabsTriggerVariants = cva(
+    tabsTriggerBase,
+    {
+        variants: {
+            variant: {
+                default: cn(
+                    "rounded-3xl font-medium text-muted",
+                    "data-[selected=true]:text-segment-foreground aria-selected:text-segment-foreground",
+                    "hover:not-data-[selected=true]:not-aria-selected:opacity-70",
+                ),
+                flat: cn(
+                    "rounded-3xl font-medium text-muted",
+                    "data-[selected=true]:text-segment-foreground aria-selected:text-segment-foreground",
+                    "hover:not-data-[selected=true]:not-aria-selected:opacity-70",
+                ),
+                line: cn(
+                    "rounded-none font-normal text-muted-foreground",
+                    "data-[selected=true]:text-foreground data-[selected=true]:font-medium",
+                    "aria-selected:text-foreground aria-selected:font-medium",
+                    "hover:not-data-[selected=true]:not-aria-selected:text-foreground hover:not-data-[selected=true]:not-aria-selected:opacity-100",
+                ),
+            },
+        },
+        defaultVariants: {
+            variant: "default",
+        },
+    }
 );
 
 function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
+    const variant = useContext(TabsVariantContext);
     return (
         <TabsPrimitive.Tab
             data-slot="tabs-trigger"
-            className={cn(tabsTriggerBaseStyles, className)}
+            className={cn(tabsTriggerVariants({ variant }), className)}
             {...props}
         />
     );
@@ -115,7 +161,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
 const tabsIndicatorBase = cn(
     "absolute inset-0 z-0",
     "transition-all duration-250 ease-out motion-reduce:transition-none",
-    "[width:var(--active-tab-width)] [height:var(--active-tab-height)] [translate:var(--active-tab-left)_var(--active-tab-top)]"
+    "w-(--active-tab-width) h-(--active-tab-height) [translate:var(--active-tab-left)_var(--active-tab-top)]"
 );
 
 const tabsIndicatorVariants = cva(
@@ -124,7 +170,8 @@ const tabsIndicatorVariants = cva(
         variants: {
             variant: {
                 default: "bg-segment shadow-surface rounded-3xl",
-                line: "bg-primary shadow-none rounded-none",
+                flat: "bg-surface shadow-surface",
+                line: "bg-primary shadow-none rounded-full h-0.5 [translate:var(--active-tab-left)_calc(var(--active-tab-top)+var(--active-tab-height)-2px)]",
             },
         },
         defaultVariants: {

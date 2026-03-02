@@ -1,7 +1,10 @@
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { FileCodeIcon } from "@phosphor-icons/react";
 import { getStatebagLabel, STATUS_CHIP_KEYS } from "@/lib/statebag-labels";
 import type { StepResult } from "@/types/trace";
 import type React from "react";
+import { useDebuggerContext } from "../debugger-context";
 import { DurationBadge, StepStatusBadge } from "../shared";
 
 // ============================================================================
@@ -19,6 +22,8 @@ interface InspectorHeaderProps {
     duration?: number;
     /** Full statebag snapshot for the selected step. */
     statebag: Record<string, string>;
+    /** Source log record ID — enables the "View Source" button when provided. */
+    logId?: string;
 }
 
 /**
@@ -28,7 +33,7 @@ interface InspectorHeaderProps {
  * Below it, a row of `Badge` chips surfaces the most important statebag
  * values at a glance (see `STATUS_CHIP_KEYS`).
  */
-export function InspectorHeader({ icon, name, result, duration, statebag }: InspectorHeaderProps) {
+export function InspectorHeader({ icon, name, result, duration, statebag, logId }: InspectorHeaderProps) {
     return (
         <div>
             {/* ── Sticky identity bar (36 px) ────────────────────────── */}
@@ -41,6 +46,7 @@ export function InspectorHeader({ icon, name, result, duration, statebag }: Insp
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                    {logId && <ViewSourceButton logId={logId} />}
                     {result && <StepStatusBadge result={result} />}
                     <DurationBadge durationMs={duration} />
                 </div>
@@ -88,5 +94,40 @@ function StatusChips({ statebag }: { statebag: Record<string, string> }) {
                 );
             })}
         </div>
+    );
+}
+
+// ============================================================================
+// View Source Button (internal)
+// ============================================================================
+
+/**
+ * Small icon button that switches the bottom panel to "Raw Log" and
+ * navigates to the log record matching the given `logId`.
+ */
+function ViewSourceButton({ logId }: { logId: string }) {
+    const { setActiveBottomTab, setTargetLogId } = useDebuggerContext();
+
+    const handleClick = () => {
+        setActiveBottomTab("raw-log");
+        setTargetLogId(logId);
+    };
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        onClick={handleClick}
+                        aria-label="View Source"
+                        className="inline-flex items-center justify-center size-6 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    >
+                        <FileCodeIcon className="size-3.5" />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">View Source</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     );
 }

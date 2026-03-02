@@ -71,6 +71,7 @@ export function TpRenderer({ stepNode, selection, dispatch }: TpRendererProps) {
                 result={stepData.result}
                 duration={stepData.duration}
                 statebag={stepNode.context.statebagSnapshot}
+                logId={stepNode.context.logId}
             />
 
             {/* 2. Error banner(s) */}

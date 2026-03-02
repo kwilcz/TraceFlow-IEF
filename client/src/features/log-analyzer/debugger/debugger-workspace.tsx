@@ -5,7 +5,7 @@ import { getStepPosition } from "@/lib/trace/domain/flow-node-utils";
 import { DebuggerProvider, useDebuggerContext } from "./debugger-context";
 import { InspectorPanel } from "./inspector-panel";
 import { JourneyTree } from "./journey-tree/journey-tree";
-import { ClaimsDiffTable } from "./claims-diff-table";
+import { BottomPanel } from "./bottom-panel";
 import { useResizer } from "./use-resizer";
 
 // ============================================================================
@@ -95,12 +95,12 @@ export function DebuggerWorkspace() {
                     data-testid="workspace-resizer"
                 />
 
-                {/* ── Bottom row: StatebagPanel (Phase 3 → ClaimsDiffTable) */}
+                {/* ── Bottom row: Tabbed panel (Claims Diff + Raw Log) */}
                 <div
-                    className="min-h-0 overflow-y-auto"
+                    className="min-h-0 overflow-hidden"
                     style={{ flexBasis: bottomBasis }}
                 >
-                    <ClaimsDiffTable />
+                    <BottomPanel />
                 </div>
             </div>
         </DebuggerProvider>

@@ -66,6 +66,7 @@ export function CtRenderer({ stepNode, selection, dispatch }: CtRendererProps) {
                 name={ctId}
                 result={stepData.result}
                 statebag={stepNode.context.statebagSnapshot}
+                logId={stepNode.context.logId}
             />
 
             {/* 2. Breadcrumb */}

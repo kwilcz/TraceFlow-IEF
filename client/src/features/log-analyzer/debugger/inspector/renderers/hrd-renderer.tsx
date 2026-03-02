@@ -40,6 +40,7 @@ export function HrdRenderer({ stepNode, selection, dispatch }: HrdRendererProps)
                 name="Home Realm Discovery"
                 result={stepData.result}
                 statebag={stepNode.context.statebagSnapshot}
+                logId={stepNode.context.logId}
             />
 
             {/* 2. Breadcrumb */}

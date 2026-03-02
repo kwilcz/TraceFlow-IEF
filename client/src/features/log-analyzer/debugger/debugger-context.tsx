@@ -1,5 +1,12 @@
-import { createContext, useContext, useReducer, type Dispatch, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useReducer, useState, type Dispatch, type ReactNode } from "react";
 import type { Selection, SelectionAction } from "./types";
+
+// ============================================================================
+// Bottom Panel Tab Type
+// ============================================================================
+
+/** Discriminator for the active bottom-panel tab. */
+export type BottomTab = "claims-diff" | "raw-log";
 
 // ============================================================================
 // Pure Reducer — exported for unit testing
@@ -42,6 +49,14 @@ export function selectionReducer(state: Selection | null, action: SelectionActio
 interface DebuggerContextValue {
     selection: Selection | null;
     dispatch: Dispatch<SelectionAction>;
+    /** Currently active bottom-panel tab. */
+    activeBottomTab: BottomTab;
+    /** Switch the bottom-panel to a specific tab. */
+    setActiveBottomTab: (tab: BottomTab) => void;
+    /** Log ID that the "View Source" action wants to navigate to (or `null`). */
+    targetLogId: string | null;
+    /** Request navigation to a specific log record in the Raw Log tab. */
+    setTargetLogId: (id: string | null) => void;
 }
 
 const DebuggerContext = createContext<DebuggerContextValue | null>(null);
@@ -49,9 +64,16 @@ const DebuggerContext = createContext<DebuggerContextValue | null>(null);
 /** Provides selection state and dispatch to the debugger workspace tree. */
 export function DebuggerProvider({ children }: { children: ReactNode }) {
     const [selection, dispatch] = useReducer(selectionReducer, null);
+    const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>("claims-diff");
+    const [targetLogId, setTargetLogId] = useState<string | null>(null);
+
+    const value = useMemo(
+        () => ({ selection, dispatch, activeBottomTab, setActiveBottomTab, targetLogId, setTargetLogId }),
+        [selection, activeBottomTab, targetLogId],
+    );
 
     return (
-        <DebuggerContext.Provider value={{ selection, dispatch }}>
+        <DebuggerContext.Provider value={value}>
             {children}
         </DebuggerContext.Provider>
     );

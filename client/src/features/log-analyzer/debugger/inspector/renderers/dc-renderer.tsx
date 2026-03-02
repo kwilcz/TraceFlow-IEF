@@ -86,6 +86,7 @@ export function DcRenderer({ stepNode, selection, dispatch }: DcRendererProps) {
                 name={dcId}
                 result={stepData.result}
                 statebag={stepNode.context.statebagSnapshot}
+                logId={stepNode.context.logId}
             />
 
             {/* 2. Error banner(s) */}
