@@ -92,5 +92,5 @@ UpgradeLog*.XML
 *.pubxml
 *.publishproj
 
-.github/
-!.github/workflows
+.github/*
+!.github/workflows/

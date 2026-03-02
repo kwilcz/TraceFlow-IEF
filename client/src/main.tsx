@@ -4,7 +4,11 @@ import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 import '@/styles/globals.css';
 
-const router = createRouter({ routeTree });
+// Derive basepath from Vite's base config (set via VITE_BASE_PATH env var in CI).
+// Strip trailing slash so TanStack Router normalizes correctly; default to '/'.
+const basepath = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
+
+const router = createRouter({ routeTree, basepath });
 
 declare module '@tanstack/react-router' {
   interface Register {
