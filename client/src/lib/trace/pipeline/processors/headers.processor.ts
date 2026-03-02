@@ -12,12 +12,12 @@
 import type { Clip, HeadersContent } from "@/types/journey-recorder";
 import type { ClipProcessingContext } from "../clip-processing-context";
 import type { ClipProcessor } from "./clip-processor";
-import type { ResultApplicator } from "../result-applicator";
+import type { StepLifecycleManager } from "../step-lifecycle-manager";
 import { ClipKind, eventInstanceToEventType } from "../../constants/keys";
 import { beginNewSession } from "../clip-processing-context";
 
 export class HeadersProcessor implements ClipProcessor {
-    constructor(private readonly resultApplicator: ResultApplicator) {}
+    constructor(private readonly stepLifecycleManager: StepLifecycleManager) {}
 
     process(clip: Clip, ctx: ClipProcessingContext): void {
         if (clip.Kind !== ClipKind.Headers) return;
@@ -27,7 +27,7 @@ export class HeadersProcessor implements ClipProcessor {
         // Session boundary detection: a second Event:AUTH signals a new
         // authentication session (e.g. user clicked browser-back).
         if (headers.EventInstance === "Event:AUTH" && ctx.sessionFlowCount > 0) {
-            beginNewSession(ctx, (c) => this.resultApplicator.finalizeCurrentStep(c));
+            beginNewSession(ctx, (c) => this.stepLifecycleManager.finalizeCurrentStep(c));
         }
 
         ctx.currentHeaders = headers;

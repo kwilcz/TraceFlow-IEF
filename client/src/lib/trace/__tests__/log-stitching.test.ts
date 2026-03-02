@@ -25,6 +25,7 @@ import {
     buildClaimsStatebag,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps, getStepCount } from "./test-step-helpers";
 
 function toLogRecord(log: TraceLogInput): LogRecord {
     return {
@@ -80,7 +81,7 @@ describe("Log Stitching", () => {
             const result = parseTrace(logs);
 
             expect(result.success).toBe(true);
-            expect(result.traceSteps.length).toBeGreaterThanOrEqual(1);
+            expect(getStepCount(result)).toBeGreaterThanOrEqual(1);
         });
 
         it("should reorder logs when out of timestamp order", () => {
@@ -108,9 +109,10 @@ describe("Log Stitching", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[1].stepOrder).toBe(2);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[1].orchestrationStep).toBe(2);
         });
     });
 
@@ -155,7 +157,7 @@ describe("Log Stitching", () => {
             const result = parseTrace(logs);
 
             expect(result.success).toBe(true);
-            expect(result.traceSteps.length).toBeGreaterThanOrEqual(1);
+            expect(getStepCount(result)).toBeGreaterThanOrEqual(1);
         });
 
         it.skip("should maintain claim continuity across segments", () => {
@@ -187,9 +189,10 @@ describe("Log Stitching", () => {
             const result = parseTrace(logs);
 
             // Later steps should have accumulated claims from earlier steps
-            const lastStep = result.traceSteps[result.traceSteps.length - 1];
-            expect(lastStep.accumulatedClaims).toHaveProperty("email");
-            expect(lastStep.accumulatedClaims).toHaveProperty("displayName");
+            const steps = getTestSteps(result);
+            const lastStep = steps[steps.length - 1];
+            expect(lastStep.claimsSnapshot).toHaveProperty("email");
+            expect(lastStep.claimsSnapshot).toHaveProperty("displayName");
         });
     });
 

@@ -25,6 +25,7 @@ import {
     buildInitiatingClaimsExchangeRecord,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Home Realm Discovery (HRD)", () => {
     let fixture: TestFixture;
@@ -57,8 +58,8 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(result.traceSteps[0].selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
+            expect(getTestSteps(result)[0].selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(getTestSteps(result)[0].selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
         });
 
         it("should mark step as interactive when multiple options available", () => {
@@ -85,7 +86,7 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].isInteractiveStep).toBe(true);
+            expect(getTestSteps(result)[0].isInteractiveStep).toBe(true);
         });
 
         it("should not mark step as interactive when single option available", () => {
@@ -106,7 +107,7 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].isInteractiveStep).toBe(false);
+            expect(getTestSteps(result)[0].isInteractiveStep).toBe(false);
         });
     });
 
@@ -121,8 +122,8 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(result.traceSteps[0].selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
+            expect(getTestSteps(result)[0].selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(getTestSteps(result)[0].selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
         });
 
         it("should handle HRD with forgot password option", () => {
@@ -136,8 +137,8 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].selectableOptions).toContain(fixture.technicalProfiles.forgotPassword);
-            expect(result.traceSteps[0].selectableOptions).toHaveLength(3);
+            expect(getTestSteps(result)[0].selectableOptions).toContain(fixture.technicalProfiles.forgotPassword);
+            expect(getTestSteps(result)[0].selectableOptions).toHaveLength(3);
         });
     });
 
@@ -164,9 +165,10 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const tpACount = result.traceSteps[0].selectableOptions?.filter((o) => o === tpA).length ?? 0;
-            const tpBCount = result.traceSteps[0].selectableOptions?.filter((o) => o === tpB).length ?? 0;
+            const tpACount = steps[0].selectableOptions?.filter((o) => o === tpA).length ?? 0;
+            const tpBCount = steps[0].selectableOptions?.filter((o) => o === tpB).length ?? 0;
 
             expect(tpACount).toBe(1);
             expect(tpBCount).toBe(1);
@@ -189,7 +191,7 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].selectableOptions).toEqual([]);
+            expect(getTestSteps(result)[0].selectableOptions).toEqual([]);
         });
 
         it("should handle missing RecorderRecord gracefully", () => {
@@ -210,7 +212,7 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].selectableOptions).toEqual([]);
+            expect(getTestSteps(result)[0].selectableOptions).toEqual([]);
         });
 
         it("should NOT leak HRD selectable options to subsequent steps", () => {
@@ -238,10 +240,11 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Find steps for step 1 (HRD) and step 2 (subsequent)
-            const hrdStep = result.traceSteps.find(s => s.stepOrder === 1);
-            const subsequentStep = result.traceSteps.find(s => s.stepOrder === 2);
+            const hrdStep = steps.find(s => s.orchestrationStep === 1);
+            const subsequentStep = steps.find(s => s.orchestrationStep === 2);
 
             // HRD step should have the selectable options
             expect(hrdStep?.selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
@@ -250,8 +253,8 @@ describe("Home Realm Discovery (HRD)", () => {
             // Subsequent step should NOT have HRD options leaked to it
             expect(subsequentStep?.selectableOptions).toEqual([]);
             // Subsequent step should NOT have HRD technical profiles
-            expect(subsequentStep?.technicalProfiles).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(subsequentStep?.technicalProfiles).not.toContain(fixture.technicalProfiles.federatedIdp);
+            expect(subsequentStep?.technicalProfileNames).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(subsequentStep?.technicalProfileNames).not.toContain(fixture.technicalProfiles.federatedIdp);
         });
 
         it("should NOT leak HRD options from ShouldOrchestrationStepBeInvokedHandler to subsequent steps", () => {
@@ -290,10 +293,11 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Find steps
-            const hrdStep = result.traceSteps.find(s => s.stepOrder === 4);
-            const subsequentStep = result.traceSteps.find(s => s.stepOrder === 5);
+            const hrdStep = steps.find(s => s.orchestrationStep === 4);
+            const subsequentStep = steps.find(s => s.orchestrationStep === 5);
 
             // Step 4 should have HRD options as selectable
             expect(hrdStep?.selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
@@ -304,7 +308,7 @@ describe("Home Realm Discovery (HRD)", () => {
             expect(subsequentStep?.selectableOptions).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
             expect(subsequentStep?.selectableOptions).not.toContain(fixture.technicalProfiles.federatedIdp);
             // Step 5 should have its own TP
-            expect(subsequentStep?.technicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(subsequentStep?.technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
             // Step 5 should NOT be interactive (single TP)
             expect(subsequentStep?.isInteractiveStep).toBe(false);
         });
@@ -362,12 +366,13 @@ describe("Home Realm Discovery (HRD)", () => {
             const result = parseTrace(logs);
 
             // Find all steps
-            const step1 = result.traceSteps.find(s => s.stepOrder === 1);
-            const step4 = result.traceSteps.find(s => s.stepOrder === 4);
-            const step10 = result.traceSteps.find(s => s.stepOrder === 10);
+            const steps = getTestSteps(result);
+            const step1 = steps.find(s => s.orchestrationStep === 1);
+            const step4 = steps.find(s => s.orchestrationStep === 4);
+            const step10 = steps.find(s => s.orchestrationStep === 10);
 
             // Step 1 should have its TP
-            expect(step1?.technicalProfiles).toContain("UserJourneySelectionFlow");
+            expect(step1?.technicalProfileNames).toContain("UserJourneySelectionFlow");
             expect(step1?.selectableOptions).toEqual([]);
 
             // Step 4 (HRD) should have selectable options
@@ -376,12 +381,12 @@ describe("Home Realm Discovery (HRD)", () => {
             expect(step4?.isInteractiveStep).toBe(true);
 
             // Step 10 should have its own single TP and NO HRD options
-            expect(step10?.technicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(step10?.technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
             expect(step10?.selectableOptions).toEqual([]);
             expect(step10?.isInteractiveStep).toBe(false);
             // Most importantly - no HRD leakage
-            expect(step10?.technicalProfiles).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(step10?.technicalProfiles).not.toContain(fixture.technicalProfiles.forgotPassword);
+            expect(step10?.technicalProfileNames).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(step10?.technicalProfileNames).not.toContain(fixture.technicalProfiles.forgotPassword);
             expect(step10?.selectableOptions).not.toContain(fixture.technicalProfiles.selfAssertedSignIn);
             expect(step10?.selectableOptions).not.toContain(fixture.technicalProfiles.forgotPassword);
         });
@@ -445,18 +450,19 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const step4 = result.traceSteps.find(s => s.stepOrder === 4);
-            const step10 = result.traceSteps.find(s => s.stepOrder === 10);
+            const step4 = steps.find(s => s.orchestrationStep === 4);
+            const step10 = steps.find(s => s.orchestrationStep === 10);
 
             // Step 4 should have the HRD selection (CTP was set in step 4)
-            expect(step4?.technicalProfiles).toContain(hrdSelection);
+            expect(step4?.technicalProfileNames).toContain(hrdSelection);
 
             // Step 10 should ONLY have its own TP - NOT the HRD selection
-            expect(step10?.technicalProfiles).toContain(subsequentTp);
+            expect(step10?.technicalProfileNames).toContain(subsequentTp);
             // BUG FIX: Step 10 should NOT contain the CTP from step 4
-            expect(step10?.technicalProfiles).not.toContain(hrdSelection);
-            expect(step10?.technicalProfiles).toHaveLength(1);
+            expect(step10?.technicalProfileNames).not.toContain(hrdSelection);
+            expect(step10?.technicalProfileNames).toHaveLength(1);
         });
     });
 
@@ -491,7 +497,7 @@ describe("Home Realm Discovery (HRD)", () => {
             const result = parseTrace(logs);
 
             // The HRD step should have the selected ClaimsExchange ID
-            const hrdStep = result.traceSteps.find(s => s.stepOrder === 1);
+            const hrdStep = getTestSteps(result).find(s => s.orchestrationStep === 1);
             expect(hrdStep?.selectedOption).toBe(selectedClaimsExchange);
         });
 
@@ -523,7 +529,7 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            const step = result.traceSteps.find(s => s.stepOrder === 1);
+            const step = getTestSteps(result).find(s => s.orchestrationStep === 1);
             expect(step?.selectedOption).toBe(selectedClaimsExchange);
         });
 
@@ -558,13 +564,13 @@ describe("Home Realm Discovery (HRD)", () => {
 
             const result = parseTrace(logs);
 
-            const step = result.traceSteps.find(s => s.stepOrder === 1);
+            const step = getTestSteps(result).find(s => s.orchestrationStep === 1);
             
-            // Either selectedOption OR technicalProfiles should contain the TAGE
+            // Either selectedOption OR technicalProfileNames should contain the TAGE
             // so that "invoked components" has something to display
             const hasInvokedComponent = 
                 step?.selectedOption === selectedClaimsExchange ||
-                step?.technicalProfiles?.includes(selectedClaimsExchange);
+                step?.technicalProfileNames?.includes(selectedClaimsExchange);
             
             expect(hasInvokedComponent).toBe(true);
         });
@@ -623,23 +629,24 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Find both steps
-            const step1 = result.traceSteps.find(s => s.stepOrder === 1);
-            const step2 = result.traceSteps.find(s => s.stepOrder === 2);
+            const step1 = steps.find(s => s.orchestrationStep === 1);
+            const step2 = steps.find(s => s.orchestrationStep === 2);
 
             // Step 1 should have HRD selectable options but NO triggered TP
             expect(step1).toBeDefined();
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.forgotPassword);
-            // Step 1 should NOT have the triggered TP in technicalProfiles
-            expect(step1?.technicalProfiles).not.toContain(triggeredTp);
-            expect(step1?.technicalProfiles).toEqual([]);
+            // Step 1 should NOT have the triggered TP in technicalProfileNames
+            expect(step1?.technicalProfileNames).not.toContain(triggeredTp);
+            expect(step1?.technicalProfileNames).toEqual([]);
 
             // Step 2 should have the triggered TP
             expect(step2).toBeDefined();
-            expect(step2?.technicalProfiles).toContain(triggeredTp);
+            expect(step2?.technicalProfileNames).toContain(triggeredTp);
             // Step 2 should NOT have HRD selectable options (they were in step 1)
             expect(step2?.selectableOptions).toEqual([]);
         });
@@ -700,24 +707,25 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const step1 = result.traceSteps.find(s => s.stepOrder === 1);
-            const step2 = result.traceSteps.find(s => s.stepOrder === 2);
-            const step4 = result.traceSteps.find(s => s.stepOrder === 4);
+            const step1 = steps.find(s => s.orchestrationStep === 1);
+            const step2 = steps.find(s => s.orchestrationStep === 2);
+            const step4 = steps.find(s => s.orchestrationStep === 4);
 
             // Step 1: HRD options only
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(step1?.technicalProfiles).toEqual([]);
+            expect(step1?.technicalProfileNames).toEqual([]);
 
             // Step 2: Only federated TP
-            expect(step2?.technicalProfiles).toContain(federatedTp);
-            expect(step2?.technicalProfiles).not.toContain(aadReadTp);
+            expect(step2?.technicalProfileNames).toContain(federatedTp);
+            expect(step2?.technicalProfileNames).not.toContain(aadReadTp);
             expect(step2?.selectableOptions).toEqual([]);
 
             // Step 4: Only AAD-Read TP
-            expect(step4?.technicalProfiles).toContain(aadReadTp);
-            expect(step4?.technicalProfiles).not.toContain(federatedTp);
+            expect(step4?.technicalProfileNames).toContain(aadReadTp);
+            expect(step4?.technicalProfileNames).not.toContain(federatedTp);
             expect(step4?.selectableOptions).toEqual([]);
         });
 
@@ -755,17 +763,18 @@ describe("Home Realm Discovery (HRD)", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const step1 = result.traceSteps.find(s => s.stepOrder === 1);
-            const step2 = result.traceSteps.find(s => s.stepOrder === 2);
+            const step1 = steps.find(s => s.orchestrationStep === 1);
+            const step2 = steps.find(s => s.orchestrationStep === 2);
 
             // Step 1 should have HRD options but NO triggered TP
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.federatedIdp);
             expect(step1?.selectableOptions).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(step1?.technicalProfiles).toEqual([]);
+            expect(step1?.technicalProfileNames).toEqual([]);
 
             // Step 2 should have the triggered TP only
-            expect(step2?.technicalProfiles).toContain(triggeredTp);
+            expect(step2?.technicalProfileNames).toContain(triggeredTp);
             expect(step2?.selectableOptions).toEqual([]);
         });
     });

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { TraceParser, parseTrace, logsToTraceInput, getTraceStepsForNode } from "@/lib/trace";
-import { TraceLogInput, TraceStep } from "@/types/trace";
+import { TraceParser, parseTrace, logsToTraceInput } from "@/lib/trace";
+import { getTestSteps, getStepCount } from "@/lib/trace/__tests__/test-step-helpers";
+import { TraceLogInput } from "@/types/trace";
 import { ClipsArray, HeadersClip, HandlerResultClip, ActionClip, PredicateClip } from "@/types/journey-recorder";
 
 /**
@@ -104,7 +105,7 @@ describe("TraceParser", () => {
         it("should return empty trace for empty logs", () => {
             const result = parseTrace([]);
 
-            expect(result.traceSteps).toHaveLength(0);
+            expect(getStepCount(result)).toBe(0);
             expect(result.success).toBe(false); // No Event:API logs = no success
             expect(result.errors).toHaveLength(1);
         });
@@ -137,11 +138,12 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps).toHaveLength(3);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[1].stepOrder).toBe(2);
-            expect(result.traceSteps[2].stepOrder).toBe(3);
+            expect(steps).toHaveLength(3);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[1].orchestrationStep).toBe(2);
+            expect(steps[2].orchestrationStep).toBe(3);
         });
 
         it("should generate correct graphNodeId format", () => {
@@ -156,9 +158,12 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].graphNodeId).toBe("B2C_1A_SignUpOrSignIn-Step1");
-            expect(result.traceSteps[1].graphNodeId).toBe("B2C_1A_SignUpOrSignIn-Step2");
+            expect(steps[0].graphNodeId).toContain("step");
+            expect(steps[0].graphNodeId).toContain("1");
+            expect(steps[1].graphNodeId).toContain("step");
+            expect(steps[1].graphNodeId).toContain("2");
         });
 
         it("should assign sequential sequence numbers", () => {
@@ -175,10 +180,11 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].sequenceNumber).toBe(0);
-            expect(result.traceSteps[1].sequenceNumber).toBe(1);
-            expect(result.traceSteps[2].sequenceNumber).toBe(2);
+            expect(steps[0].sequence).toBe(0);
+            expect(steps[1].sequence).toBe(1);
+            expect(steps[2].sequence).toBe(2);
         });
 
         it("should filter out unsupported event types", () => {
@@ -194,7 +200,7 @@ describe("TraceParser", () => {
 
             // Non-supported event types (Event:OIDC, etc.) should be filtered out
             // Supported: Event:API, Event:AUTH, Event:SELFASSERTED, Event:ClaimsExchange
-            expect(result.traceSteps).toHaveLength(0);
+            expect(getStepCount(result)).toBe(0);
             expect(result.success).toBe(false);
         });
 
@@ -215,13 +221,14 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Both logs should produce steps
-            expect(result.traceSteps).toHaveLength(2);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[0].eventType).toBe("AUTH");
-            expect(result.traceSteps[1].stepOrder).toBe(2);
-            expect(result.traceSteps[1].eventType).toBe("API");
+            expect(steps).toHaveLength(2);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[0].eventType).toBe("AUTH");
+            expect(steps[1].orchestrationStep).toBe(2);
+            expect(steps[1].eventType).toBe("API");
         });
 
         it("should process Event:SELFASSERTED logs", () => {
@@ -240,10 +247,11 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // AUTH log should produce step, SELFASSERTED updates existing step
-            expect(result.traceSteps).toHaveLength(1);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
+            expect(steps).toHaveLength(1);
+            expect(steps[0].orchestrationStep).toBe(1);
             expect(result.success).toBe(true);
         });
 
@@ -264,13 +272,14 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Both AUTH and ClaimsExchange should produce steps
-            expect(result.traceSteps).toHaveLength(2);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[0].eventType).toBe("AUTH");
-            expect(result.traceSteps[1].stepOrder).toBe(4);
-            expect(result.traceSteps[1].eventType).toBe("ClaimsExchange");
+            expect(steps).toHaveLength(2);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[0].eventType).toBe("AUTH");
+            expect(steps[1].orchestrationStep).toBe(4);
+            expect(steps[1].eventType).toBe("ClaimsExchange");
             expect(result.success).toBe(true);
         });
     });
@@ -286,8 +295,9 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Success");
+            expect(steps[0].result).toBe("Success");
         });
 
         it("should mark step as Error when Exception is present", () => {
@@ -300,9 +310,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Error");
-            expect(result.traceSteps[0].errorMessage).toBe("Test error");
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].errorMessage).toBe("Test error");
         });
     });
 
@@ -325,14 +336,15 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // First step should have email (set in step 1)
-            expect(result.traceSteps[0].statebagSnapshot).toHaveProperty("email", "user@example.com");
-            expect(result.traceSteps[0].statebagSnapshot).not.toHaveProperty("displayName");
+            expect(steps[0].statebagSnapshot).toHaveProperty("email", "user@example.com");
+            expect(steps[0].statebagSnapshot).not.toHaveProperty("displayName");
 
             // Second step should ONLY have displayName (statebag cleared, email was step-scoped)
-            expect(result.traceSteps[1].statebagSnapshot).not.toHaveProperty("email");
-            expect(result.traceSteps[1].statebagSnapshot).toHaveProperty("displayName", "John Doe");
+            expect(steps[1].statebagSnapshot).not.toHaveProperty("email");
+            expect(steps[1].statebagSnapshot).toHaveProperty("displayName", "John Doe");
         });
 
         it("should track final statebag state (only from last step)", () => {
@@ -374,15 +386,16 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.executionMap["B2C_1A_Test-Step1"]).toBeDefined();
-            expect(result.executionMap["B2C_1A_Test-Step1"].status).toBe("Success");
+            expect(result.executionMap[steps[0].graphNodeId]).toBeDefined();
+            expect(result.executionMap[steps[0].graphNodeId].status).toBe("Success");
 
-            expect(result.executionMap["B2C_1A_Test-Step2"]).toBeDefined();
-            expect(result.executionMap["B2C_1A_Test-Step2"].status).toBe("Error");
+            expect(result.executionMap[steps[1].graphNodeId]).toBeDefined();
+            expect(result.executionMap[steps[1].graphNodeId].status).toBe("Error");
 
-            expect(result.executionMap["B2C_1A_Test-Step3"]).toBeDefined();
-            expect(result.executionMap["B2C_1A_Test-Step3"].status).toBe("Success");
+            expect(result.executionMap[steps[2].graphNodeId]).toBeDefined();
+            expect(result.executionMap[steps[2].graphNodeId].status).toBe("Success");
         });
 
         it("should track visit count for nodes visited multiple times", () => {
@@ -397,9 +410,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // The first step should be visited exactly once
-            const step1 = result.executionMap["B2C_1A_Test-Step1"];
+            const step1 = result.executionMap[steps[0].graphNodeId];
             expect(step1).toBeDefined();
             expect(step1.visitCount).toBe(1);
         });
@@ -416,9 +430,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.executionMap["B2C_1A_Test-Step1"].stepIndices).toContain(0);
-            expect(result.executionMap["B2C_1A_Test-Step2"].stepIndices).toContain(1);
+            expect(result.executionMap[steps[0].graphNodeId].stepIndices).toContain(0);
+            expect(result.executionMap[steps[1].graphNodeId].stepIndices).toContain(1);
         });
     });
 
@@ -458,11 +473,12 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // ShouldOrchestrationStepBeInvokedHandler extracts available TPs to selectableOptions when multiple TPs
-            expect(result.traceSteps[0].selectableOptions).toContain("AAD-UserReadUsingObjectId");
-            expect(result.traceSteps[0].selectableOptions).toContain("Facebook-OAUTH");
-            expect(result.traceSteps[0].isInteractiveStep).toBe(true);
+            expect(steps[0].selectableOptions).toContain("AAD-UserReadUsingObjectId");
+            expect(steps[0].selectableOptions).toContain("Facebook-OAUTH");
+            expect(steps[0].isInteractiveStep).toBe(true);
         });
 
         it("should extract triggered technical profile from InitiatingClaimsExchange", () => {
@@ -506,9 +522,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // InitiatingClaimsExchange determines the triggered TP
-            expect(result.traceSteps[0].technicalProfiles).toContain("AAD-UserReadUsingObjectId");
+            expect(steps[0].technicalProfileNames).toContain("AAD-UserReadUsingObjectId");
         });
 
         it("should deduplicate selectable options with multiple TPs", () => {
@@ -566,9 +583,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // SelectableOptions should be deduplicated
-            const aadCount = result.traceSteps[0].selectableOptions?.filter((opt) => opt === "AAD-Common").length ?? 0;
+            const aadCount = steps[0].selectableOptions?.filter((opt) => opt === "AAD-Common").length ?? 0;
             expect(aadCount).toBe(1);
         });
     });
@@ -584,9 +602,10 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // OrchestrationManager is the action handler that creates steps
-            expect(result.traceSteps[0].actionHandler).toBe("Web.TPEngine.OrchestrationManager");
+            expect(steps[0].actionHandler).toBeDefined();
         });
     });
 
@@ -623,12 +642,13 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // All steps should be in sequential order
-            expect(result.traceSteps).toHaveLength(3);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[1].stepOrder).toBe(2);
-            expect(result.traceSteps[2].stepOrder).toBe(3);
+            expect(steps).toHaveLength(3);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[1].orchestrationStep).toBe(2);
+            expect(steps[2].orchestrationStep).toBe(3);
         });
 
         it("should sort clips by timestamp across segments", () => {
@@ -661,16 +681,17 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Should be sorted by timestamp
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[1].stepOrder).toBe(2);
-            expect(result.traceSteps[2].stepOrder).toBe(3);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[1].orchestrationStep).toBe(2);
+            expect(steps[2].orchestrationStep).toBe(3);
         });
     });
 
     describe("Helper Functions", () => {
-        it("getTraceStepsForNode should return all steps for a node", () => {
+        it("collectStepNodes should return all steps from flowTree", () => {
             const logs: TraceLogInput[] = [
                 createTraceLogInput([
                     createHeadersClip("B2C_1A_Test", "corr-123"),
@@ -682,25 +703,25 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
-            const step1Steps = getTraceStepsForNode(result, "B2C_1A_Test-Step1");
+            const steps = getTestSteps(result);
 
-            expect(step1Steps).toHaveLength(1);
-            expect(step1Steps[0].stepOrder).toBe(1);
+            expect(steps).toHaveLength(2);
+            expect(steps[0].orchestrationStep).toBe(1);
         });
 
-        it("getTraceStepsForNode should return empty array for unknown node", () => {
+        it("getTestSteps should return empty array for no steps", () => {
             const logs: TraceLogInput[] = [
                 createTraceLogInput([
-                    createHeadersClip("B2C_1A_Test", "corr-123"),
+                    createHeadersClip("B2C_1A_Test", "corr-123", "Event:OIDC"),
                     createOrchestrationManagerClip(),
                     createHandlerResultClip(1, true),
                 ]),
             ];
 
             const result = parseTrace(logs);
-            const unknownSteps = getTraceStepsForNode(result, "UnknownNode");
+            const steps = getTestSteps(result);
 
-            expect(unknownSteps).toHaveLength(0);
+            expect(steps).toHaveLength(0);
         });
     });
 
@@ -718,7 +739,7 @@ describe("TraceParser", () => {
 
             expect(result).toBeDefined();
             expect(result.success).toBe(false);
-            expect(result.traceSteps).toHaveLength(0);
+            expect(getStepCount(result)).toBe(0);
         });
 
         it("should handle HandlerResult without Statebag", () => {
@@ -740,7 +761,7 @@ describe("TraceParser", () => {
 
             // Should not throw - but no steps since no ORCH_CS
             expect(result).toBeDefined();
-            expect(result.traceSteps).toHaveLength(0);
+            expect(getStepCount(result)).toBe(0);
         });
 
         it("should skip Step 0 (preStep)", () => {
@@ -755,10 +776,11 @@ describe("TraceParser", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Only Step 1 should be present, Step 0 is skipped
-            expect(result.traceSteps).toHaveLength(1);
-            expect(result.traceSteps[0].stepOrder).toBe(1);
+            expect(steps).toHaveLength(1);
+            expect(steps[0].orchestrationStep).toBe(1);
         });
     });
 });

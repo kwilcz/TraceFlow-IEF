@@ -7,7 +7,7 @@ import {
     type TechnicalProfileFlowData,
     type ClaimsTransformationFlowData,
 } from "@/types/flow-node";
-import { findChildNode } from "@/lib/trace/domain/flow-node-utils";
+import { findChildNode, getStepTpNames } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
 import { InspectorErrorBanner } from "../inspector-error-banner";
@@ -60,20 +60,20 @@ export function DcRenderer({ stepNode, selection, dispatch }: DcRendererProps) {
             .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId) ?? [];
 
     // Primary TP for breadcrumb (first TP in step)
-    const mainTpId = stepData.technicalProfileNames[0];
+    const mainTpId = getStepTpNames(stepNode)[0];
 
     // Build breadcrumb segments
     const segments: BreadcrumbSegment[] = [
         {
             label: `Step ${stepData.stepOrder}`,
-            onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
+            onClick: () => dispatch({ type: "select-step", nodeId: selection.nodeId }),
         },
     ];
     if (mainTpId) {
         segments.push({
             label: mainTpId,
             onClick: () =>
-                dispatch({ type: "select-tp", stepIndex: selection.stepIndex, tpId: mainTpId }),
+                dispatch({ type: "select-tp", nodeId: selection.nodeId, tpId: mainTpId }),
         });
     }
     segments.push({ label: dcId });
@@ -88,13 +88,16 @@ export function DcRenderer({ stepNode, selection, dispatch }: DcRendererProps) {
                 statebag={stepNode.context.statebagSnapshot}
             />
 
-            {/* 2. Error banner */}
-            {stepData.errorMessage && (
-                <div className="px-3">
-                    <InspectorErrorBanner
-                        message={stepData.errorMessage}
-                        hResult={stepData.errorHResult}
-                    />
+            {/* 2. Error banner(s) */}
+            {stepData.errors.length > 0 && (
+                <div className="px-3 space-y-2">
+                    {stepData.errors.map((err, i) => (
+                        <InspectorErrorBanner
+                            key={i}
+                            message={err.message}
+                            hResult={err.hResult}
+                        />
+                    ))}
                 </div>
             )}
 

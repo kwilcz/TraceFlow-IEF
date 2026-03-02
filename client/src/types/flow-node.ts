@@ -41,6 +41,7 @@ export enum FlowNodeType {
     ClaimsTransformation = "ct",
     HomeRealmDiscovery = "hrd",
     DisplayControl = "dc",
+    SendClaims = "sendClaims",
 }
 
 // ============================================================================
@@ -106,7 +107,35 @@ export type FlowNodeData =
     | TechnicalProfileFlowData
     | ClaimsTransformationFlowData
     | HomeRealmDiscoveryFlowData
-    | DisplayControlFlowData;
+    | DisplayControlFlowData
+    | SendClaimsFlowData;
+
+// ============================================================================
+// FlowNodeChild — interpreter output building block
+// ============================================================================
+
+/**
+ * Intermediate structure returned by interpreters to describe FlowNode children.
+ * The FlowTreeBuilder converts these into actual FlowNode instances.
+ */
+export interface FlowNodeChild {
+    readonly data: Exclude<FlowNodeData, RootFlowData | SubJourneyFlowData | StepFlowData>;
+    readonly children?: FlowNodeChild[];
+}
+
+// ============================================================================
+// StepError — structured error representation
+// ============================================================================
+
+/**
+ * Structured error collected during step execution.
+ * Supports both general exceptions and handler-specific errors.
+ */
+export interface StepError {
+    readonly kind: "Handled" | "Unhandled";
+    readonly hResult: string;
+    readonly message: string;
+}
 
 // ─── Root ───────────────────────────────────────────────────────────────────
 
@@ -135,13 +164,6 @@ export interface SubJourneyFlowData {
 export interface StepFlowData {
     readonly type: FlowNodeType.Step;
 
-    // ── Backward compatibility bridge — will be removed when pipeline produces FlowNodes directly ──
-    /**
-     * Index into the flat `traceSteps[]` array.
-     * @deprecated Will be removed when all consumers migrate to FlowNode tree.
-     */
-    stepIndex: number;
-
     // ── Identity / ordering ──
     /** The ORCH_CS step order */
     readonly stepOrder: number;
@@ -153,10 +175,8 @@ export interface StepFlowData {
     result: StepResult;
     /** Duration in ms from this step to the next (set by post-processor) */
     duration?: number;
-    /** Error message if result is Error */
-    readonly errorMessage?: string;
-    /** HResult error code (hex string) */
-    readonly errorHResult?: string;
+    /** Structured errors collected during step execution */
+    readonly errors: StepError[];
 
     // ── Handler / context ──
     /** Action handler that executed this step */
@@ -260,4 +280,24 @@ export interface DisplayControlFlowData {
     readonly resultCode?: string;
     /** Claim mappings for this action */
     readonly claimMappings?: ClaimMapping[];
+}
+
+// ─── Send Claims (Relying Party Response) ───────────────────────────────────
+
+/**
+ * Data for the final "send claims to relying party" node.
+ *
+ * Appears as child of a Step node when the journey completes via
+ * SendRelyingPartyResponseHandler. Represents token issuance.
+ *
+ * Children: none.
+ */
+export interface SendClaimsFlowData {
+    readonly type: FlowNodeType.SendClaims;
+    /** The relying party technical profile ID */
+    readonly technicalProfileId: string;
+    /** Protocol used (e.g., "OpenIdConnect", "SAML2") */
+    readonly protocol?: string;
+    /** Output claims sent to the relying party */
+    readonly outputClaims?: ReadonlyArray<{ claimType: string; value: string }>;
 }

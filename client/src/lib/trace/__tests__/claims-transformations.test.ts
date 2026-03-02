@@ -18,6 +18,7 @@ import {
     buildClaimsTransformationRecord,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Claims Transformations", () => {
     let fixture: TestFixture;
@@ -50,9 +51,10 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsTransformationDetails).toHaveLength(1);
-            expect(result.traceSteps[0].claimsTransformationDetails[0].id).toBe(fixture.claimsTransformations.getDateTime);
+            expect(steps[0].claimsTransformationDetails).toHaveLength(1);
+            expect(steps[0].claimsTransformationDetails[0].id).toBe(fixture.claimsTransformations.getDateTime);
         });
 
         it("should extract input claims from transformation", () => {
@@ -81,8 +83,9 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const ct = result.traceSteps[0].claimsTransformationDetails[0];
+            const ct = steps[0].claimsTransformationDetails[0];
             expect(ct.inputClaims).toHaveLength(2);
             expect(ct.inputClaims).toContainEqual({ claimType: "givenName", value: "Test" });
             expect(ct.inputClaims).toContainEqual({ claimType: "surname", value: "User" });
@@ -114,8 +117,9 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const ct = result.traceSteps[0].claimsTransformationDetails[0];
+            const ct = steps[0].claimsTransformationDetails[0];
             expect(ct.outputClaims).toHaveLength(1);
             expect(ct.outputClaims[0]).toEqual({ claimType: "displayName", value: "Test User" });
         });
@@ -160,9 +164,10 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsTransformationDetails).toHaveLength(3);
-            expect(result.traceSteps[0].claimsTransformationDetails.map((ct) => ct.id)).toEqual([
+            expect(steps[0].claimsTransformationDetails).toHaveLength(3);
+            expect(steps[0].claimsTransformationDetails.map((ct) => ct.id)).toEqual([
                 "Transform1",
                 "Transform2",
                 "Transform3",
@@ -197,9 +202,10 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsTransformations).toContain("TransformA");
-            expect(result.traceSteps[0].claimsTransformations).toContain("TransformB");
+            expect(steps[0].claimsTransformationIds).toContain("TransformA");
+            expect(steps[0].claimsTransformationIds).toContain("TransformB");
         });
     });
 
@@ -227,8 +233,9 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsTransformationDetails[0].inputClaims).toEqual([]);
+            expect(steps[0].claimsTransformationDetails[0].inputClaims).toEqual([]);
         });
 
         it("should handle empty transformations gracefully", () => {
@@ -245,8 +252,9 @@ describe("Claims Transformations", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsTransformationDetails).toEqual([]);
+            expect(steps[0].claimsTransformationDetails).toEqual([]);
         });
     });
 });

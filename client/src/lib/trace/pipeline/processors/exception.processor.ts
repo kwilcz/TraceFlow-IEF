@@ -2,16 +2,15 @@
  * Exception Clip Processor
  *
  * Processes FatalException clips which represent terminal errors in the journey.
- * Creates an error step and adds it to the trace.
- *
- * This mirrors the handleFatalException method from the old TraceParser.
+ * Creates an error step FlowNode directly on the FlowTree.
  */
 
 import type { Clip, FatalExceptionContent } from "@/types/journey-recorder";
 import type { ClipProcessingContext } from "../clip-processing-context";
 import type { ClipProcessor } from "./clip-processor";
+import type { StepFlowData } from "@/types/flow-node";
 import { ClipKind } from "../../constants/keys";
-import { TraceStepBuilder } from "../../domain/trace-step-builder";
+import { FlowNodeType } from "@/types/flow-node";
 
 export class ExceptionProcessor implements ClipProcessor {
     process(clip: Clip, ctx: ClipProcessingContext): void {
@@ -22,28 +21,38 @@ export class ExceptionProcessor implements ClipProcessor {
 
         ctx.errors.push(message);
 
-        // Mark current step as error if one exists
-        if (ctx.currentStepBuilder) {
-            ctx.currentStepBuilder.withError(message).withResult("Error");
+        // Mark current pending step as error if one is being accumulated
+        if (ctx.pendingStepData) {
+            ctx.pendingStepData.result = "Error";
+            ctx.pendingStepData.errorMessage = message;
         }
 
-        // Create a dedicated error step
+        // Create a dedicated error step FlowNode directly on the tree
         const context = ctx.journeyStack.current();
-        const errorStep = TraceStepBuilder.create()
-            .withSequence(++ctx.sequenceNumber)
-            .withTimestamp(ctx.currentTimestamp)
-            .withLogId(ctx.currentLogId)
-            .withEventType("AUTH")
-            .withJourneyContext(context.journeyId, context.journeyName)
-            .withOrchStep(context.lastOrchStep)
-            .withGraphNodeId(`${context.journeyId}-Error`)
-            .withError(message)
-            .withStatebag(ctx.statebag.getStatebagSnapshot())
-            .withClaims(ctx.statebag.getClaimsSnapshot())
-            .build();
+        const errorStepData: StepFlowData = {
+            type: FlowNodeType.Step,
+            stepOrder: context.lastOrchStep,
+            currentJourneyName: context.journeyName,
+            result: "Error",
+            errors: [{ kind: "Unhandled", hResult: "", message }],
+            selectableOptions: [],
+        };
 
-        ctx.traceSteps.push(errorStep);
-        ctx.executionMap.addStep(errorStep);
+        const graphNodeId = `${context.journeyId}-Error`;
+        ctx.executionMap.addStep({
+            graphNodeId,
+            result: "Error",
+            sequenceNumber: ++ctx.sequenceNumber,
+        });
+
+        ctx.flowTreeBuilder.addStep(errorStepData, {
+            timestamp: ctx.currentTimestamp,
+            sequenceNumber: ctx.sequenceNumber,
+            logId: ctx.currentLogId,
+            eventType: ctx.currentEventType,
+            statebagSnapshot: ctx.statebag.getStatebagSnapshot(),
+            claimsSnapshot: ctx.statebag.getClaimsSnapshot(),
+        });
 
         ctx.lastClipKind = ClipKind.Exception;
     }

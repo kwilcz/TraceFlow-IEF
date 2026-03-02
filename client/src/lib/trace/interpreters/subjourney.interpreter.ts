@@ -58,9 +58,6 @@ export class SubJourneyInterpreter extends BaseInterpreter {
         const subJourneyId = this.extractSubJourneyId(context);
 
         if (subJourneyId) {
-          context.stepBuilder
-            .withSubJourneyId(subJourneyId);
-
             return this.successNoOp({
                 statebagUpdates,
                 claimsUpdates,

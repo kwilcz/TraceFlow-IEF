@@ -17,6 +17,7 @@ import {
     buildCtpStatebag,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps, getStepCount } from "./test-step-helpers";
 
 describe("Error Handling", () => {
     let fixture: TestFixture;
@@ -42,9 +43,10 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Error");
-            expect(result.traceSteps[0].errorMessage).toContain("required claim");
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].errorMessage).toContain("required claim");
         });
 
         it("should set step result to Error when exception occurs", () => {
@@ -63,8 +65,9 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Error");
+            expect(steps[0].result).toBe("Error");
         });
 
         it("should preserve full error message text", () => {
@@ -85,8 +88,9 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].errorMessage).toBe(errorMessage);
+            expect(steps[0].errorMessage).toBe(errorMessage);
         });
     });
 
@@ -107,9 +111,10 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Error");
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.localAccountPasswordReset);
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.localAccountPasswordReset);
         });
     });
 
@@ -130,8 +135,9 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
-            expect(result.executionMap[`${fixture.policyId}-Step1`].status).toBe("Error");
+            expect(result.executionMap[graphNodeId].status).toBe("Error");
         });
     });
 
@@ -163,8 +169,9 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const errorSteps = result.traceSteps.filter((s) => s.result === "Error");
+            const errorSteps = steps.filter((s) => s.result === "Error");
             expect(errorSteps).toHaveLength(2);
         });
     });
@@ -204,10 +211,11 @@ describe("Error Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].result).toBe("Error");
-            expect(result.traceSteps[1].result).toBe("Success");
-            expect(result.traceSteps[2].result).toBe("Success");
+            expect(steps[0].result).toBe("Error");
+            expect(steps[1].result).toBe("Success");
+            expect(steps[2].result).toBe("Success");
         });
     });
 });

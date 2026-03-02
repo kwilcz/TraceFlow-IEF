@@ -65,6 +65,11 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                     stepResult: "Error",
                     error: errorInfo.message,
                     errorHResult: errorInfo.hResult,
+                    stepErrors: [{
+                        kind: "Unhandled",
+                        hResult: errorInfo.hResult ?? "",
+                        message: errorInfo.message!,
+                    }],
                     actionHandler: this.getActionHandlerName(handlerName),
                 };
             }

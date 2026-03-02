@@ -3,7 +3,7 @@ import { computeClaimsDiff, type ClaimsDiff } from "@/types/trace";
 import type { FlowNode } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
 import type { TechnicalProfileFlowData, ClaimsTransformationFlowData } from "@/types/flow-node";
-import { findStepFlowNode, findPreviousStepNode } from "@/lib/trace/domain/flow-node-utils";
+import { findStepFlowNodeById, findPreviousStepNode, getStepPosition } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection } from "./types";
 
 // ============================================================================
@@ -166,18 +166,22 @@ export function useClaimsDiff(
     selection: Selection | null,
     flowTree: FlowNode | null,
 ): ClaimsDiffResult {
-    const stepIndex = selection?.stepIndex ?? -1;
+    const nodeId = selection?.nodeId;
     const selectionType = selection?.type;
     const selectionItemId = selection?.itemId;
 
     // Resolve the current and previous step nodes from the flow tree
     const currentNode = useMemo(
-        () => (flowTree ? findStepFlowNode(flowTree, stepIndex) : null),
-        [flowTree, stepIndex],
+        () => (flowTree && nodeId ? findStepFlowNodeById(flowTree, nodeId) : null),
+        [flowTree, nodeId],
+    );
+    const stepPosition = useMemo(
+        () => (flowTree && nodeId ? getStepPosition(flowTree, nodeId) : -1),
+        [flowTree, nodeId],
     );
     const prevNode = useMemo(
-        () => (flowTree && stepIndex > 0 ? findPreviousStepNode(flowTree, stepIndex) : null),
-        [flowTree, stepIndex],
+        () => (flowTree && stepPosition > 0 ? findPreviousStepNode(flowTree, stepPosition) : null),
+        [flowTree, stepPosition],
     );
 
     return useMemo(() => {

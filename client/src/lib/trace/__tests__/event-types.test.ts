@@ -16,6 +16,7 @@ import {
     buildOrchestrationResult,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Event Type Handling", () => {
     let fixture: TestFixture;
@@ -30,7 +31,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].eventType).toBe("AUTH");
+            expect(getTestSteps(result)[0].eventType).toBe("AUTH");
         });
 
         it("should handle AUTH events at journey start", () => {
@@ -40,9 +41,10 @@ describe("Event Type Handling", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].eventType).toBe("AUTH");
-            expect(result.traceSteps[1].eventType).toBe("API");
+            expect(steps[0].eventType).toBe("AUTH");
+            expect(steps[1].eventType).toBe("API");
         });
     });
 
@@ -52,7 +54,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].eventType).toBe("API");
+            expect(getTestSteps(result)[0].eventType).toBe("API");
         });
 
         it("should handle multiple consecutive API events", () => {
@@ -64,7 +66,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps.every((s) => s.eventType === "API")).toBe(true);
+            expect(getTestSteps(result).every((s) => s.eventType === "API")).toBe(true);
         });
     });
 
@@ -74,7 +76,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].eventType).toBe("SELFASSERTED");
+            expect(getTestSteps(result)[0].eventType).toBe("SELFASSERTED");
         });
 
         it("should handle SELFASSERTED events for form submissions", () => {
@@ -85,7 +87,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[1].eventType).toBe("SELFASSERTED");
+            expect(getTestSteps(result)[1].eventType).toBe("SELFASSERTED");
         });
     });
 
@@ -95,7 +97,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].eventType).toBe("ClaimsExchange");
+            expect(getTestSteps(result)[0].eventType).toBe("ClaimsExchange");
         });
 
         it("should handle ClaimsExchange events for federated authentication", () => {
@@ -106,7 +108,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[1].eventType).toBe("ClaimsExchange");
+            expect(getTestSteps(result)[1].eventType).toBe("ClaimsExchange");
         });
     });
 
@@ -121,7 +123,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps.map((s) => s.eventType)).toEqual([
+            expect(getTestSteps(result).map((s) => s.eventType)).toEqual([
                 "AUTH",
                 "SELFASSERTED",
                 "API",
@@ -138,7 +140,7 @@ describe("Event Type Handling", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps.map((s) => s.eventType)).toEqual([
+            expect(getTestSteps(result).map((s) => s.eventType)).toEqual([
                 "AUTH",
                 "ClaimsExchange",
                 "API",

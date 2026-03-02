@@ -5,7 +5,17 @@
  * Maps graph node IDs to their execution status (Success, Skipped, Error, etc.).
  */
 
-import type { TraceStep, TraceExecutionMap, NodeExecutionStatus, StepResult } from "@/types/trace";
+import type { TraceExecutionMap, NodeExecutionStatus, StepResult } from "@/types/trace";
+
+/**
+ * Minimal step info required by the execution map.
+ * Decoupled from the removed TraceStep type.
+ */
+export interface ExecutionMapStepInfo {
+    graphNodeId: string;
+    result: StepResult;
+    sequenceNumber: number;
+}
 
 /**
  * Builds and maintains the execution map.
@@ -14,9 +24,9 @@ export class ExecutionMapBuilder {
     private readonly map: Map<string, NodeExecutionStatus> = new Map();
 
     /**
-     * Adds a trace step to the execution map.
+     * Adds a step to the execution map.
      */
-    addStep(step: TraceStep): void {
+    addStep(step: ExecutionMapStepInfo): void {
         const nodeId = step.graphNodeId;
 
         if (!nodeId) {
@@ -41,7 +51,7 @@ export class ExecutionMapBuilder {
     /**
      * Adds multiple steps to the execution map.
      */
-    addSteps(steps: TraceStep[]): void {
+    addSteps(steps: ExecutionMapStepInfo[]): void {
         for (const step of steps) {
             this.addStep(step);
         }

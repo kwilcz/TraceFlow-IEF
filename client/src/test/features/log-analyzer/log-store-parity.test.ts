@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LogRecord } from "@/types/logs";
 import type { UserFlow } from "@/types/trace";
+import type { FlowNode, FlowNodeContext } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
 
 const {
     runTwoPhaseLogFetchOrchestrationMock,
@@ -79,6 +81,65 @@ function createDeferred<T>() {
     return { promise, resolve, reject };
 }
 
+function makeMockContext(): FlowNodeContext {
+    return {
+        timestamp: new Date("2026-01-01T00:00:00.000Z"),
+        sequenceNumber: 0,
+        logId: "",
+        eventType: "AUTH",
+        statebagSnapshot: {},
+        claimsSnapshot: {},
+    };
+}
+
+function makeMockFlowTree(): FlowNode {
+    return {
+        id: "root",
+        name: "B2C_1A_TEST",
+        type: FlowNodeType.Root,
+        triggeredAtStep: 0,
+        lastStep: 2,
+        children: [
+            {
+                id: "step-root-1",
+                name: "Step 1",
+                type: FlowNodeType.Step,
+                triggeredAtStep: 1,
+                lastStep: 1,
+                children: [],
+                data: {
+                    type: FlowNodeType.Step,
+                    stepOrder: 1,
+                    currentJourneyName: "B2C_1A_TEST",
+                    result: "Success" as const,
+                    errors: [],
+                    selectableOptions: [],
+                },
+                context: { ...makeMockContext(), sequenceNumber: 0 },
+            },
+            {
+                id: "step-root-2",
+                name: "Step 2",
+                type: FlowNodeType.Step,
+                triggeredAtStep: 2,
+                lastStep: 2,
+                children: [],
+                data: {
+                    type: FlowNodeType.Step,
+                    stepOrder: 2,
+                    currentJourneyName: "B2C_1A_TEST",
+                    result: "Success" as const,
+                    errors: [],
+                    selectableOptions: [],
+                },
+                context: { ...makeMockContext(), sequenceNumber: 1 },
+            },
+        ],
+        data: { type: FlowNodeType.Root, policyId: "B2C_1A_TEST" },
+        context: makeMockContext(),
+    };
+}
+
 function resetStore() {
     useLogStore.setState(useLogStore.getInitialState());
 }
@@ -101,12 +162,10 @@ beforeEach(async () => {
     logsToTraceInputMock.mockImplementation((logs: LogRecord[]) => logs);
     analyzeAllFlowsMock.mockResolvedValue(undefined);
     parseTraceMock.mockReturnValue({
-        traceSteps: [
-            { nodeId: "step-1", sequenceNumber: 0, result: "Success" },
-            { nodeId: "step-2", sequenceNumber: 1, result: "Success" },
-        ],
+        flowTree: makeMockFlowTree(),
         executionMap: {},
         mainJourneyId: "B2C_1A_TEST",
+        success: true,
         errors: [],
         finalStatebag: {},
         finalClaims: {},
@@ -212,7 +271,7 @@ describe("log-store parity guards", () => {
             logs: [logA, logB],
             userFlows: [flow],
             selectedFlow: null,
-            traceSteps: [],
+            flowTree: null,
             activeStepIndex: null,
         });
 
@@ -223,11 +282,11 @@ describe("log-store parity guards", () => {
         const afterSelectedLog = useLogStore.getState();
         expect(afterSelectedLog.selectedLog).toEqual(logA);
         expect(afterSelectedLog.selectedFlow).toEqual(flow);
-        expect(afterSelectedLog.traceSteps.length).toBeGreaterThan(0);
+        expect(afterSelectedLog.flowTree).not.toBeNull();
         expect(afterSelectedLog.activeStepIndex).toBe(0);
 
         const stableTraceSnapshot = {
-            traceSteps: afterSelectedLog.traceSteps,
+            flowTree: afterSelectedLog.flowTree,
             executionMap: afterSelectedLog.executionMap,
             activeStepIndex: afterSelectedLog.activeStepIndex,
             selectedFlow: afterSelectedLog.selectedFlow,
@@ -241,7 +300,7 @@ describe("log-store parity guards", () => {
 
         const afterSelectedLogOnly = useLogStore.getState();
         expect(afterSelectedLogOnly.selectedLog).toEqual(logB);
-        expect(afterSelectedLogOnly.traceSteps).toEqual(stableTraceSnapshot.traceSteps);
+        expect(afterSelectedLogOnly.flowTree).toEqual(stableTraceSnapshot.flowTree);
         expect(afterSelectedLogOnly.executionMap).toEqual(stableTraceSnapshot.executionMap);
         expect(afterSelectedLogOnly.activeStepIndex).toEqual(stableTraceSnapshot.activeStepIndex);
         expect(afterSelectedLogOnly.selectedFlow).toEqual(stableTraceSnapshot.selectedFlow);
@@ -261,7 +320,7 @@ describe("log-store parity guards", () => {
             userFlows: [unrelatedFlow],
             selectedFlow: unrelatedFlow,
             selectedLog: null,
-            traceSteps: [],
+            flowTree: null,
             correlationId: "",
         });
 
@@ -285,7 +344,7 @@ describe("log-store parity guards", () => {
             selectedFlow: flow,
             selectedLog: logA,
             searchText: "persist me",
-            traceSteps: [{ nodeId: "existing-step", sequenceNumber: 1 }],
+            flowTree: makeMockFlowTree(),
             activeStepIndex: 0,
             isTraceModeActive: true,
             correlationId: "corr-1",
@@ -298,7 +357,7 @@ describe("log-store parity guards", () => {
         const state = useLogStore.getState();
         expect(state.selectedFlow).toBeNull();
         expect(state.selectedLog).toBeNull();
-        expect(state.traceSteps).toEqual([]);
+        expect(state.flowTree).toBeNull();
         expect(state.activeStepIndex).toBeNull();
         expect(state.isTraceModeActive).toBe(false);
         expect(state.correlationId).toBe("");

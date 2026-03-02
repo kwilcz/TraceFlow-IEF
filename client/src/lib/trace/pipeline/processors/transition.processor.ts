@@ -25,12 +25,9 @@ export class TransitionProcessor implements ClipProcessor {
             stateName: transition.StateName,
         };
 
-        // Apply transition events to the current step builder.
-        // This preserves behavior where the last transition event
-        // (e.g., "SendClaims", "ClaimsExchange") is captured on the step.
-        if (ctx.currentStepBuilder) {
-            ctx.currentStepBuilder.withTransitionEvent(transition.EventName);
-        }
+        // Transition event name is no longer tracked on the step —
+        // StepFlowData does not have a transitionEvent field.
+        // The transition is available via ctx.lastTransition for interpreters.
 
         ctx.lastClipKind = ClipKind.Transition;
     }

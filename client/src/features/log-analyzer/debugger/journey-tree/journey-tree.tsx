@@ -43,28 +43,28 @@ function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
 
     switch (node.type) {
         case "step":
-            return selection.type === "step" && selection.stepIndex === node.stepIndex;
+            return selection.type === "step" && selection.nodeId === node.nodeId;
         case "technicalProfile":
         case "dcTechnicalProfile":
         case "selectedOption":
             return (
                 selection.type === "technicalProfile" &&
-                selection.stepIndex === node.stepIndex &&
+                selection.nodeId === node.nodeId &&
                 selection.itemId === node.label
             );
         case "transformation":
         case "dcTransformation":
             return (
                 selection.type === "transformation" &&
-                selection.stepIndex === node.stepIndex &&
+                selection.nodeId === node.nodeId &&
                 selection.itemId === node.label
             );
         case "hrd":
-            return selection.type === "hrd" && selection.stepIndex === node.stepIndex;
+            return selection.type === "hrd" && selection.nodeId === node.nodeId;
         case "displayControl":
             return (
                 selection.type === "displayControl" &&
-                selection.stepIndex === node.stepIndex &&
+                selection.nodeId === node.nodeId &&
                 selection.itemId === node.metadata?.displayControlId
             );
         default:
@@ -126,24 +126,24 @@ function JourneyTreeContent({ tree }: { tree: TreeNode[] }) {
     const handleNodeSelect = (node: TreeNode) => {
         switch (node.type) {
             case "step":
-                dispatch({ type: "select-step", stepIndex: node.stepIndex! });
+                dispatch({ type: "select-step", nodeId: node.nodeId! });
                 break;
             case "technicalProfile":
             case "selectedOption":
             case "dcTechnicalProfile":
-                dispatch({ type: "select-tp", stepIndex: node.stepIndex!, tpId: node.label });
+                dispatch({ type: "select-tp", nodeId: node.nodeId!, tpId: node.label });
                 break;
             case "transformation":
             case "dcTransformation":
-                dispatch({ type: "select-ct", stepIndex: node.stepIndex!, ctId: node.label });
+                dispatch({ type: "select-ct", nodeId: node.nodeId!, ctId: node.label });
                 break;
             case "hrd":
-                dispatch({ type: "select-hrd", stepIndex: node.stepIndex! });
+                dispatch({ type: "select-hrd", nodeId: node.nodeId! });
                 break;
             case "displayControl":
                 dispatch({
                     type: "select-dc",
-                    stepIndex: node.stepIndex!,
+                    nodeId: node.nodeId!,
                     dcId: node.metadata?.displayControlId ?? node.label,
                     metadata: (node.metadata ?? {}) as Record<string, unknown>,
                 });

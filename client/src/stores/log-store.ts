@@ -3,6 +3,7 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { FetchLogsArgs, LogRecord, LogStore, LogStoreActions, LogStoreState } from "@/types/logs";
 import { LOG_LIMITS, APP_INSIGHTS_CONFIG } from "@/constants/log-analyzer.constants";
 import { getLogsForFlow } from "@/lib/trace";
+import { collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
 import { TraceActions, TraceState, initialTraceState } from "@/features/log-analyzer/model/trace-state";
 import { runTwoPhaseLogFetchOrchestration } from "@/features/log-analyzer/services/log-fetch-orchestration-service";
 import {
@@ -171,7 +172,8 @@ export const useLogStore = create<ExtendedLogStore>()(
                 },
 
                 setActiveStep: (index) => {
-                    const { traceSteps } = get();
+                    const { flowTree } = get();
+                    const stepCount = flowTree ? collectStepNodes(flowTree).length : 0;
                     
                     if (index === null) {
                         set({ activeStepIndex: null });
@@ -179,7 +181,7 @@ export const useLogStore = create<ExtendedLogStore>()(
                     }
 
                     // Clamp index to valid range
-                    const validIndex = Math.max(0, Math.min(index, traceSteps.length - 1));
+                    const validIndex = Math.max(0, Math.min(index, stepCount - 1));
                     set({ activeStepIndex: validIndex });
                 },
 
@@ -203,9 +205,10 @@ export const useLogStore = create<ExtendedLogStore>()(
                 },
 
                 nextStep: () => {
-                    const { activeStepIndex, traceSteps } = get();
+                    const { activeStepIndex, flowTree } = get();
+                    const stepCount = flowTree ? collectStepNodes(flowTree).length : 0;
                     
-                    if (activeStepIndex === null || activeStepIndex >= traceSteps.length - 1) {
+                    if (activeStepIndex === null || activeStepIndex >= stepCount - 1) {
                         return;
                     }
 
@@ -279,7 +282,6 @@ export const useLogStore = create<ExtendedLogStore>()(
                             const message = error instanceof Error ? error.message : "Trace computation failed";
                             set({
                                 flowTree: null,
-                                traceSteps: [],
                                 executionMap: {},
                                 activeStepIndex: null,
                                 isTraceModeActive: false,

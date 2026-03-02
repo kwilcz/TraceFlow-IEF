@@ -23,6 +23,7 @@ import type { DisplayControlAction, ClaimMapping, DisplayControlTechnicalProfile
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import { DISPLAY_CONTROL_HANDLERS, DISPLAY_CONTROL_ACTION_RESPONSE } from "../constants/handlers";
 import { RecorderRecordKey } from "../constants/keys";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 
 /**
  * Interprets Display Control handler clips.
@@ -67,7 +68,7 @@ export class DisplayControlInterpreter extends BaseInterpreter {
     readonly handlerNames = DISPLAY_CONTROL_HANDLERS;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerName, handlerResult, stepBuilder } = context;
+        const { handlerName, handlerResult } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -81,34 +82,51 @@ export class DisplayControlInterpreter extends BaseInterpreter {
             const displayControlAction = this.extractDisplayControlAction(handlerResult);
 
             if (displayControlAction) {
-                stepBuilder.addDisplayControlAction(displayControlAction);
-
-                // Collect all technical profile IDs from all TPs in the action
-                const allTechnicalProfileIds: string[] = [];
-                const allClaimsTransformationDetails: ClaimsTransformationDetail[] = [];
-
+                // Build DC FlowNodeChild with nested TP/CT children
+                const dcChildren: FlowNodeChild[] = [];
                 if (displayControlAction.technicalProfiles) {
                     for (const tp of displayControlAction.technicalProfiles) {
-                        allTechnicalProfileIds.push(tp.technicalProfileId);
+                        const tpChildren: FlowNodeChild[] = [];
                         if (tp.claimsTransformations) {
-                            allClaimsTransformationDetails.push(...tp.claimsTransformations);
+                            for (const ct of tp.claimsTransformations) {
+                                tpChildren.push({
+                                    data: {
+                                        type: FlowNodeType.ClaimsTransformation,
+                                        transformationId: ct.id,
+                                        inputClaims: ct.inputClaims,
+                                        inputParameters: ct.inputParameters,
+                                        outputClaims: ct.outputClaims,
+                                    },
+                                });
+                            }
                         }
+                        dcChildren.push({
+                            data: {
+                                type: FlowNodeType.TechnicalProfile,
+                                technicalProfileId: tp.technicalProfileId,
+                                providerType: "DisplayControlProvider",
+                                claimMappings: tp.claimMappings,
+                            },
+                            children: tpChildren.length > 0 ? tpChildren : undefined,
+                        });
                     }
                 }
 
-                // Add all TPs to the step
-                if (allTechnicalProfileIds.length > 0) {
-                    stepBuilder.addTechnicalProfiles(allTechnicalProfileIds);
-                }
-
-                // Add claims transformation details
-                for (const ct of allClaimsTransformationDetails) {
-                    stepBuilder.addClaimsTransformationDetail(ct);
-                }
+                const flowChildren: FlowNodeChild[] = [{
+                    data: {
+                        type: FlowNodeType.DisplayControl,
+                        displayControlId: displayControlAction.displayControlId,
+                        action: displayControlAction.action,
+                        resultCode: displayControlAction.resultCode,
+                        claimMappings: displayControlAction.claimMappings,
+                    },
+                    children: dcChildren.length > 0 ? dcChildren : undefined,
+                }];
 
                 return this.successNoOp({
                     statebagUpdates,
                     claimsUpdates,
+                    flowChildren,
                 });
             }
         }

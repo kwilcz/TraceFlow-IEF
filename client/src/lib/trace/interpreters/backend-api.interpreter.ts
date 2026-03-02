@@ -22,6 +22,7 @@ import {
     CLAIMS_EXCHANGE_API,
 } from "../constants/handlers";
 import { RecorderRecordKey, StatebagKey } from "../constants/keys";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 
 /**
  * Protocol provider types from B2C.
@@ -48,7 +49,7 @@ export class BackendApiInterpreter extends BaseInterpreter {
     ] as const;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerName, handlerResult, stepBuilder } = context;
+        const { handlerName, handlerResult, pendingStepData } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -60,32 +61,29 @@ export class BackendApiInterpreter extends BaseInterpreter {
         // Extract backend API call information
         const backendApiCalls = this.extractBackendApiCalls(handlerResult, statebagUpdates);
         const technicalProfileDetails = this.extractTechnicalProfileDetails(handlerResult);
-        
-        // Also extract technical profile IDs for the simple technicalProfiles array
-        const technicalProfiles = technicalProfileDetails.map((detail) => detail.id);
 
-        // When a TP is triggered (via ClaimsExchangeProtocol handlers like Redirection or API),
-        // clear any selectableOptions that may have been set by ShouldOrchestrationStepBeInvoked.
-        // This prevents HRD options from leaking to steps where a TP was definitively triggered.
-        const hasTechnicalProfiles = technicalProfiles.length > 0;
-
-        // Apply directly to step builder
-        if (hasTechnicalProfiles) {
-            stepBuilder.clearSelectableOptions();
-            stepBuilder.addTechnicalProfiles(technicalProfiles);
-        }
-
+        // Build TP flowChildren with provider type info
+        const flowChildren: FlowNodeChild[] = [];
         for (const detail of technicalProfileDetails) {
-            stepBuilder.addTechnicalProfileDetail(detail);
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.TechnicalProfile,
+                    technicalProfileId: detail.id,
+                    providerType: detail.providerType,
+                    protocolType: detail.protocolType,
+                },
+            });
         }
 
+        // Backend API calls are step-level data accumulated on pendingStepData
         for (const call of backendApiCalls) {
-            stepBuilder.addBackendApiCall(call);
+            pendingStepData.backendApiCalls.push(call);
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 

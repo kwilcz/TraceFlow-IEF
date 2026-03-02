@@ -7,21 +7,21 @@
 
 import type { FlowNode, StepFlowData, TechnicalProfileFlowData, ClaimsTransformationFlowData } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
+import { isStepCompletionHandler } from "@/lib/trace/constants/handlers";
 
 // ============================================================================
 // Index Building
 // ============================================================================
 
 /**
- * Builds a Map from stepIndex → FlowNode for O(1) lookup.
- * Only indexes Step-type nodes.
+ * Builds a Map from step position (0-based tree order) → FlowNode for O(1) lookup.
+ * Only indexes Step-type nodes. Position matches index into traceSteps[].
  */
 export function buildFlowNodeIndex(flowTree: FlowNode): Map<number, FlowNode> {
     const index = new Map<number, FlowNode>();
+    let counter = 0;
     walkStepNodes(flowTree, (node) => {
-        if (node.data.type === FlowNodeType.Step) {
-            index.set(node.data.stepIndex, node);
-        }
+        index.set(counter++, node);
     });
     return index;
 }
@@ -31,17 +31,12 @@ export function buildFlowNodeIndex(flowTree: FlowNode): Map<number, FlowNode> {
 // ============================================================================
 
 /**
- * Finds a Step FlowNode by its stepIndex (index into traceSteps[]).
+ * Finds a Step FlowNode by its position (index into traceSteps[]).
  * Returns null if not found.
  */
 export function findStepFlowNode(flowTree: FlowNode, stepIndex: number): FlowNode | null {
-    let found: FlowNode | null = null;
-    walkStepNodes(flowTree, (node) => {
-        if (node.data.type === FlowNodeType.Step && node.data.stepIndex === stepIndex) {
-            found = node;
-        }
-    });
-    return found;
+    const steps = collectStepNodes(flowTree);
+    return steps[stepIndex] ?? null;
 }
 
 /**
@@ -104,12 +99,9 @@ export function collectStepNodes(flowTree: FlowNode): FlowNode[] {
  * Returns null if this is the first step.
  */
 export function findPreviousStepNode(flowTree: FlowNode, currentStepIndex: number): FlowNode | null {
+    if (currentStepIndex <= 0) return null;
     const steps = collectStepNodes(flowTree);
-    const currentIdx = steps.findIndex(
-        (n) => n.data.type === FlowNodeType.Step && n.data.stepIndex === currentStepIndex,
-    );
-    if (currentIdx <= 0) return null;
-    return steps[currentIdx - 1];
+    return steps[currentStepIndex - 1] ?? null;
 }
 
 /**
@@ -118,11 +110,8 @@ export function findPreviousStepNode(flowTree: FlowNode, currentStepIndex: numbe
  */
 export function findNextStepNode(flowTree: FlowNode, currentStepIndex: number): FlowNode | null {
     const steps = collectStepNodes(flowTree);
-    const currentIdx = steps.findIndex(
-        (n) => n.data.type === FlowNodeType.Step && n.data.stepIndex === currentStepIndex,
-    );
-    if (currentIdx < 0 || currentIdx >= steps.length - 1) return null;
-    return steps[currentIdx + 1];
+    if (currentStepIndex < 0 || currentStepIndex >= steps.length - 1) return null;
+    return steps[currentStepIndex + 1] ?? null;
 }
 
 // ============================================================================
@@ -130,12 +119,23 @@ export function findNextStepNode(flowTree: FlowNode, currentStepIndex: number): 
 // ============================================================================
 
 /**
- * Collects TP IDs from a step's direct TP children.
+ * Collects TP IDs from a step's TP children.
+ * Includes: direct TPs + TPs nested under other TPs (validation TPs).
  */
 export function getStepTpNames(stepNode: FlowNode): string[] {
-    return stepNode.children
-        .filter((c) => c.type === FlowNodeType.TechnicalProfile)
-        .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId);
+    const names: string[] = [];
+    for (const child of stepNode.children) {
+        if (child.type === FlowNodeType.TechnicalProfile) {
+            names.push((child.data as TechnicalProfileFlowData).technicalProfileId);
+            // Also collect nested validation TPs
+            for (const grandchild of child.children) {
+                if (grandchild.type === FlowNodeType.TechnicalProfile) {
+                    names.push((grandchild.data as TechnicalProfileFlowData).technicalProfileId);
+                }
+            }
+        }
+    }
+    return names;
 }
 
 /**
@@ -160,10 +160,11 @@ export function getStepCtNames(stepNode: FlowNode): string[] {
 
 /**
  * Derives isFinalStep from the step's actionHandler.
- * A step is final when its handler is "SendClaims" (token issuance).
+ * A step is final when its handler is one of the step-completion handlers
+ * (SendClaims, SendClaimsAction, SendRelyingPartyResponse, SendResponse).
  */
 export function isStepFinal(stepData: StepFlowData): boolean {
-    return stepData.actionHandler === "SendClaims";
+    return !!stepData.actionHandler && isStepCompletionHandler(stepData.actionHandler);
 }
 
 /**
@@ -174,6 +175,43 @@ export function isStepInteractive(stepNode: FlowNode): boolean {
     return stepNode.children.some(
         (c) => c.type === FlowNodeType.HomeRealmDiscovery || c.type === FlowNodeType.DisplayControl,
     );
+}
+
+// ============================================================================
+// Id-based Lookup
+// ============================================================================
+
+/**
+ * Builds a Map from FlowNode.id → FlowNode for O(1) id-based lookup.
+ * Indexes all node types (root, subjourney, step, tp, ct, hrd, dc, sendClaims).
+ */
+export function buildFlowNodeIndexById(flowTree: FlowNode): Map<string, FlowNode> {
+    const index = new Map<string, FlowNode>();
+    walkAllNodes(flowTree, (node) => {
+        index.set(node.id, node);
+    });
+    return index;
+}
+
+/**
+ * Finds a Step FlowNode by its unique id (e.g., "step-AuthN-LocalOnly-1").
+ * Returns null if not found.
+ */
+export function findStepFlowNodeById(flowTree: FlowNode, nodeId: string): FlowNode | null {
+    let found: FlowNode | null = null;
+    walkAllNodes(flowTree, (node) => {
+        if (node.id === nodeId) found = node;
+    });
+    return found;
+}
+
+/**
+ * Returns the tree-order position (0-based) of a step node identified by id.
+ * Returns -1 if the node is not a step or not found.
+ */
+export function getStepPosition(flowTree: FlowNode, stepNodeId: string): number {
+    const steps = collectStepNodes(flowTree);
+    return steps.findIndex((s) => s.id === stepNodeId);
 }
 
 // ============================================================================
@@ -189,5 +227,15 @@ function walkStepNodes(node: FlowNode, callback: (node: FlowNode) => void): void
     }
     for (const child of node.children) {
         walkStepNodes(child, callback);
+    }
+}
+
+/**
+ * Walks all FlowNodes depth-first regardless of type.
+ */
+function walkAllNodes(node: FlowNode, callback: (node: FlowNode) => void): void {
+    callback(node);
+    for (const child of node.children) {
+        walkAllNodes(child, callback);
     }
 }

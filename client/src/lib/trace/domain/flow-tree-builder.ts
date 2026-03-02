@@ -1,11 +1,13 @@
 import type {
     FlowNode,
     FlowNodeContext,
+    FlowNodeChild,
     StepFlowData,
     TechnicalProfileFlowData,
     ClaimsTransformationFlowData,
     HomeRealmDiscoveryFlowData,
     DisplayControlFlowData,
+    SendClaimsFlowData,
 } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
 
@@ -165,6 +167,57 @@ export class FlowTreeBuilder {
         };
         parent.children.push(dcNode);
         return dcNode;
+    }
+
+    /**
+     * Add a SendClaims child node to a parent FlowNode.
+     * Returns the created node.
+     */
+    addSendClaims(parent: FlowNode, data: SendClaimsFlowData, context: FlowNodeContext): FlowNode {
+        const node: FlowNode = {
+            id: `sc-${data.technicalProfileId}`,
+            name: `SendClaims: ${data.technicalProfileId}`,
+            type: FlowNodeType.SendClaims,
+            triggeredAtStep: parent.triggeredAtStep,
+            lastStep: parent.triggeredAtStep,
+            children: [],
+            data,
+            context,
+        };
+        parent.children.push(node);
+        return node;
+    }
+
+    /**
+     * Recursively converts FlowNodeChild[] into FlowNode children on a parent.
+     * Called by StepLifecycleManager when a step is finalized.
+     */
+    attachChildren(parent: FlowNode, children: FlowNodeChild[], context: FlowNodeContext): void {
+        for (const child of children) {
+            let node: FlowNode;
+            switch (child.data.type) {
+                case FlowNodeType.TechnicalProfile:
+                    node = this.addTechnicalProfile(parent, child.data, context);
+                    break;
+                case FlowNodeType.ClaimsTransformation:
+                    this.addClaimsTransformation(parent, child.data, context);
+                    continue; // CT has no children
+                case FlowNodeType.HomeRealmDiscovery:
+                    this.addHomeRealmDiscovery(parent, child.data, context);
+                    continue;
+                case FlowNodeType.DisplayControl:
+                    node = this.addDisplayControl(parent, child.data, context);
+                    break;
+                case FlowNodeType.SendClaims:
+                    node = this.addSendClaims(parent, child.data, context);
+                    break;
+                default:
+                    continue;
+            }
+            if (child.children?.length) {
+                this.attachChildren(node, child.children, context);
+            }
+        }
     }
 
     /**

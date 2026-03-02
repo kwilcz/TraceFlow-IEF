@@ -12,9 +12,9 @@ import type { TraceLogInput, TraceParseResult } from "@/types/trace";
 import { SUPPORTED_EVENT_INSTANCES } from "./constants/keys";
 import { JourneyStack } from "./domain/journey-stack";
 import { FlowTreeBuilder } from "./domain/flow-tree-builder";
+import { collectStepNodes } from "./domain/flow-node-utils";
 import { getInterpreterRegistry } from "./interpreters";
 import { runPostProcessors } from "./post-processors";
-import { syncFlowTreeFromSteps } from "./post-processors/flow-tree-sync";
 import { ExecutionMapBuilder } from "./services/execution-map-builder";
 import { StatebagAccumulator } from "./services/statebag-accumulator";
 import {
@@ -23,7 +23,6 @@ import {
     resetLogContext,
 } from "./pipeline/clip-processing-context";
 import { ClipPipeline } from "./pipeline/clip-pipeline";
-import { ResultApplicator } from "./pipeline/result-applicator";
 
 /**
  * Trace Parser using sequential clip pipeline.
@@ -33,7 +32,6 @@ export class TraceParser {
     private readonly logs: TraceLogInput[];
     private readonly interpreterRegistry = getInterpreterRegistry();
     private readonly pipeline: ClipPipeline;
-    private readonly resultApplicator = new ResultApplicator();
 
     constructor(logs: TraceLogInput[]) {
         this.logs = logs;
@@ -75,25 +73,22 @@ export class TraceParser {
         }
 
         // Finalize any remaining in-progress step
-        this.resultApplicator.finalizeCurrentStep(ctx);
+        this.pipeline.stepLifecycleManager.finalizeCurrentStep(ctx);
 
-        // Finalize the last session's step count
+        // Finalize the last session's step count using the FlowNode tree
         const lastSession = ctx.sessions[ctx.sessions.length - 1];
         if (lastSession) {
-            lastSession.stepCount = ctx.traceSteps.length - ctx.sessionStartStepIndex;
+            const tree = ctx.flowTreeBuilder.getTree();
+            lastSession.stepCount = collectStepNodes(tree).length;
         }
 
         // Run post-processors for cross-step analysis (duration calculation, HRD resolution, etc.)
-        const postProcessingResult = runPostProcessors(ctx.traceSteps);
+        const postProcessingResult = runPostProcessors(ctx.flowTreeBuilder.getTree());
         if (!postProcessingResult.success) {
             ctx.errors.push(...postProcessingResult.errors);
         }
 
-        // Sync post-processor mutations back to the FlowNode tree
-        syncFlowTreeFromSteps(ctx.flowTreeBuilder.getTree(), ctx.traceSteps);
-
         return {
-            traceSteps: ctx.traceSteps,
             flowTree: ctx.flowTreeBuilder.getTree(),
             executionMap: ctx.executionMap.build(),
             mainJourneyId: ctx.mainJourneyId,
@@ -156,7 +151,6 @@ export class TraceParser {
      */
     private createEmptyResult(error: string): TraceParseResult {
         return {
-            traceSteps: [],
             flowTree: new FlowTreeBuilder().getTree(),
             executionMap: {},
             mainJourneyId: "",

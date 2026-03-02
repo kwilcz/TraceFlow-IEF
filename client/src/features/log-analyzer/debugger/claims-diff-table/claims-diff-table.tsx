@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollBar } from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
-import { findStepFlowNode, collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
+import { findStepFlowNodeById, collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
 import type { StepFlowData } from "@/types/flow-node";
 import { useDebuggerContext } from "../debugger-context";
 import { CLAIM_STATUSES, useClaimsDiff, type ClaimDiffRow, type ClaimRowStatus } from "../use-claims-diff";
@@ -48,11 +48,11 @@ export function ClaimsDiffTable() {
     const flowTree = useLogStore(useShallow((s) => s.flowTree));
 
     const { rows } = useClaimsDiff(selection, flowTree);
-    const stepIndex = selection?.stepIndex ?? -1;
+    const nodeId = selection?.nodeId;
 
     const activeStepNode = useMemo(
-        () => (flowTree && stepIndex >= 0 ? findStepFlowNode(flowTree, stepIndex) : null),
-        [flowTree, stepIndex],
+        () => (flowTree && nodeId ? findStepFlowNodeById(flowTree, nodeId) : null),
+        [flowTree, nodeId],
     );
     const stepCount = useMemo(
         () => (flowTree ? collectStepNodes(flowTree).length : 0),
@@ -172,7 +172,7 @@ export function ClaimsDiffTable() {
                     <ScrollAreaContent>
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={stepIndex}
+                                key={selection?.nodeId ?? "none"}
                                 initial={{ opacity: 0.5 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ duration }}

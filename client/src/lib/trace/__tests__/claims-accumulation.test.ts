@@ -16,6 +16,7 @@ import {
     buildComplexClaimsStatebag,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Claims Accumulation", () => {
     let fixture: TestFixture;
@@ -66,14 +67,15 @@ describe("Claims Accumulation", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsSnapshot).toHaveProperty("signInName");
-            expect(result.traceSteps[0].claimsSnapshot).not.toHaveProperty("objectId");
+            expect(steps[0].claimsSnapshot).toHaveProperty("signInName");
+            expect(steps[0].claimsSnapshot).not.toHaveProperty("objectId");
 
-            expect(result.traceSteps[1].claimsSnapshot).toHaveProperty("signInName");
-            expect(result.traceSteps[1].claimsSnapshot).toHaveProperty("objectId");
+            expect(steps[1].claimsSnapshot).toHaveProperty("signInName");
+            expect(steps[1].claimsSnapshot).toHaveProperty("objectId");
 
-            expect(result.traceSteps[2].claimsSnapshot).toHaveProperty("displayName");
+            expect(steps[2].claimsSnapshot).toHaveProperty("displayName");
         });
 
         it("should provide final claims state after journey completion", () => {
@@ -131,9 +133,10 @@ describe("Claims Accumulation", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsSnapshot).toEqual({ claim1: "value1" });
-            expect(result.traceSteps[1].claimsSnapshot).toEqual({ claim1: "value1", claim2: "value2" });
+            expect(steps[0].claimsSnapshot).toEqual({ claim1: "value1" });
+            expect(steps[1].claimsSnapshot).toEqual({ claim1: "value1", claim2: "value2" });
         });
 
         it("should handle claim value changes between steps", () => {
@@ -159,9 +162,10 @@ describe("Claims Accumulation", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsSnapshot.status).toBe("pending");
-            expect(result.traceSteps[1].claimsSnapshot.status).toBe("verified");
+            expect(steps[0].claimsSnapshot.status).toBe("pending");
+            expect(steps[1].claimsSnapshot.status).toBe("verified");
         });
     });
 
@@ -221,8 +225,9 @@ describe("Claims Accumulation", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsSnapshot).toEqual({});
+            expect(steps[0].claimsSnapshot).toEqual({});
         });
 
         it("should handle claims with special characters in values", () => {
@@ -243,9 +248,10 @@ describe("Claims Accumulation", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimsSnapshot.email).toBe(testEmailWithPlus);
-            expect(result.traceSteps[0].claimsSnapshot.displayName).toBe("Test User, Sample");
+            expect(steps[0].claimsSnapshot.email).toBe(testEmailWithPlus);
+            expect(steps[0].claimsSnapshot.displayName).toBe("Test User, Sample");
         });
     });
 });

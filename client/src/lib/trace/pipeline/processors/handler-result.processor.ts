@@ -15,13 +15,14 @@ import type { InterpreterRegistry } from "../../interpreters/interpreter-registr
 import type { ClipProcessingContext } from "../clip-processing-context";
 import type { ClipProcessor } from "./clip-processor";
 import { ClipKind } from "../../constants/keys";
-import { TraceStepBuilder } from "../../domain/trace-step-builder";
-import { ResultApplicator } from "../result-applicator";
+import { FlowNodeType } from "@/types/flow-node";
+import type { StepLifecycleManager } from "../step-lifecycle-manager";
 
 export class HandlerResultProcessor implements ClipProcessor {
-    private readonly resultApplicator = new ResultApplicator();
-
-    constructor(private readonly registry: InterpreterRegistry) {}
+    constructor(
+        private readonly registry: InterpreterRegistry,
+        private readonly stepLifecycleManager: StepLifecycleManager,
+    ) {}
 
     process(clip: Clip, ctx: ClipProcessingContext): void {
         if (clip.Kind !== ClipKind.HandlerResult) return;
@@ -60,8 +61,41 @@ export class HandlerResultProcessor implements ClipProcessor {
             const interpretCtx = this.buildInterpretContext(handlerName, handlerResult, clip, ctx);
             const result = interpreter.interpret(interpretCtx);
 
-            // Apply the result to the processing context
-            this.resultApplicator.apply(result, ctx);
+            // For createStep results, children belong to the NEW step — defer accumulation
+            // until after apply() finalizes the previous step and resets pendingFlowChildren.
+            // For all other results, children belong to the CURRENT step — push before apply.
+            if (!result.createStep) {
+                if (result.flowChildren?.length) {
+                    // When a claims-exchange protocol handler provides a specific triggered TP,
+                    // clear any previously accumulated HRD children — the triggered TP supersedes
+                    // the selectable options that ShouldOrchestrationStepBeInvokedHandler listed.
+                    const isClaimsExchangeProtocol = handlerName.includes("IsClaimsExchangeProtocol");
+                    const hasTpChild = result.flowChildren.some(c => c.data.type === FlowNodeType.TechnicalProfile);
+                    if (isClaimsExchangeProtocol && hasTpChild) {
+                        ctx.pendingFlowChildren = ctx.pendingFlowChildren.filter(
+                            c => c.data.type !== FlowNodeType.HomeRealmDiscovery,
+                        );
+                    }
+
+                    ctx.pendingFlowChildren.push(...result.flowChildren);
+                }
+                if (result.stepErrors?.length) {
+                    ctx.pendingStepErrors.push(...result.stepErrors);
+                }
+            }
+
+            // Apply the result to the processing context (may create/finalize steps)
+            this.stepLifecycleManager.apply(result, ctx);
+
+            // For createStep results, push children AFTER apply (they belong to the new step)
+            if (result.createStep) {
+                if (result.flowChildren?.length) {
+                    ctx.pendingFlowChildren.push(...result.flowChildren);
+                }
+                if (result.stepErrors?.length) {
+                    ctx.pendingStepErrors.push(...result.stepErrors);
+                }
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn(
@@ -84,15 +118,6 @@ export class HandlerResultProcessor implements ClipProcessor {
         clip: Clip,
         ctx: ClipProcessingContext,
     ): InterpretContext {
-        // Create or reuse the step builder
-        const stepBuilder =
-            ctx.currentStepBuilder ??
-            TraceStepBuilder.create()
-                .withSequence(ctx.sequenceNumber)
-                .withTimestamp(ctx.currentTimestamp)
-                .withLogId(ctx.currentLogId)
-                .withEventType(ctx.currentEventType);
-
         return {
             clip,
             clipIndex: 0, // Not meaningful in sequential pipeline
@@ -100,13 +125,12 @@ export class HandlerResultProcessor implements ClipProcessor {
             handlerName,
             handlerResult,
             journeyStack: ctx.journeyStack,
-            stepBuilder,
+            pendingStepData: ctx.pendingStepData,
             sequenceNumber: ctx.sequenceNumber,
             timestamp: ctx.currentTimestamp,
             logId: ctx.currentLogId,
             statebag: ctx.statebag.getStatebagSnapshot(),
             claims: ctx.statebag.getClaimsSnapshot(),
-            previousSteps: ctx.traceSteps,
         };
     }
 }

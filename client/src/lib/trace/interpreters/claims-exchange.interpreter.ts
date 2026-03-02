@@ -28,6 +28,7 @@ import {
     CLAIMS_EXCHANGE_HANDLERS,
 } from "../constants/handlers";
 import { RecorderRecordKey, StatebagKey, extractTechnicalProfileFromCTP } from "../constants/keys";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 
 /**
  * Interprets claims exchange handler clips.
@@ -61,28 +62,40 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         const statebagUpdates = this.extractStatebagFromResult(handlerResult);
         const claimsUpdates = this.extractClaimsFromResult(handlerResult);
 
-        // Extract technical profile from InitiatingClaimsExchange (primary for service calls)
+        // Extract technical profile info from InitiatingClaimsExchange (primary for service calls)
         // Falls back to InitiatingBackendClaimsExchange (nested under GettingClaims)
         // Falls back to CTP for user-triggered flows
-        const initiatingTp = this.extractTechnicalProfileFromInitiatingClaimsExchange(handlerResult);
-        const backendTp = this.extractTechnicalProfileFromBackendClaimsExchange(handlerResult);
+        const initiatingTpInfo = this.extractTpInfoFromInitiatingClaimsExchange(handlerResult);
+        const backendTpInfo = this.extractTpInfoFromBackendClaimsExchange(handlerResult);
         const ctpTp = this.extractTriggeredTechnicalProfileFromCTP(handlerResult);
-        const technicalProfileId = initiatingTp ?? backendTp ?? ctpTp;
-        const technicalProfiles = technicalProfileId ? [technicalProfileId] : [];
+        const tpInfo = initiatingTpInfo ?? backendTpInfo
+            ?? (ctpTp ? { id: ctpTp, providerType: "Unknown", protocolType: undefined as string | undefined } : null);
+
+        const flowChildren: FlowNodeChild[] = [];
+        if (tpInfo) {
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.TechnicalProfile,
+                    technicalProfileId: tpInfo.id,
+                    providerType: tpInfo.providerType,
+                    protocolType: tpInfo.protocolType,
+                },
+            });
+        }
 
         switch (handlerName) {
             case CLAIMS_EXCHANGE_REDIRECT:
-                return this.handleRedirect(context, statebagUpdates, claimsUpdates, technicalProfiles);
+                return this.handleRedirect(context, statebagUpdates, claimsUpdates, flowChildren);
 
             case CLAIMS_EXCHANGE_SUBMIT:
-                return this.handleSubmit(context, statebagUpdates, claimsUpdates, technicalProfiles);
+                return this.handleSubmit(context, statebagUpdates, claimsUpdates, flowChildren);
 
             case CLAIMS_EXCHANGE_SELECT:
                 return this.handleSelect(context, statebagUpdates, claimsUpdates);
 
             case CLAIMS_EXCHANGE_ACTION:
             default:
-                return this.handleAction(context, statebagUpdates, claimsUpdates, technicalProfiles);
+                return this.handleAction(context, statebagUpdates, claimsUpdates, flowChildren);
         }
     }
 
@@ -98,16 +111,14 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         context: InterpretContext,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>,
-        technicalProfiles: string[]
+        flowChildren: FlowNodeChild[]
     ): InterpretResult {
-        context.stepBuilder
-            .withEventType("ClaimsExchange")
-            .withActionHandler(CLAIMS_EXCHANGE_REDIRECT)
-            .addTechnicalProfiles(technicalProfiles);
+        context.pendingStepData.actionHandler = CLAIMS_EXCHANGE_REDIRECT;
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 
@@ -119,17 +130,15 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         context: InterpretContext,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>,
-        technicalProfiles: string[]
+        flowChildren: FlowNodeChild[]
     ): InterpretResult {
-        context.stepBuilder
-            .withEventType("ClaimsExchange")
-            .withActionHandler(CLAIMS_EXCHANGE_SUBMIT)
-            .addTechnicalProfiles(technicalProfiles);
+        context.pendingStepData.actionHandler = CLAIMS_EXCHANGE_SUBMIT;
 
         return this.successFinalizeStep({
             statebagUpdates,
             claimsUpdates,
             stepResult: "Success",
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 
@@ -146,13 +155,22 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
 
         const selectableOptions = this.extractSelectableProviders(handlerResult);
 
-        context.stepBuilder
-            .withActionHandler(CLAIMS_EXCHANGE_SELECT)
-            .addSelectableOptions(selectableOptions);
+        context.pendingStepData.actionHandler = CLAIMS_EXCHANGE_SELECT;
+
+        const flowChildren: FlowNodeChild[] = [];
+        if (selectableOptions.length > 0) {
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.HomeRealmDiscovery,
+                    selectableOptions,
+                },
+            });
+        }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 
@@ -164,15 +182,14 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
         context: InterpretContext,
         statebagUpdates: Record<string, string>,
         claimsUpdates: Record<string, string>,
-        technicalProfiles: string[]
+        flowChildren: FlowNodeChild[]
     ): InterpretResult {
-        context.stepBuilder
-            .withActionHandler(CLAIMS_EXCHANGE_ACTION)
-            .addTechnicalProfiles(technicalProfiles);
+        context.pendingStepData.actionHandler = CLAIMS_EXCHANGE_ACTION;
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 
@@ -186,17 +203,27 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
      * Pattern: IsClaimsExchangeProtocolAServiceCallHandler or IsClaimsExchangeProtocolOneWayMessageHandler
      * has RecorderRecord with InitiatingClaimsExchange.TechnicalProfileId
      */
-    private extractTechnicalProfileFromInitiatingClaimsExchange(
+    private extractTpInfoFromInitiatingClaimsExchange(
         handlerResult: HandlerResultContent | null
-    ): string | null {
+    ): { id: string; providerType: string; protocolType?: string } | null {
         if (!handlerResult?.RecorderRecord?.Values) {
             return null;
         }
 
         for (const entry of handlerResult.RecorderRecord.Values) {
             if (entry.Key === RecorderRecordKey.InitiatingClaimsExchange && entry.Value) {
-                const value = entry.Value as { TechnicalProfileId?: string };
-                return value.TechnicalProfileId ?? null;
+                const value = entry.Value as {
+                    TechnicalProfileId?: string;
+                    ProtocolProviderType?: string;
+                    ProtocolType?: string;
+                };
+                if (value.TechnicalProfileId) {
+                    return {
+                        id: value.TechnicalProfileId,
+                        providerType: value.ProtocolProviderType ?? "Unknown",
+                        protocolType: value.ProtocolType,
+                    };
+                }
             }
         }
 
@@ -219,9 +246,9 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
      * ] } }
      * ```
      */
-    private extractTechnicalProfileFromBackendClaimsExchange(
+    private extractTpInfoFromBackendClaimsExchange(
         handlerResult: HandlerResultContent | null
-    ): string | null {
+    ): { id: string; providerType: string; protocolType?: string } | null {
         if (!handlerResult?.RecorderRecord?.Values) {
             return null;
         }
@@ -240,8 +267,16 @@ export class ClaimsExchangeInterpreter extends BaseInterpreter {
                         ) {
                             const backendExchange = innerEntry.Value as {
                                 TechnicalProfileId?: string;
+                                ProtocolProviderType?: string;
+                                ProtocolType?: string;
                             };
-                            return backendExchange.TechnicalProfileId ?? null;
+                            if (backendExchange.TechnicalProfileId) {
+                                return {
+                                    id: backendExchange.TechnicalProfileId,
+                                    providerType: backendExchange.ProtocolProviderType ?? "Unknown",
+                                    protocolType: backendExchange.ProtocolType,
+                                };
+                            }
                         }
                     }
                 }

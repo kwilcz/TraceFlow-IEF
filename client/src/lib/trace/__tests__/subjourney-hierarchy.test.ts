@@ -24,6 +24,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
+import { getTestSteps } from "./test-step-helpers";
 import {
     createTestFixture,
     buildTraceLogInput,
@@ -305,7 +306,7 @@ describe("ChangeSignin_v2 SubJourney Hierarchy", () => {
         expect(stepChildren(arl), "SubJourney-Child2 should include only step 1").toHaveLength(1);
 
         // Step 3 is a SubJourney invocation step (pushes SubJourney-Child3),
-        // so it only exists in traceSteps[], not in the FlowTree.
+        // so it does not appear as a Step node in the FlowTree.
         const aloSteps = stepChildren(alo);
         const step3 = aloSteps.find(
             (s) => s.data.type === "step" && s.data.stepOrder === 3,
@@ -329,7 +330,7 @@ describe("ChangeSignin_v2 SubJourney Hierarchy", () => {
         expect(stepChildren(aru), "SubJourney-Child3 should include only step 1").toHaveLength(1);
 
         // Step 4 is a SubJourney invocation step (pushes SubJourney-Child4),
-        // so it only exists in traceSteps[], not in the FlowTree.
+        // so it does not appear as a Step node in the FlowTree.
         const aloSteps = stepChildren(alo);
         const step4 = aloSteps.find(
             (s) => s.data.type === "step" && s.data.stepOrder === 4,
@@ -390,25 +391,25 @@ describe("ChangeSignin_v2 SubJourney Hierarchy", () => {
 
     it("should assign correct journeyContextId to steps in SubJourneys", () => {
         const result = parseTrace(buildLogs());
-        const steps = result.traceSteps;
+        const steps = getTestSteps(result);
 
         // Steps inside SubJourney-Child1 should reference it as their journey context
-        const aisSteps = steps.filter((s) => s.journeyContextId.includes("SubJourney-Child1"));
+        const aisSteps = steps.filter((s) => s.journeyName.includes("SubJourney-Child1"));
         expect(aisSteps.length).toBeGreaterThanOrEqual(2);
         aisSteps.forEach((s) => {
-            expect(s.currentJourneyName).toBe("SubJourney-Child1");
+            expect(s.journeyName).toBe("SubJourney-Child1");
         });
 
         // Steps inside SubJourney-Child2
-        const arlSteps = steps.filter((s) => s.journeyContextId.includes("SubJourney-Child2"));
+        const arlSteps = steps.filter((s) => s.journeyName.includes("SubJourney-Child2"));
         expect(arlSteps.length).toBeGreaterThanOrEqual(1);
 
         // Steps inside SubJourney-Child3
-        const aruSteps = steps.filter((s) => s.journeyContextId.includes("SubJourney-Child3"));
+        const aruSteps = steps.filter((s) => s.journeyName.includes("SubJourney-Child3"));
         expect(aruSteps.length).toBeGreaterThanOrEqual(1);
 
         // Steps inside SubJourney-Child4
-        const amfaSteps = steps.filter((s) => s.journeyContextId.includes("SubJourney-Child4"));
+        const amfaSteps = steps.filter((s) => s.journeyName.includes("SubJourney-Child4"));
         expect(amfaSteps.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -418,14 +419,14 @@ describe("ChangeSignin_v2 SubJourney Hierarchy", () => {
 
     it("should have correct stepOrder values derived from ORCH_CS", () => {
         const result = parseTrace(buildLogs());
-        const steps = result.traceSteps;
+        const steps = getTestSteps(result);
 
         // Collect all step orders grouped by journey
         const stepsByJourney = new Map<string, number[]>();
         for (const step of steps) {
-            const key = step.currentJourneyName;
+            const key = step.journeyName;
             if (!stepsByJourney.has(key)) stepsByJourney.set(key, []);
-            stepsByJourney.get(key)!.push(step.stepOrder);
+            stepsByJourney.get(key)!.push(step.orchestrationStep);
         }
 
         // SubJourney-Child1 should have steps 1, 2

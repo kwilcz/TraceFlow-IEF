@@ -33,6 +33,8 @@
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import { ORCHESTRATION_MANAGER } from "../constants/handlers";
 import { StatebagKey, extractTechnicalProfileFromCTP } from "../constants/keys";
+import type { FlowNodeChild } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
 
 /**
  * Threshold in milliseconds to distinguish between log entries belonging 
@@ -56,7 +58,7 @@ export class OrchestrationInterpreter extends BaseInterpreter {
     private lastTimestamp: number | null = null;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, journeyStack, timestamp, stepBuilder } = context;
+        const { handlerResult, journeyStack, timestamp } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -130,23 +132,31 @@ export class OrchestrationInterpreter extends BaseInterpreter {
 
             this.lastTimestamp = currentTimestamp;
 
+            // Include CTP-extracted TP as a flowChild for the new step
+            const createFlowChildren: FlowNodeChild[] | undefined = technicalProfile
+                ? [{ data: { type: FlowNodeType.TechnicalProfile, technicalProfileId: technicalProfile, providerType: "" } }]
+                : undefined;
+
             return this.successCreateStep({
                 statebagUpdates,
                 claimsUpdates,
                 actionHandler: ORCHESTRATION_MANAGER,
                 stepResult: hasException ? "Error" : "Success",
                 error: errorMessage,
+                stepErrors: errorMessage ? [{ kind: "Unhandled", hResult: "", message: errorMessage }] : undefined,
                 popSubJourney: popCount > 0 ? popCount : undefined,
+                flowChildren: createFlowChildren,
             });
         }
 
         // Update timestamp even if step didn't change
         this.lastTimestamp = currentTimestamp;
 
-        // Apply technical profile directly to step builder for non-createStep cases
-        if (technicalProfile) {
-            stepBuilder.addTechnicalProfile(technicalProfile);
-        }
+        // For non-createStep cases, TPs are added as flowChildren
+        // (they will be attached to the current step on finalization)
+        const flowChildren: FlowNodeChild[] | undefined = technicalProfile
+            ? [{ data: { type: FlowNodeType.TechnicalProfile, technicalProfileId: technicalProfile, providerType: "" } }]
+            : undefined;
 
         // Even if step didn't change, check for error on current step
         if (hasException) {
@@ -155,12 +165,15 @@ export class OrchestrationInterpreter extends BaseInterpreter {
                 claimsUpdates,
                 stepResult: "Error",
                 error: errorMessage,
+                stepErrors: errorMessage ? [{ kind: "Unhandled", hResult: "", message: errorMessage }] : undefined,
+                flowChildren,
             });
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren,
         });
     }
 

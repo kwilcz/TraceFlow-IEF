@@ -49,13 +49,16 @@ export function StepRenderer({ stepNode }: StepRendererProps) {
                 statebag={stepNode.context.statebagSnapshot}
             />
 
-            {/* 2. Error banner */}
-            {stepData.errorMessage && (
-                <div className="px-3">
-                    <InspectorErrorBanner
-                        message={stepData.errorMessage}
-                        hResult={stepData.errorHResult}
-                    />
+            {/* 2. Error banner(s) */}
+            {stepData.errors.length > 0 && (
+                <div className="px-3 space-y-2">
+                    {stepData.errors.map((err, i) => (
+                        <InspectorErrorBanner
+                            key={i}
+                            message={err.message}
+                            hResult={err.hResult}
+                        />
+                    ))}
                 </div>
             )}
 

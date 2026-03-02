@@ -7,6 +7,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
+import { getTestSteps } from "./test-step-helpers";
 import {
     createTestFixture,
     buildTraceLogInput,
@@ -37,7 +38,7 @@ describe("Validation Technical Profiles", () => {
                         buildHeadersClip(fixture, "Event:SELFASSERTED"),
                         buildOrchestrationManagerAction(),
                         buildOrchestrationResult(1),
-                        buildActionClip("SelfAssertedAttributeProviderActionHandler"),
+                        buildActionClip("SelfAssertedMessageValidationHandler"),
                         buildActionResult(true, buildValidationTechnicalProfileRecord(fixture.technicalProfiles.aadRead)),
                     ],
                     0
@@ -46,7 +47,7 @@ describe("Validation Technical Profiles", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].validationTechnicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
         });
 
         it("should handle multiple validation technical profiles in same step", () => {
@@ -57,7 +58,7 @@ describe("Validation Technical Profiles", () => {
                         buildHeadersClip(fixture, "Event:SELFASSERTED"),
                         buildOrchestrationManagerAction(),
                         buildOrchestrationResult(2),
-                        buildActionClip("SelfAssertedAttributeProviderActionHandler"),
+                        buildActionClip("SelfAssertedMessageValidationHandler"),
                         buildActionResult(true, {
                             Values: [
                                 {
@@ -91,10 +92,11 @@ describe("Validation Technical Profiles", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].validationTechnicalProfiles).toHaveLength(2);
-            expect(result.traceSteps[0].validationTechnicalProfiles).toContain(fixture.technicalProfiles.aadRead);
-            expect(result.traceSteps[0].validationTechnicalProfiles).toContain(fixture.technicalProfiles.aadWrite);
+            expect(steps[0].technicalProfileNames).toHaveLength(2);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadWrite);
         });
 
         it("should separate main TP from validation TPs", () => {
@@ -105,7 +107,7 @@ describe("Validation Technical Profiles", () => {
                         buildHeadersClip(fixture, "Event:SELFASSERTED"),
                         buildOrchestrationManagerAction(),
                         buildOrchestrationResult(1, buildCtpStatebag(fixture.technicalProfiles.selfAssertedSignIn, 1)),
-                        buildActionClip("SelfAssertedAttributeProviderActionHandler"),
+                        buildActionClip("SelfAssertedMessageValidationHandler"),
                         buildActionResult(true, buildValidationTechnicalProfileRecord(fixture.technicalProfiles.aadRead)),
                     ],
                     0
@@ -113,9 +115,10 @@ describe("Validation Technical Profiles", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(result.traceSteps[0].validationTechnicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
         });
     });
 
@@ -128,7 +131,7 @@ describe("Validation Technical Profiles", () => {
                         buildHeadersClip(fixture, "Event:SELFASSERTED"),
                         buildOrchestrationManagerAction(),
                         buildOrchestrationResult(1),
-                        buildActionClip("SelfAssertedAttributeProviderActionHandler"),
+                        buildActionClip("SelfAssertedMessageValidationHandler"),
                         buildActionResult(
                             true,
                             buildValidationTechnicalProfileRecord(fixture.technicalProfiles.aadRead, [
@@ -142,13 +145,15 @@ describe("Validation Technical Profiles", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].claimMappings).toBeDefined();
-            expect(result.traceSteps[0].claimMappings).toContainEqual({
+            const claimMappings = steps[0].technicalProfiles.flatMap(tp => tp.claimMappings ?? []);
+            expect(claimMappings).toBeDefined();
+            expect(claimMappings).toContainEqual({
                 partnerClaimType: "oid",
                 policyClaimType: "objectId",
             });
-            expect(result.traceSteps[0].claimMappings).toContainEqual({
+            expect(claimMappings).toContainEqual({
                 partnerClaimType: "upn",
                 policyClaimType: "userPrincipalName",
             });
@@ -160,19 +165,21 @@ describe("Validation Technical Profiles", () => {
             const logs = [buildSelfAssertedStep(fixture, 1, fixture.technicalProfiles.selfAssertedSignIn, fixture.technicalProfiles.aadRead, 0)];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].eventType).toBe("SELFASSERTED");
-            expect(result.traceSteps[0].validationTechnicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].eventType).toBe("SELFASSERTED");
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
         });
 
         it("should handle self-asserted step without validation TP", () => {
             const logs = [buildSelfAssertedStep(fixture, 1, fixture.technicalProfiles.selfAssertedSignIn, undefined, 0)];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].eventType).toBe("SELFASSERTED");
-            // When no validation TP is provided, the array may be undefined or empty
-            expect(result.traceSteps[0].validationTechnicalProfiles ?? []).toEqual([]);
+            expect(steps[0].eventType).toBe("SELFASSERTED");
+            // When no validation TP is provided, only the self-asserted main TP may appear
+            expect(steps[0].technicalProfileNames.filter(n => n !== fixture.technicalProfiles.selfAssertedSignIn)).toEqual([]);
         });
     });
 });

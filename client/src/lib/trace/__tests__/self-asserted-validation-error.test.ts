@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
+import { getTestSteps } from "./test-step-helpers";
 import type { TraceLogInput } from "@/types/trace";
 import type { ClipsArray } from "@/types/journey-recorder";
 
@@ -117,13 +118,14 @@ describe("Self-Asserted Validation Errors", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Should have a step with Error result
-            const errorSteps = result.traceSteps.filter((s) => s.result === "Error");
+            const errorSteps = steps.filter((s) => s.result === "Error");
             expect(errorSteps.length).toBeGreaterThan(0);
 
             // The error message should contain the exception message
-            const stepWithError = result.traceSteps.find((s) => s.errorMessage);
+            const stepWithError = steps.find((s) => s.errorMessage);
             expect(stepWithError).toBeDefined();
             expect(stepWithError?.errorMessage).toContain("user with the specified credential could not be found");
         });
@@ -175,7 +177,7 @@ describe("Self-Asserted Validation Errors", () => {
 
             const result = parseTrace(logs);
 
-            const stepWithError = result.traceSteps.find((s) => s.result === "Error");
+            const stepWithError = getTestSteps(result).find((s) => s.result === "Error");
             expect(stepWithError).toBeDefined();
             expect(stepWithError?.errorMessage).toContain("Invalid password format");
         });
@@ -252,7 +254,7 @@ describe("Self-Asserted Validation Errors", () => {
             const result = parseTrace(logs);
 
             // Should not have any error steps
-            const errorSteps = result.traceSteps.filter((s) => s.result === "Error");
+            const errorSteps = getTestSteps(result).filter((s) => s.result === "Error");
             expect(errorSteps).toHaveLength(0);
         });
 
@@ -325,9 +327,9 @@ describe("Self-Asserted Validation Errors", () => {
             const result = parseTrace(logs);
 
             // Should have an error step that includes the validation TP
-            const errorStep = result.traceSteps.find((s) => s.result === "Error");
+            const errorStep = getTestSteps(result).find((s) => s.result === "Error");
             expect(errorStep).toBeDefined();
-            expect(errorStep?.validationTechnicalProfiles).toContain("AAD-UserReadUsingSignInName");
+            expect(errorStep?.technicalProfileNames).toContain("AAD-UserReadUsingSignInName");
             expect(errorStep?.errorMessage).toContain("User does not exist");
         });
     });

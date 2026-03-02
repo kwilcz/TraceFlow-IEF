@@ -22,6 +22,7 @@ import {
     buildClaimsExchangeStep,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Technical Profile Extraction", () => {
     let fixture: TestFixture;
@@ -46,7 +47,8 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(getTestSteps(result)[0].technicalProfileNames).toHaveLength(1);
         });
 
         it("should parse CTP format correctly, removing step number suffix", () => {
@@ -63,9 +65,11 @@ describe("Technical Profile Extraction", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.aadRead);
-            expect(result.traceSteps[0].technicalProfiles).not.toContain(`${fixture.technicalProfiles.aadRead}:6`);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].technicalProfileNames).not.toContain(`${fixture.technicalProfiles.aadRead}:6`);
+            expect(steps[0].technicalProfileNames).toHaveLength(1);
         });
 
         it("should handle technical profile names with hyphens", () => {
@@ -85,7 +89,8 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(tpWithHyphens);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(tpWithHyphens);
+            expect(getTestSteps(result)[0].technicalProfileNames).toHaveLength(1);
         });
     });
 
@@ -95,7 +100,8 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
+            expect(getTestSteps(result)[0].technicalProfileNames).toHaveLength(1);
         });
 
         it("should extract technical profile from REST API call", () => {
@@ -103,7 +109,8 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.restApi);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.restApi);
+            expect(getTestSteps(result)[0].technicalProfileNames).toHaveLength(1);
         });
     });
 
@@ -143,7 +150,8 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.restApi);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.restApi);
+            expect(getTestSteps(result)[0].technicalProfileNames).toHaveLength(1);
         });
     });
 
@@ -176,9 +184,10 @@ describe("Technical Profile Extraction", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].technicalProfileDetails).toBeDefined();
-            expect(result.traceSteps[0].technicalProfileDetails?.[0].providerType).toBe("AzureActiveDirectoryProvider");
+            expect(steps[0].technicalProfiles).toBeDefined();
+            expect(steps[0].technicalProfiles?.[0].providerType).toBe("AzureActiveDirectoryProvider");
         });
 
         it("should identify ClaimsTransformationProtocolProvider", () => {
@@ -210,7 +219,7 @@ describe("Technical Profile Extraction", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfileDetails?.[0].providerType).toBe("ClaimsTransformationProtocolProvider");
+            expect(getTestSteps(result)[0].technicalProfiles?.[0].providerType).toBe("ClaimsTransformationProtocolProvider");
         });
     });
 
@@ -231,9 +240,11 @@ describe("Technical Profile Extraction", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.selfAssertedSignIn);
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.selfAssertedSignIn);
+            expect(steps[0].technicalProfileNames).toContain(fixture.technicalProfiles.aadRead);
+            expect(steps[0].technicalProfileNames).toHaveLength(2);
         });
     });
 });

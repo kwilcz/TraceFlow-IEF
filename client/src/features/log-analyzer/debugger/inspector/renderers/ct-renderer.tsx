@@ -47,13 +47,13 @@ export function CtRenderer({ stepNode, selection, dispatch }: CtRendererProps) {
     const segments: BreadcrumbSegment[] = [
         {
             label: `Step ${stepData.stepOrder}`,
-            onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
+            onClick: () => dispatch({ type: "select-step", nodeId: selection.nodeId }),
         },
     ];
     if (parentTpId) {
         segments.push({
             label: parentTpId,
-            onClick: () => dispatch({ type: "select-tp", stepIndex: selection.stepIndex, tpId: parentTpId }),
+            onClick: () => dispatch({ type: "select-tp", nodeId: selection.nodeId, tpId: parentTpId }),
         });
     }
     segments.push({ label: ctId });

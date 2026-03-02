@@ -77,9 +77,9 @@ function makeStepFlowNode(
         },
         data: {
             type: FlowNodeType.Step,
-            stepIndex,
             stepOrder,
             result: overrides?.result ?? "Success",
+            errors: [],
             currentJourneyName: overrides?.currentJourneyName ?? "B2C_1A_signup_signin",
             actionHandler: overrides?.actionHandler,
             uiSettings: overrides?.uiSettings,
@@ -352,7 +352,7 @@ describe("buildStepNode", () => {
         expect(node.id).toBe("step-5");
         expect(node.label).toBe("Step 3 — Unknown");
         expect(node.type).toBe("step");
-        expect(node.stepIndex).toBe(5);
+        expect(node.nodeId).toBe("step-5");
         expect(node.metadata?.result).toBe("Skipped");
         expect(node.metadata?.duration).toBe(250);
     });

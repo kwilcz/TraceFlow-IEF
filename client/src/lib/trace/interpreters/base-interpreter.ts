@@ -14,10 +14,11 @@
 
 import type { Clip, ClipsArray, HandlerResultContent } from "@/types/journey-recorder";
 import type {
-    TraceStep,
+    StepResult,
 } from "@/types/trace";
+import type { FlowNodeChild, StepError } from "@/types/flow-node";
 import type { JourneyStack } from "../domain/journey-stack";
-import type { TraceStepBuilder } from "../domain/trace-step-builder";
+import type { PendingStepData } from "../pipeline/clip-processing-context";
 import { ClipKind, StatebagKey } from "../constants/keys";
 
 /**
@@ -42,8 +43,8 @@ export interface InterpretContext {
     /** Current journey stack */
     journeyStack: JourneyStack;
 
-    /** Current step builder being populated */
-    stepBuilder: TraceStepBuilder;
+    /** Mutable step data accumulated during interpretation. Replaces TraceStepBuilder. */
+    pendingStepData: PendingStepData;
 
     /** Current sequence number */
     sequenceNumber: number;
@@ -59,9 +60,6 @@ export interface InterpretContext {
 
     /** Accumulated claims state */
     claims: Record<string, string>;
-
-    /** Previously built steps (for backreference) */
-    previousSteps: TraceStep[];
 }
 
 /**
@@ -96,10 +94,16 @@ export interface InterpretResult {
     errorHResult?: string;
 
     /** Step result override */
-    stepResult?: TraceStep["result"];
+    stepResult?: StepResult;
 
     /** Action handler name for the step */
     actionHandler?: string;
+
+    /** FlowNode children to attach when step is finalized */
+    flowChildren?: FlowNodeChild[];
+
+    /** Structured step errors (new model, alongside legacy error/errorHResult) */
+    stepErrors?: StepError[];
 }
 
 /**

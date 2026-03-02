@@ -22,15 +22,17 @@ function makeContext(overrides: Partial<FlowNodeContext> = {}): FlowNodeContext 
     };
 }
 
-function makeStepData(overrides: Partial<StepFlowData> = {}): StepFlowData {
+function makeStepData(overrides: Partial<StepFlowData> & { stepIndex?: number } = {}): StepFlowData {
+    // stepIndex was removed from StepFlowData — strip it from overrides
+    const { stepIndex: _, ...rest } = overrides;
     return {
         type: FlowNodeType.Step,
-        stepIndex: 0,
         stepOrder: 1,
         currentJourneyName: "",
         result: "Success",
+        errors: [],
         selectableOptions: [],
-        ...overrides,
+        ...rest,
     };
 }
 

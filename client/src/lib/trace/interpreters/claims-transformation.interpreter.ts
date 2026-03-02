@@ -17,6 +17,7 @@
 import type { HandlerResultContent } from "@/types/journey-recorder";
 import type { ClaimsTransformationDetail, BackendApiCall } from "@/types/trace";
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 import {
     CLAIMS_TRANSFORMATION_ACTION,
     CLAIMS_TRANSFORMATION_HANDLERS,
@@ -39,7 +40,7 @@ export class ClaimsTransformationInterpreter extends BaseInterpreter {
     readonly handlerNames = CLAIMS_TRANSFORMATION_HANDLERS;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, stepBuilder } = context;
+        const { handlerResult, pendingStepData } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -53,30 +54,54 @@ export class ClaimsTransformationInterpreter extends BaseInterpreter {
         // Extract TP context and associate CTs with it
         const tpContext = this.extractTechnicalProfileContext(handlerResult);
 
+        // Build flowChildren: TP with nested CTs, or orphan CTs
+        const flowChildren: FlowNodeChild[] = [];
+
         if (tpContext && claimsTransformations.length > 0) {
-            // Create TechnicalProfileDetail with associated CTs
-            stepBuilder.addTechnicalProfileDetail({
-                id: tpContext.technicalProfileId,
-                providerType: tpContext.providerType || "Unknown",
-                protocolType: tpContext.protocolType,
-                claimsTransformations,
+            const ctChildren: FlowNodeChild[] = claimsTransformations.map(ct => ({
+                data: {
+                    type: FlowNodeType.ClaimsTransformation as const,
+                    transformationId: ct.id,
+                    inputClaims: ct.inputClaims,
+                    inputParameters: ct.inputParameters,
+                    outputClaims: ct.outputClaims,
+                },
+            }));
+
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.TechnicalProfile as const,
+                    technicalProfileId: tpContext.technicalProfileId,
+                    providerType: tpContext.providerType || "Unknown",
+                    protocolType: tpContext.protocolType,
+                },
+                children: ctChildren,
             });
+        } else {
+            // Orphan CTs (no TP context)
+            for (const ct of claimsTransformations) {
+                flowChildren.push({
+                    data: {
+                        type: FlowNodeType.ClaimsTransformation as const,
+                        transformationId: ct.id,
+                        inputClaims: ct.inputClaims,
+                        inputParameters: ct.inputParameters,
+                        outputClaims: ct.outputClaims,
+                    },
+                });
+            }
         }
 
-        // Apply claims transformations directly to step builder
-        for (const ct of claimsTransformations) {
-            stepBuilder.addClaimsTransformationDetail(ct);
-        }
-
-        // Apply backend API calls directly to step builder
+        // Backend API calls are step-level data accumulated on pendingStepData
         for (const call of backendApiCalls) {
-            stepBuilder.addBackendApiCall(call);
+            pendingStepData.backendApiCalls.push(call);
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
             actionHandler: CLAIMS_TRANSFORMATION_ACTION,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 

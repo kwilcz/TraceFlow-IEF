@@ -19,15 +19,15 @@ import type { Selection, SelectionAction } from "./types";
 export function selectionReducer(state: Selection | null, action: SelectionAction): Selection | null {
     switch (action.type) {
         case "select-step":
-            return { type: "step", stepIndex: action.stepIndex };
+            return { type: "step", nodeId: action.nodeId };
         case "select-tp":
-            return { type: "technicalProfile", stepIndex: action.stepIndex, itemId: action.tpId };
+            return { type: "technicalProfile", nodeId: action.nodeId, itemId: action.tpId };
         case "select-ct":
-            return { type: "transformation", stepIndex: action.stepIndex, itemId: action.ctId };
+            return { type: "transformation", nodeId: action.nodeId, itemId: action.ctId };
         case "select-hrd":
-            return { type: "hrd", stepIndex: action.stepIndex };
+            return { type: "hrd", nodeId: action.nodeId };
         case "select-dc":
-            return { type: "displayControl", stepIndex: action.stepIndex, itemId: action.dcId, metadata: action.metadata };
+            return { type: "displayControl", nodeId: action.nodeId, itemId: action.dcId, metadata: action.metadata };
         case "clear":
             return null;
         default:

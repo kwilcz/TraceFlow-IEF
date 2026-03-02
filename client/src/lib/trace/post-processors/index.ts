@@ -13,7 +13,7 @@
  * ```
  */
 
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
 
 import {
     BasePostProcessor,
@@ -62,11 +62,11 @@ export function getPostProcessors(): BasePostProcessor[] {
  * Returns combined results with any errors.
  */
 export function runPostProcessors(
-    traceSteps: TraceStep[],
+    flowTree: FlowNode,
     postProcessors?: BasePostProcessor[]
 ): { success: boolean; errors: string[] } {
     const processors = postProcessors ?? getPostProcessors();
-    const context: PostProcessorContext = { traceSteps };
+    const context: PostProcessorContext = { flowTree };
     const allErrors: string[] = [];
 
     for (const processor of processors) {

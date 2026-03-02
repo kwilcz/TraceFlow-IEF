@@ -23,8 +23,9 @@
 import type { HandlerResultContent } from "@/types/journey-recorder";
 import type { TechnicalProfileDetail } from "@/types/trace";
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
-import { SHOULD_STEP_BE_INVOKED, CLAIMS_EXCHANGE_SERVICE_CALL, CLAIMS_EXCHANGE_API } from "../constants/handlers";
+import { SHOULD_STEP_BE_INVOKED, CLAIMS_EXCHANGE_SERVICE_CALL, CLAIMS_EXCHANGE_API, CLAIMS_EXCHANGE_REDIRECTION } from "../constants/handlers";
 import { RecorderRecordKey } from "../constants/keys";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 
 /**
  * Interprets ShouldOrchestrationStepBeInvokedHandler clips.
@@ -63,10 +64,10 @@ import { RecorderRecordKey } from "../constants/keys";
  * ```
  */
 export class StepInvokeInterpreter extends BaseInterpreter {
-    readonly handlerNames = [SHOULD_STEP_BE_INVOKED, CLAIMS_EXCHANGE_SERVICE_CALL, CLAIMS_EXCHANGE_API] as const;
+    readonly handlerNames = [SHOULD_STEP_BE_INVOKED, CLAIMS_EXCHANGE_SERVICE_CALL, CLAIMS_EXCHANGE_API, CLAIMS_EXCHANGE_REDIRECTION] as const;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, stepBuilder } = context;
+        const { handlerResult } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -81,38 +82,45 @@ export class StepInvokeInterpreter extends BaseInterpreter {
         // Extract from InitiatingClaimsExchange (used by IsClaimsExchangeProtocolAServiceCallHandler)
         const initiatingExchange = this.extractInitiatingClaimsExchange(handlerResult);
 
-        // Determine triggered TP based on number of options:
-        // - Single option = that's the triggered TP
-        // - Multiple options = HRD step, no single triggered TP yet
+        // Build flowChildren based on number of options:
+        // - Single option = TP FlowNodeChild
+        // - Multiple options = HRD FlowNodeChild
         // - InitiatingClaimsExchange provides TP directly
         const isSingleTpStep = selectableOptions.length === 1;
-        const technicalProfiles = initiatingExchange?.id
-            ? [initiatingExchange.id]
-            : isSingleTpStep
-                ? selectableOptions
-                : [];
-
-        // Multiple selectable options = interactive (HRD) step
         const isInteractive = selectableOptions.length > 1;
 
-        // For single-TP steps, add the TP to the step builder
-        if (technicalProfiles.length > 0) {
-            stepBuilder.addTechnicalProfiles(technicalProfiles);
-        }
+        const flowChildren: FlowNodeChild[] = [];
 
-        // Add technical profile details if we have provider type info
         if (initiatingExchange) {
-            stepBuilder.addTechnicalProfileDetail(initiatingExchange);
-        }
-
-        // For multi-TP (HRD) steps, add as selectable options
-        if (isInteractive) {
-            stepBuilder.addSelectableOptions(selectableOptions).asInteractiveStep();
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.TechnicalProfile,
+                    technicalProfileId: initiatingExchange.id,
+                    providerType: initiatingExchange.providerType || "Unknown",
+                    protocolType: initiatingExchange.protocolType,
+                },
+            });
+        } else if (isSingleTpStep) {
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.TechnicalProfile,
+                    technicalProfileId: selectableOptions[0],
+                    providerType: "Unknown",
+                },
+            });
+        } else if (isInteractive) {
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.HomeRealmDiscovery,
+                    selectableOptions,
+                },
+            });
         }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 

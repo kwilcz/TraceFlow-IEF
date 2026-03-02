@@ -16,6 +16,7 @@ import {
     buildActionClip,
     buildActionResult,
 } from "./fixtures";
+import { getTestSteps, getStepCount } from "./test-step-helpers";
 
 function createDisplayControlActionResult(displayControlId: string, action: string, technicalProfileId: string) {
     return buildActionResult(true, {
@@ -57,15 +58,16 @@ describe("Display Control Interpreter", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Step 1 should have the DisplayControl action
-            expect(result.traceSteps.length).toBeGreaterThanOrEqual(1);
+            expect(steps.length).toBeGreaterThanOrEqual(1);
             
-            const step1 = result.traceSteps[0];
-            expect(step1.displayControlActions).toBeDefined();
-            expect(step1.displayControlActions.length).toBe(1);
+            const step1 = steps[0];
+            expect(step1.displayControls).toBeDefined();
+            expect(step1.displayControls.length).toBe(1);
             
-            const dcAction = step1.displayControlActions[0];
+            const dcAction = step1.displayControls[0];
             expect(dcAction.displayControlId).toBe("captchaControlChallengeCode");
             expect(dcAction.action).toBe("GetChallenge");
             expect(dcAction.technicalProfiles).toBeDefined();
@@ -102,11 +104,12 @@ describe("Display Control Interpreter", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const step1 = result.traceSteps[0];
-            expect(step1.displayControlActions.length).toBe(1);
+            const step1 = steps[0];
+            expect(step1.displayControls.length).toBe(1);
             
-            const dcAction = step1.displayControlActions[0];
+            const dcAction = step1.displayControls[0];
             expect(dcAction.technicalProfiles).toBeDefined();
             expect(dcAction.technicalProfiles!.length).toBe(2);
             expect(dcAction.technicalProfiles![0].technicalProfileId).toBe("GenerateOtp");
@@ -139,14 +142,15 @@ describe("Display Control Interpreter", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
             // Should still have just 1 step
-            expect(result.traceSteps.length).toBe(1);
+            expect(steps.length).toBe(1);
             
-            const step1 = result.traceSteps[0];
-            expect(step1.displayControlActions).toBeDefined();
-            expect(step1.displayControlActions.length).toBe(1);
-            expect(step1.displayControlActions[0].displayControlId).toBe("captchaControlChallengeCode");
+            const step1 = steps[0];
+            expect(step1.displayControls).toBeDefined();
+            expect(step1.displayControls.length).toBe(1);
+            expect(step1.displayControls[0].displayControlId).toBe("captchaControlChallengeCode");
         });
     });
 });

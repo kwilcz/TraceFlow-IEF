@@ -8,7 +8,7 @@ import type { FlowNode } from "@/types/flow-node";
 /** Selection state — which tree item is active in the debugger. */
 export interface Selection {
     type: "step" | "technicalProfile" | "transformation" | "hrd" | "displayControl";
-    stepIndex: number;
+    nodeId: string;
     /** For TP, CT, or selected option */
     itemId?: string;
     /** For displayControl-specific data (displayControlId, action, etc.) */
@@ -17,11 +17,11 @@ export interface Selection {
 
 /** Actions for the selection reducer. */
 export type SelectionAction =
-    | { type: "select-step"; stepIndex: number }
-    | { type: "select-tp"; stepIndex: number; tpId: string }
-    | { type: "select-ct"; stepIndex: number; ctId: string }
-    | { type: "select-hrd"; stepIndex: number }
-    | { type: "select-dc"; stepIndex: number; dcId: string; metadata: Record<string, unknown> }
+    | { type: "select-step"; nodeId: string }
+    | { type: "select-tp"; nodeId: string; tpId: string }
+    | { type: "select-ct"; nodeId: string; ctId: string }
+    | { type: "select-hrd"; nodeId: string }
+    | { type: "select-dc"; nodeId: string; dcId: string; metadata: Record<string, unknown> }
     | { type: "clear" };
 
 // ============================================================================
@@ -71,7 +71,7 @@ export interface TreeNode {
     label: string;
     type: TreeNodeType;
     children?: TreeNode[];
-    stepIndex?: number;
+    nodeId?: string;
     /** The FlowNode this tree node was built from. */
     flowNode?: FlowNode;
     metadata?: TreeNodeMetadata;

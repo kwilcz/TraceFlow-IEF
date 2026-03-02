@@ -49,9 +49,19 @@ export {
 } from "./subjourney.interpreter";
 
 export {
-    SelfAssertedInterpreter,
-    createSelfAssertedInterpreter,
-} from "./self-asserted.interpreter";
+    SelfAssertedRedirectInterpreter,
+    createSelfAssertedRedirectInterpreter,
+} from "./self-asserted-redirect.interpreter";
+
+export {
+    SelfAssertedValidationInterpreter,
+    createSelfAssertedValidationInterpreter,
+} from "./self-asserted-validation.interpreter";
+
+export {
+    SelfAssertedActionInterpreter,
+    createSelfAssertedActionInterpreter,
+} from "./self-asserted-action.interpreter";
 
 export {
     StepInvokeInterpreter,
@@ -99,7 +109,9 @@ import { createClaimsExchangeInterpreter } from "./claims-exchange.interpreter";
 import { createClaimsTransformationInterpreter } from "./claims-transformation.interpreter";
 import { createHomeRealmDiscoveryInterpreter } from "./home-realm-discovery.interpreter";
 import { createSubJourneyInterpreter } from "./subjourney.interpreter";
-import { createSelfAssertedInterpreter } from "./self-asserted.interpreter";
+import { createSelfAssertedRedirectInterpreter } from "./self-asserted-redirect.interpreter";
+import { createSelfAssertedValidationInterpreter } from "./self-asserted-validation.interpreter";
+import { createSelfAssertedActionInterpreter } from "./self-asserted-action.interpreter";
 import { createStepInvokeInterpreter } from "./step-invoke.interpreter";
 import { createJourneyCompletionInterpreter } from "./journey-completion.interpreter";
 import { createValidateApiResponseInterpreter } from "./validate-api-response.interpreter";
@@ -121,7 +133,9 @@ const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
     createClaimsTransformationInterpreter,
     createHomeRealmDiscoveryInterpreter,
     createSubJourneyInterpreter,
-    createSelfAssertedInterpreter,
+    createSelfAssertedRedirectInterpreter,
+    createSelfAssertedValidationInterpreter,
+    createSelfAssertedActionInterpreter,
     createJourneyCompletionInterpreter,
     createValidateApiResponseInterpreter,
     createBackendApiInterpreter,

@@ -38,7 +38,6 @@ function makeStepNode(
         children,
         data: {
             type: FlowNodeType.Step,
-            stepIndex,
             stepOrder: stepIndex,
             journeyContextId: "journey-1",
             currentJourneyName: "TestJourney",
@@ -50,6 +49,7 @@ function makeStepNode(
             technicalProfileNames: [],
             claimsTransformationNames: [],
             displayControlNames: [],
+            errors: [],
             selectableOptions: [],
         } as StepFlowData,
         context: makeFlowNodeContext(claimsSnapshot),
@@ -122,7 +122,7 @@ describe("useClaimsDiff", () => {
                 makeStepNode(0, { a: "1", b: "2", c: "3" }),
                 makeStepNode(1, { a: "1", b: "CHANGED", d: "new" }),
             );
-            const selection: Selection = { type: "step", stepIndex: 1 };
+            const selection: Selection = { type: "step", nodeId: "step-1" };
 
             const { result } = renderHook(() => useClaimsDiff(selection, flowTree));
 
@@ -168,7 +168,7 @@ describe("useClaimsDiff", () => {
                 makeStepNode(0, { keep: "v", zebra: "old", beta: "old" }),
                 makeStepNode(1, { keep: "v", zebra: "new", alpha: "new" }),
             );
-            const selection: Selection = { type: "step", stepIndex: 1 };
+            const selection: Selection = { type: "step", nodeId: "step-1" };
 
             const { result } = renderHook(() => useClaimsDiff(selection, flowTree));
 
@@ -181,7 +181,7 @@ describe("useClaimsDiff", () => {
             const flowTree = makeFlowTree(
                 makeStepNode(0, { x: "val" }),
             );
-            const selection: Selection = { type: "step", stepIndex: 0 };
+            const selection: Selection = { type: "step", nodeId: "step-0" };
 
             const { result } = renderHook(() => useClaimsDiff(selection, flowTree));
 
@@ -216,11 +216,11 @@ describe("useClaimsDiff", () => {
 
             const { result, rerender } = renderHook(
                 ({ sel }: { sel: Selection | null }) => useClaimsDiff(sel, flowTree),
-                { initialProps: { sel: { type: "step" as const, stepIndex: 1 } } },
+                { initialProps: { sel: { type: "step" as const, nodeId: "step-1" } } },
             );
 
             // Rerender with new selection
-            rerender({ sel: { type: "step" as const, stepIndex: 2 } });
+            rerender({ sel: { type: "step" as const, nodeId: "step-2" } });
 
             // Should reflect the latest selection (step 2)
             expect(result.current.rows.find((r: { key: string }) => r.key === "a")?.newValue).toBe("3");
@@ -233,7 +233,7 @@ describe("useClaimsDiff", () => {
                 makeStepNode(0, { keep: "v" }),
                 makeStepNode(1, { keep: "v", added: "new" }),
             );
-            const selection: Selection = { type: "step", stepIndex: 1 };
+            const selection: Selection = { type: "step", nodeId: "step-1" };
 
             const { result } = renderHook(() => useClaimsDiff(selection, flowTree));
 
@@ -249,7 +249,7 @@ describe("useClaimsDiff", () => {
             const flowTree = makeFlowTree(
                 makeStepNode(0, { z: "1", a: "2", m: "3" }),
             );
-            const selection: Selection = { type: "step", stepIndex: 0 };
+            const selection: Selection = { type: "step", nodeId: "step-0" };
 
             const { result } = renderHook(() => useClaimsDiff(selection, flowTree));
 
@@ -273,7 +273,7 @@ describe("useClaimsDiff", () => {
             );
             const selection: Selection = {
                 type: "technicalProfile",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "tp-read",
             };
 
@@ -296,7 +296,7 @@ describe("useClaimsDiff", () => {
             );
             const selection: Selection = {
                 type: "technicalProfile",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "tp-write",
             };
 
@@ -321,7 +321,7 @@ describe("useClaimsDiff", () => {
             );
             const selection: Selection = {
                 type: "technicalProfile",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "tp-no-snap",
             };
 
@@ -343,7 +343,7 @@ describe("useClaimsDiff", () => {
             );
             const selection: Selection = {
                 type: "technicalProfile",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "tp-nonexistent",
             };
 
@@ -369,7 +369,7 @@ describe("useClaimsDiff", () => {
             );
             const selection: Selection = {
                 type: "transformation",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "ct-concat",
             };
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { enrichUserFlow } from "@/features/log-analyzer/services/trace-bootstrap-service";
 import type { TraceState } from "@/features/log-analyzer/model/trace-state";
-import type { TraceStep, UserFlow } from "@/types/trace";
+import type { UserFlow } from "@/types/trace";
+import type { FlowNode, FlowNodeContext, StepFlowData } from "@/types/flow-node";
+import { FlowNodeType } from "@/types/flow-node";
 
 function makeFlow(overrides?: Partial<UserFlow>): UserFlow {
     return {
@@ -22,27 +24,47 @@ function makeFlow(overrides?: Partial<UserFlow>): UserFlow {
     };
 }
 
-function makeStep(sequenceNumber: number, claimsSnapshot: Record<string, string>): TraceStep {
+function makeMinimalContext(claimsSnapshot: Record<string, string> = {}): FlowNodeContext {
     return {
-        sequenceNumber,
         timestamp: new Date("2026-02-27T10:00:00.000Z"),
-        logId: `log-${sequenceNumber}`,
+        sequenceNumber: 0,
+        logId: "log-1",
         eventType: "API",
-        graphNodeId: `node-${sequenceNumber}`,
-        journeyContextId: "B2C_1A_Test",
-        currentJourneyName: "B2C_1A_Test",
-        stepOrder: sequenceNumber + 1,
-        result: "Success",
         statebagSnapshot: {},
         claimsSnapshot,
-        technicalProfiles: [],
-        selectableOptions: [],
-        isInteractiveStep: false,
-        claimsTransformations: [],
-        claimsTransformationDetails: [],
-        displayControls: [],
-        displayControlActions: [],
-        backendApiCalls: [],
+    };
+}
+
+function makeStepNode(sequenceNumber: number, claimsSnapshot: Record<string, string>): FlowNode {
+    return {
+        id: `step-root-${sequenceNumber + 1}`,
+        name: `Step ${sequenceNumber + 1}`,
+        type: FlowNodeType.Step,
+        triggeredAtStep: sequenceNumber + 1,
+        lastStep: sequenceNumber + 1,
+        children: [],
+        data: {
+            type: FlowNodeType.Step,
+            stepOrder: sequenceNumber + 1,
+            currentJourneyName: "B2C_1A_Test",
+            result: "Success",
+            errors: [],
+            selectableOptions: [],
+        } satisfies StepFlowData,
+        context: makeMinimalContext(claimsSnapshot),
+    };
+}
+
+function makeFlowTree(steps: FlowNode[]): FlowNode {
+    return {
+        id: "root",
+        name: "B2C_1A_Test",
+        type: FlowNodeType.Root,
+        triggeredAtStep: 0,
+        lastStep: 0,
+        children: steps,
+        data: { type: FlowNodeType.Root, policyId: "B2C_1A_Test" },
+        context: makeMinimalContext(),
     };
 }
 
@@ -50,10 +72,10 @@ describe("enrichUserFlow email resolution", () => {
     it("uses the most recent non-null email by scanning trace steps from the end", () => {
         const flow = makeFlow({ userEmail: "existing@example.com" });
         const tracePatch: Partial<TraceState> = {
-            traceSteps: [
-                makeStep(0, { signInName: "Null" }),
-                makeStep(1, { signInName: "latest@example.com" }),
-            ],
+            flowTree: makeFlowTree([
+                makeStepNode(0, { signInName: "Null" }),
+                makeStepNode(1, { signInName: "latest@example.com" }),
+            ]),
             finalClaims: { signInName: "Null" },
         };
 
@@ -65,7 +87,9 @@ describe("enrichUserFlow email resolution", () => {
     it("falls back to finalClaims when trace steps do not have a valid email", () => {
         const flow = makeFlow({ userEmail: undefined });
         const tracePatch: Partial<TraceState> = {
-            traceSteps: [makeStep(0, { signInName: "Null" })],
+            flowTree: makeFlowTree([
+                makeStepNode(0, { signInName: "Null" }),
+            ]),
             finalClaims: { email: "final@example.com" },
         };
 
@@ -77,7 +101,9 @@ describe("enrichUserFlow email resolution", () => {
     it("preserves existing flow email when no valid claim value exists", () => {
         const flow = makeFlow({ userEmail: "existing@example.com" });
         const tracePatch: Partial<TraceState> = {
-            traceSteps: [makeStep(0, { signInName: "Null", email: "  " })],
+            flowTree: makeFlowTree([
+                makeStepNode(0, { signInName: "Null", email: "  " }),
+            ]),
             finalClaims: { signInName: "Null", email: "" },
         };
 

@@ -3,43 +3,43 @@ import { selectionReducer } from "@/features/log-analyzer/debugger/debugger-cont
 import type { Selection, SelectionAction } from "@/features/log-analyzer/debugger/types";
 
 describe("selectionReducer", () => {
-    const existingSelection: Selection = { type: "step", stepIndex: 0 };
+    const existingSelection: Selection = { type: "step", nodeId: "step-0" };
 
     describe("select-step", () => {
         it("produces a step selection from null", () => {
-            const result = selectionReducer(null, { type: "select-step", stepIndex: 3 });
-            expect(result).toEqual({ type: "step", stepIndex: 3 });
+            const result = selectionReducer(null, { type: "select-step", nodeId: "step-3" });
+            expect(result).toEqual({ type: "step", nodeId: "step-3" });
         });
 
         it("overwrites an existing selection", () => {
-            const result = selectionReducer(existingSelection, { type: "select-step", stepIndex: 5 });
-            expect(result).toEqual({ type: "step", stepIndex: 5 });
+            const result = selectionReducer(existingSelection, { type: "select-step", nodeId: "step-5" });
+            expect(result).toEqual({ type: "step", nodeId: "step-5" });
         });
     });
 
     describe("select-tp", () => {
         it("produces a technicalProfile selection", () => {
-            const result = selectionReducer(null, { type: "select-tp", stepIndex: 1, tpId: "TP-SignIn" });
-            expect(result).toEqual({ type: "technicalProfile", stepIndex: 1, itemId: "TP-SignIn" });
+            const result = selectionReducer(null, { type: "select-tp", nodeId: "step-1", tpId: "TP-SignIn" });
+            expect(result).toEqual({ type: "technicalProfile", nodeId: "step-1", itemId: "TP-SignIn" });
         });
 
         it("overwrites an existing selection", () => {
-            const result = selectionReducer(existingSelection, { type: "select-tp", stepIndex: 2, tpId: "TP-Read" });
-            expect(result).toEqual({ type: "technicalProfile", stepIndex: 2, itemId: "TP-Read" });
+            const result = selectionReducer(existingSelection, { type: "select-tp", nodeId: "step-2", tpId: "TP-Read" });
+            expect(result).toEqual({ type: "technicalProfile", nodeId: "step-2", itemId: "TP-Read" });
         });
     });
 
     describe("select-ct", () => {
         it("produces a transformation selection", () => {
-            const result = selectionReducer(null, { type: "select-ct", stepIndex: 4, ctId: "CT-CreateEmail" });
-            expect(result).toEqual({ type: "transformation", stepIndex: 4, itemId: "CT-CreateEmail" });
+            const result = selectionReducer(null, { type: "select-ct", nodeId: "step-4", ctId: "CT-CreateEmail" });
+            expect(result).toEqual({ type: "transformation", nodeId: "step-4", itemId: "CT-CreateEmail" });
         });
     });
 
     describe("select-hrd", () => {
         it("produces an hrd selection", () => {
-            const result = selectionReducer(null, { type: "select-hrd", stepIndex: 2 });
-            expect(result).toEqual({ type: "hrd", stepIndex: 2 });
+            const result = selectionReducer(null, { type: "select-hrd", nodeId: "step-2" });
+            expect(result).toEqual({ type: "hrd", nodeId: "step-2" });
         });
     });
 
@@ -48,13 +48,13 @@ describe("selectionReducer", () => {
             const metadata = { displayControlId: "captcha", action: "Verify" };
             const result = selectionReducer(null, {
                 type: "select-dc",
-                stepIndex: 1,
+                nodeId: "step-1",
                 dcId: "captcha",
                 metadata,
             });
             expect(result).toEqual({
                 type: "displayControl",
-                stepIndex: 1,
+                nodeId: "step-1",
                 itemId: "captcha",
                 metadata,
             });

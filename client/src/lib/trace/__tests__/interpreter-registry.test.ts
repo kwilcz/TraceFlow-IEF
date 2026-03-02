@@ -12,7 +12,7 @@ import {
     ClaimsTransformationInterpreter,
     HomeRealmDiscoveryInterpreter,
     SubJourneyInterpreter,
-    SelfAssertedInterpreter,
+    SelfAssertedValidationInterpreter,
     getInterpreterRegistry,
 } from "../interpreters";
 import { ORCHESTRATION_MANAGER, CLAIMS_EXCHANGE_ACTION, HRD_HANDLERS, SUBJOURNEY_HANDLERS } from "../constants/handlers";
@@ -69,7 +69,7 @@ describe("InterpreterRegistry", () => {
     it("should track registered interpreters in stats", () => {
         const registry = InterpreterRegistry.getInstance();
 
-        registry.register(new SelfAssertedInterpreter());
+        registry.register(new SelfAssertedValidationInterpreter());
         registry.register(new OrchestrationInterpreter());
         registry.register(new ClaimsTransformationInterpreter());
 

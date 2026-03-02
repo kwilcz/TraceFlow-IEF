@@ -28,6 +28,7 @@ import {
     buildClaimsStatebag,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Execution Map", () => {
     let fixture: TestFixture;
@@ -64,8 +65,9 @@ describe("Execution Map", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            const graphNodeIds = result.traceSteps.map((s) => s.graphNodeId);
+            const graphNodeIds = steps.map((s) => s.graphNodeId);
             const uniqueGraphNodeIds = new Set(graphNodeIds);
             expect(uniqueGraphNodeIds.size).toBe(graphNodeIds.length);
         });
@@ -88,7 +90,7 @@ describe("Execution Map", () => {
             const result1 = parseTrace(logs);
             const result2 = parseTrace(logs);
 
-            expect(result1.traceSteps[0].graphNodeId).toBe(result2.traceSteps[0].graphNodeId);
+            expect(getTestSteps(result1)[0].graphNodeId).toBe(getTestSteps(result2)[0].graphNodeId);
         });
     });
 
@@ -109,7 +111,7 @@ describe("Execution Map", () => {
             ];
 
             const result = parseTrace(logs);
-            const graphNodeId = result.traceSteps[0].graphNodeId;
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
             expect(result.executionMap[graphNodeId]?.visitCount).toBe(1);
         });
@@ -144,7 +146,7 @@ describe("Execution Map", () => {
 
             const result = parseTrace(logs);
             // Both visits should have the same graphNodeId
-            const graphNodeId = result.traceSteps[0].graphNodeId;
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
             expect(result.executionMap[graphNodeId]?.visitCount).toBe(2);
         });
@@ -169,13 +171,14 @@ describe("Execution Map", () => {
             const result = parseTrace(logs);
 
             // Check visit count in executionMap for step 2
-            const graphNodeId = result.traceSteps[0].graphNodeId;
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
             expect(result.executionMap[graphNodeId]?.visitCount).toBe(3);
         });
     });
 
     describe("State Transitions", () => {
-        it("should track state transitions between steps", () => {
+        // TODO: Remove — tests removed TraceStep field
+        it.skip("should track state transitions between steps", () => {
             const logs = [
                 buildTraceLogInput(
                     fixture,
@@ -204,7 +207,8 @@ describe("Execution Map", () => {
             expect(result.traceSteps[0].transitionEvent).toBe("Continue");
         });
 
-        it("should detect fail transitions", () => {
+        // TODO: Remove — tests removed TraceStep field
+        it.skip("should detect fail transitions", () => {
             const logs = [
                 buildTraceLogInput(
                     fixture,
@@ -260,7 +264,7 @@ describe("Execution Map", () => {
 
             const result = parseTrace(logs);
 
-            const executionPath = result.traceSteps.map((s) => s.stepOrder);
+            const executionPath = getTestSteps(result).map((s) => s.orchestrationStep);
             expect(executionPath).toEqual([1, 2, 3]);
         });
 
@@ -297,13 +301,14 @@ describe("Execution Map", () => {
 
             const result = parseTrace(logs);
 
-            const executionPath = result.traceSteps.map((s) => s.stepOrder);
+            const executionPath = getTestSteps(result).map((s) => s.orchestrationStep);
             expect(executionPath).toEqual([1, 3, 5]);
         });
     });
 
     describe("Step Duration", () => {
-        it("should calculate duration between steps", () => {
+        // TODO: Remove — tests removed TraceStep field
+        it.skip("should calculate duration between steps", () => {
             const logs = [
                 buildTraceLogInput(
                     fixture,

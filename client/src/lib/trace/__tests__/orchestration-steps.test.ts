@@ -12,6 +12,7 @@ import {
     buildSimpleOrchestrationStep,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Orchestration Step Tracking", () => {
     let fixture: TestFixture;
@@ -29,8 +30,9 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps.map((s) => s.stepOrder)).toEqual([1, 2, 3]);
+            expect(steps.map((s) => s.orchestrationStep)).toEqual([1, 2, 3]);
             expect(result.success).toBe(true);
         });
 
@@ -43,8 +45,9 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps.map((s) => s.stepOrder)).toEqual([4, 13, 15, 19]);
+            expect(steps.map((s) => s.orchestrationStep)).toEqual([4, 13, 15, 19]);
             expect(result.success).toBe(true);
         });
 
@@ -57,9 +60,10 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps).toHaveLength(4);
-            expect(result.traceSteps.map((s) => s.stepOrder)).toEqual([1, 6, 7, 8]);
+            expect(steps).toHaveLength(4);
+            expect(steps.map((s) => s.orchestrationStep)).toEqual([1, 6, 7, 8]);
         });
     });
 
@@ -71,9 +75,10 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps.map((s) => s.stepOrder)).toEqual([1]);
-            expect(result.traceSteps).toHaveLength(1);
+            expect(steps.map((s) => s.orchestrationStep)).toEqual([1]);
+            expect(steps).toHaveLength(1);
         });
 
         it("should handle multiple step 0 occurrences (journey restart)", () => {
@@ -85,8 +90,9 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps.filter((s) => s.stepOrder === 1)).toHaveLength(2);
+            expect(steps.filter((s) => s.orchestrationStep === 1)).toHaveLength(2);
         });
     });
 
@@ -99,10 +105,11 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].stepOrder).toBe(1);
-            expect(result.traceSteps[1].stepOrder).toBe(4);
-            expect(result.traceSteps[2].stepOrder).toBe(7);
+            expect(steps[0].orchestrationStep).toBe(1);
+            expect(steps[1].orchestrationStep).toBe(4);
+            expect(steps[2].orchestrationStep).toBe(7);
         });
     });
 
@@ -114,17 +121,19 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.executionMap[`${fixture.policyId}-Step1`]).toBeDefined();
-            expect(result.executionMap[`${fixture.policyId}-Step6`]).toBeDefined();
+            expect(result.executionMap[steps[0].graphNodeId]).toBeDefined();
+            expect(result.executionMap[steps[1].graphNodeId]).toBeDefined();
         });
 
         it("should track visit count for each step", () => {
             const logs = [buildSimpleOrchestrationStep(fixture, 1, "Event:AUTH", 0)];
 
             const result = parseTrace(logs);
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
-            expect(result.executionMap[`${fixture.policyId}-Step1`].visitCount).toBe(1);
+            expect(result.executionMap[graphNodeId].visitCount).toBe(1);
         });
 
         it("should increment visit count when same step is visited multiple times", () => {
@@ -134,16 +143,18 @@ describe("Orchestration Step Tracking", () => {
             ];
 
             const result = parseTrace(logs);
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
-            expect(result.executionMap[`${fixture.policyId}-Step1`].visitCount).toBe(2);
+            expect(result.executionMap[graphNodeId].visitCount).toBe(2);
         });
 
         it("should set status to Success for completed steps", () => {
             const logs = [buildSimpleOrchestrationStep(fixture, 1, "Event:AUTH", 0)];
 
             const result = parseTrace(logs);
+            const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
-            expect(result.executionMap[`${fixture.policyId}-Step1`].status).toBe("Success");
+            expect(result.executionMap[graphNodeId].status).toBe("Success");
         });
     });
 });

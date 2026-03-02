@@ -148,21 +148,21 @@ function categorizeStepChildren(stepNode: FlowNode): CategorizedChildren {
  * Builds a TP TreeNode from a TP FlowNode, recursing for nested
  * validation TPs and claims transformations.
  */
-function buildTpTreeNode(tpNode: FlowNode, seq: number, stepIndex: number): TreeNode {
+function buildTpTreeNode(tpNode: FlowNode, seq: number, nodeId: string): TreeNode {
     const data = tpNode.data as TechnicalProfileFlowData;
     const tpChildren: TreeNode[] = [];
 
     for (const child of tpNode.children) {
         if (child.type === FlowNodeType.TechnicalProfile) {
             // Nested validation TP
-            tpChildren.push(buildTpTreeNode(child, seq, stepIndex));
+            tpChildren.push(buildTpTreeNode(child, seq, nodeId));
         } else if (child.type === FlowNodeType.ClaimsTransformation) {
             const ctData = child.data as ClaimsTransformationFlowData;
             tpChildren.push({
                 id: `tp-ct-${seq}-${data.technicalProfileId}-${ctData.transformationId}`,
                 label: ctData.transformationId,
                 type: "transformation",
-                stepIndex,
+                nodeId,
                 flowNode: child,
                 metadata: { parentTechnicalProfileId: data.technicalProfileId },
             });
@@ -173,7 +173,7 @@ function buildTpTreeNode(tpNode: FlowNode, seq: number, stepIndex: number): Tree
         id: `tp-${seq}-${data.technicalProfileId}`,
         label: data.technicalProfileId,
         type: "technicalProfile",
-        stepIndex,
+        nodeId,
         flowNode: tpNode,
         children: tpChildren.length > 0 ? tpChildren : undefined,
     };
@@ -183,7 +183,7 @@ function buildTpTreeNode(tpNode: FlowNode, seq: number, stepIndex: number): Tree
  * Builds a DC TreeNode from a DC FlowNode, recursing for nested
  * TPs and their CTs.
  */
-function buildDcTreeNode(dcNode: FlowNode, seq: number, stepIndex: number): TreeNode {
+function buildDcTreeNode(dcNode: FlowNode, seq: number, nodeId: string): TreeNode {
     const data = dcNode.data as DisplayControlFlowData;
     const dcChildren: TreeNode[] = [];
 
@@ -199,7 +199,7 @@ function buildDcTreeNode(dcNode: FlowNode, seq: number, stepIndex: number): Tree
                         id: `dc-ct-${seq}-${data.displayControlId}-${data.action}-${tpData.technicalProfileId}-${ctData.transformationId}`,
                         label: ctData.transformationId,
                         type: "dcTransformation",
-                        stepIndex,
+                        nodeId,
                         flowNode: grandchild,
                         metadata: { parentDisplayControlId: data.displayControlId },
                     });
@@ -210,7 +210,7 @@ function buildDcTreeNode(dcNode: FlowNode, seq: number, stepIndex: number): Tree
                 id: `dc-tp-${seq}-${data.displayControlId}-${data.action}-${tpData.technicalProfileId}`,
                 label: tpData.technicalProfileId,
                 type: "dcTechnicalProfile",
-                stepIndex,
+                nodeId,
                 flowNode: child,
                 children: dcTpChildren.length > 0 ? dcTpChildren : undefined,
                 metadata: { parentDisplayControlId: data.displayControlId },
@@ -226,7 +226,7 @@ function buildDcTreeNode(dcNode: FlowNode, seq: number, stepIndex: number): Tree
         id: `dc-${seq}-${data.displayControlId}-${data.action}`,
         label: dcLabel,
         type: "displayControl",
-        stepIndex,
+        nodeId,
         flowNode: dcNode,
         children: dcChildren.length > 0 ? dcChildren : undefined,
         metadata: {
@@ -246,7 +246,7 @@ function buildDcTreeNode(dcNode: FlowNode, seq: number, stepIndex: number): Tree
 function buildHrdTreeNode(
     hrdNode: FlowNode,
     seq: number,
-    stepIndex: number,
+    nodeId: string,
     vtpNodes?: TreeNode[],
 ): TreeNode {
     const data = hrdNode.data as HomeRealmDiscoveryFlowData;
@@ -257,7 +257,7 @@ function buildHrdTreeNode(
             id: `hrd-${seq}-${provider}`,
             label: provider,
             type: isSelected ? ("selectedOption" as const) : ("hrdOption" as const),
-            stepIndex,
+            nodeId,
             metadata: isSelected ? { selectedOption: provider } : undefined,
             children: isSelected && vtpNodes && vtpNodes.length > 0 ? vtpNodes : undefined,
         };
@@ -267,7 +267,7 @@ function buildHrdTreeNode(
         id: `hrd-${seq}`,
         label: "HomeRealmDiscovery",
         type: "hrd",
-        stepIndex,
+        nodeId,
         flowNode: hrdNode,
         metadata: {
             isHrdSelection: true,
@@ -298,12 +298,12 @@ function buildHrdTreeNode(
 export function buildStepNode(stepNode: FlowNode): TreeNode {
     const data = stepNode.data as StepFlowData;
     const seq = stepNode.context.sequenceNumber;
-    const stepIndex = data.stepIndex;
+    const nodeId = stepNode.id;
 
     const { tp, ct, hrd, dc } = categorizeStepChildren(stepNode);
 
     // Build DC TreeNodes
-    const dcNodes = dc.map((d) => buildDcTreeNode(d, seq, stepIndex));
+    const dcNodes = dc.map((d) => buildDcTreeNode(d, seq, nodeId));
 
     // Find SelfAsserted TP
     const selfAssertedTpNode = tp.find(
@@ -330,11 +330,11 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
         ) {
             vtpNodes = tpChild.children
                 .filter((c) => c.type === FlowNodeType.TechnicalProfile)
-                .map((c) => buildTpTreeNode(c, seq, stepIndex));
+                .map((c) => buildTpTreeNode(c, seq, nodeId));
             continue;
         }
 
-        tpNodes.push(buildTpTreeNode(tpChild, seq, stepIndex));
+        tpNodes.push(buildTpTreeNode(tpChild, seq, nodeId));
     }
 
     // ── Assemble children array ──────────────────────────────────────
@@ -342,7 +342,7 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
 
     // HRD node first (with VTPs under selected option)
     if (hrd) {
-        children.push(buildHrdTreeNode(hrd, seq, stepIndex, vtpNodes));
+        children.push(buildHrdTreeNode(hrd, seq, nodeId, vtpNodes));
     }
 
     if (selfAssertedTpNode && !isHrdStep) {
@@ -365,7 +365,7 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
             id: `ct-${seq}-${ctData.transformationId}`,
             label: ctData.transformationId,
             type: "transformation",
-            stepIndex,
+            nodeId,
             flowNode: ctChild,
         });
     }
@@ -380,7 +380,7 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
         id: `step-${seq}`,
         label: `Step ${data.stepOrder} — ${primaryLabel}`,
         type: "step",
-        stepIndex,
+        nodeId,
         flowNode: stepNode,
         metadata: {
             result: data.result,

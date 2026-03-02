@@ -19,6 +19,7 @@ import type { HandlerResultContent } from "@/types/journey-recorder";
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import { HOME_REALM_DISCOVERY_ACTION, HRD_HANDLERS } from "../constants/handlers";
 import { RecorderRecordKey } from "../constants/keys";
+import { FlowNodeType, type FlowNodeChild } from "@/types/flow-node";
 
 /**
  * Interprets HomeRealmDiscoveryHandler clips.
@@ -42,7 +43,7 @@ export class HomeRealmDiscoveryInterpreter extends BaseInterpreter {
     readonly handlerNames = HRD_HANDLERS;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, stepBuilder } = context;
+        const { handlerResult, pendingStepData } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -57,17 +58,24 @@ export class HomeRealmDiscoveryInterpreter extends BaseInterpreter {
         // HRD steps are interactive selection steps.
         // The technical profile (CTP) is only set AFTER user selection in a subsequent event.
         // We should NOT add any technical profiles here - only selectable options.
-        // If we add TPs here, they will leak to subsequent steps since the step builder
-        // is reused until a new step is created.
 
-        stepBuilder
-            .withActionHandler(HOME_REALM_DISCOVERY_ACTION)
-            .addSelectableOptions(selectableOptions)
-            .asInteractiveStep();
+        pendingStepData.actionHandler = HOME_REALM_DISCOVERY_ACTION;
+
+        // Build HRD FlowNodeChild with selectableOptions
+        const flowChildren: FlowNodeChild[] = [];
+        if (selectableOptions.length > 0) {
+            flowChildren.push({
+                data: {
+                    type: FlowNodeType.HomeRealmDiscovery,
+                    selectableOptions,
+                },
+            });
+        }
 
         return this.successNoOp({
             statebagUpdates,
             claimsUpdates,
+            flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
         });
     }
 

@@ -22,6 +22,7 @@ import {
     buildSubJourneyInvocationStep,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Session Flow Boundary Detection", () => {
     let fixture: TestFixture;
@@ -54,9 +55,10 @@ describe("Session Flow Boundary Detection", () => {
             const result = parseTrace(logs);
 
             expect(result.success).toBe(true);
-            expect(result.traceSteps).toHaveLength(3);
+            const steps = getTestSteps(result);
+            expect(steps).toHaveLength(3);
 
-            const stepOrders = result.traceSteps.map((s) => s.stepOrder);
+            const stepOrders = steps.map((s) => s.orchestrationStep);
             expect(stepOrders).toEqual([1, 2, 3]);
         });
     });
@@ -105,11 +107,12 @@ describe("Session Flow Boundary Detection", () => {
             const result = parseTrace([...session1Logs, ...session2Logs]);
 
             expect(result.success).toBe(true);
+            const steps = getTestSteps(result);
             // Session 1: step 1, 2, 3 + Session 2: step 1, 2 = 5 total
-            expect(result.traceSteps).toHaveLength(5);
+            expect(steps).toHaveLength(5);
 
             // Session 2 step 1 should be a separate entry from session 1 step 1
-            const stepsWithOrder1 = result.traceSteps.filter((s) => s.stepOrder === 1);
+            const stepsWithOrder1 = steps.filter((s) => s.orchestrationStep === 1);
             expect(stepsWithOrder1).toHaveLength(2);
         });
 
@@ -177,11 +180,12 @@ describe("Session Flow Boundary Detection", () => {
             ]);
 
             expect(result.success).toBe(true);
+            const steps = getTestSteps(result);
             // 2 + 2 + 1 = 5 total steps
-            expect(result.traceSteps).toHaveLength(5);
+            expect(steps).toHaveLength(5);
 
             // All three sessions have step 1 — they must be separate entries
-            const stepsWithOrder1 = result.traceSteps.filter((s) => s.stepOrder === 1);
+            const stepsWithOrder1 = steps.filter((s) => s.orchestrationStep === 1);
             expect(stepsWithOrder1).toHaveLength(3);
         });
 
@@ -231,15 +235,16 @@ describe("Session Flow Boundary Detection", () => {
             const result = parseTrace([...session1Logs, ...session2Logs]);
 
             expect(result.success).toBe(true);
-            expect(result.traceSteps).toHaveLength(2);
+            const steps = getTestSteps(result);
+            expect(steps).toHaveLength(2);
 
             // Session 1 step should have the claims
-            const session1Step = result.traceSteps[0];
+            const session1Step = steps[0];
             expect(session1Step.claimsSnapshot).toHaveProperty("signInName", "test@example.com");
             expect(session1Step.claimsSnapshot).toHaveProperty("objectId", "session1-oid");
 
             // Session 2 step should NOT have session 1's claims
-            const session2Step = result.traceSteps[1];
+            const session2Step = steps[1];
             expect(session2Step.claimsSnapshot).not.toHaveProperty("signInName");
             expect(session2Step.claimsSnapshot).not.toHaveProperty("objectId");
         });
@@ -285,13 +290,14 @@ describe("Session Flow Boundary Detection", () => {
             const result = parseTrace([...session1Logs, ...session2Logs]);
 
             expect(result.success).toBe(true);
+            const steps = getTestSteps(result);
 
             // Find the session 2 step (last step)
-            const session2Step = result.traceSteps[result.traceSteps.length - 1];
+            const session2Step = steps[steps.length - 1];
 
             // Session 2 step should use the root journey context, not the sub-journey
             // The root journey context uses the main policyId as journeyContextId
-            expect(session2Step.journeyContextId).toBe(fixture.policyId);
+            expect(session2Step.journeyName).toBe(fixture.policyId);
         });
     });
 });

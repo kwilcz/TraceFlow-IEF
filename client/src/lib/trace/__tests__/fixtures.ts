@@ -767,7 +767,7 @@ export function buildSelfAssertedStep(
 
     if (validationTpId) {
         clips.push(
-            buildActionClip("SelfAssertedAttributeProviderActionHandler"),
+            buildActionClip("SelfAssertedMessageValidationHandler"),
             buildActionResult(true, buildValidationTechnicalProfileRecord(validationTpId))
         );
     }

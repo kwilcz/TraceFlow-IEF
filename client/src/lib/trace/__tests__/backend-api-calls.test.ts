@@ -27,6 +27,7 @@ import {
     buildActionResult,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Backend API Calls", () => {
     let fixture: TestFixture;
@@ -55,9 +56,9 @@ describe("Backend API Calls", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfileDetails).toContainEqual(
+            expect(getTestSteps(result)[0].technicalProfiles).toContainEqual(
                 expect.objectContaining({
-                    id: fixture.technicalProfiles.apiConnector,
+                    technicalProfileId: fixture.technicalProfiles.apiConnector,
                     providerType: "RestfulProvider",
                 })
             );
@@ -84,7 +85,7 @@ describe("Backend API Calls", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].backendApiCalls?.[0]?.requestUri).toBe(apiEndpoint);
+            expect(getTestSteps(result)[0].backendApiCalls?.[0]?.requestUri).toBe(apiEndpoint);
         });
     });
 
@@ -105,9 +106,10 @@ describe("Backend API Calls", () => {
             ];
 
             const result = parseTrace(logs);
+            const steps = getTestSteps(result);
 
-            expect(result.traceSteps[0].technicalProfileDetails).toBeDefined();
-            expect(result.traceSteps[0].technicalProfileDetails?.length).toBeGreaterThan(0);
+            expect(steps[0].technicalProfiles).toBeDefined();
+            expect(steps[0].technicalProfiles?.length).toBeGreaterThan(0);
         });
 
         it.skip("should capture API response claims", () => {
@@ -137,7 +139,7 @@ describe("Backend API Calls", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfileDetails).toContainEqual(
+            expect(getTestSteps(result)[0].technicalProfiles).toContainEqual(
                 expect.objectContaining({
                     providerType: "OpenIdConnectProtocolProvider",
                 })
@@ -163,7 +165,7 @@ describe("Backend API Calls", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfileDetails).toContainEqual(
+            expect(getTestSteps(result)[0].technicalProfiles).toContainEqual(
                 expect.objectContaining({
                     providerType: "AzureActiveDirectoryProvider",
                 })

@@ -36,10 +36,10 @@ describe("useDebuggerContext", () => {
         const { result } = renderHook(() => useDebuggerContext(), { wrapper });
 
         act(() => {
-            result.current.dispatch({ type: "select-step", stepIndex: 2 });
+            result.current.dispatch({ type: "select-step", nodeId: "step-2" });
         });
 
-        expect(result.current.selection).toEqual({ type: "step", stepIndex: 2 });
+        expect(result.current.selection).toEqual({ type: "step", nodeId: "step-2" });
     });
 
     it("dispatch clear resets selection to null", () => {
@@ -50,7 +50,7 @@ describe("useDebuggerContext", () => {
         const { result } = renderHook(() => useDebuggerContext(), { wrapper });
 
         act(() => {
-            result.current.dispatch({ type: "select-tp", stepIndex: 1, tpId: "TP-1" });
+            result.current.dispatch({ type: "select-tp", nodeId: "step-1", tpId: "TP-1" });
         });
         expect(result.current.selection).not.toBeNull();
 

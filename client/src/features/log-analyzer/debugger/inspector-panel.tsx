@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
-import { buildFlowNodeIndex } from "@/lib/trace/domain/flow-node-utils";
+import { buildFlowNodeIndexById } from "@/lib/trace/domain/flow-node-utils";
 import { FlowNodeType } from "@/types/flow-node";
 import { useDebuggerContext } from "./debugger-context";
 import {
@@ -30,7 +30,7 @@ export function InspectorPanel() {
     const flowTree = useLogStore(useShallow((s) => s.flowTree));
 
     const nodeIndex = useMemo(
-        () => (flowTree ? buildFlowNodeIndex(flowTree) : new Map()),
+        () => (flowTree ? buildFlowNodeIndexById(flowTree) : new Map()),
         [flowTree],
     );
 
@@ -42,7 +42,7 @@ export function InspectorPanel() {
         );
     }
 
-    const stepNode = nodeIndex.get(selection.stepIndex);
+    const stepNode = nodeIndex.get(selection.nodeId);
     if (!stepNode || stepNode.data.type !== FlowNodeType.Step) return null;
 
     return (

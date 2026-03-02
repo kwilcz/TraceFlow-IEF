@@ -1,10 +1,9 @@
 import type { LogRecord } from "@/types/logs";
-import type { TraceExecutionMap, TraceStep, UserFlow, SessionInfo } from "@/types/trace";
+import type { TraceExecutionMap, UserFlow, SessionInfo } from "@/types/trace";
 import type { FlowNode } from "@/types/flow-node";
 
 export interface TraceState {
     flowTree: FlowNode | null;
-    traceSteps: TraceStep[];
     executionMap: TraceExecutionMap;
     activeStepIndex: number | null;
     isTraceModeActive: boolean;
@@ -34,7 +33,6 @@ export interface TraceActions {
 
 export const initialTraceState: TraceState = {
     flowTree: null,
-    traceSteps: [],
     executionMap: {},
     activeStepIndex: null,
     isTraceModeActive: false,

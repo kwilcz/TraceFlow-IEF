@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
 import type { TraceLogInput } from "@/types/trace";
 import type { ClipsArray, Clip, HandlerResultContent, HeadersClip } from "@/types/journey-recorder";
+import { getTestSteps } from "./test-step-helpers";
 
 function createHeadersClip(
     policyId: string,
@@ -137,16 +138,17 @@ describe("Early Validation Error Handling", () => {
         ];
 
         const result = parseTrace(logs);
+        const steps = getTestSteps(result);
 
         // Should have created an error step despite ORCH_CS being 0
-        expect(result.traceSteps.length).toBeGreaterThanOrEqual(1);
+        expect(steps.length).toBeGreaterThanOrEqual(1);
         
         // Find the error step
-        const errorStep = result.traceSteps.find(s => s.result === "Error");
+        const errorStep = steps.find(s => s.result === "Error");
         expect(errorStep).toBeDefined();
         expect(errorStep?.errorMessage).toContain("redirect URI");
         expect(errorStep?.errorHResult).toBe("80131500"); // HResult should be captured
-        expect(errorStep?.stepOrder).toBe(0); // Error occurred at step 0
+        expect(errorStep?.orchestrationStep).toBe(0); // Error occurred at step 0
     });
 
     it("should include error step in trace errors", () => {
@@ -183,9 +185,10 @@ describe("Early Validation Error Handling", () => {
         ];
 
         const result = parseTrace(logs);
+        const steps = getTestSteps(result);
 
         // Should have at least one error step
-        const errorSteps = result.traceSteps.filter(s => s.result === "Error");
+        const errorSteps = steps.filter(s => s.result === "Error");
         expect(errorSteps.length).toBeGreaterThanOrEqual(1);
         
         // The error message and HResult should be captured

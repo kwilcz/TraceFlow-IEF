@@ -1,11 +1,27 @@
-import type { HeadersContent, HandlerResultContent } from "@/types/journey-recorder";
-import type { TraceStep } from "@/types/trace";
-import type { JourneyStack } from "../domain/journey-stack";
-import type { TraceStepBuilder } from "../domain/trace-step-builder";
-import type { FlowTreeBuilder } from "../domain/flow-tree-builder";
-import type { StatebagAccumulator } from "../services/statebag-accumulator";
-import type { ExecutionMapBuilder } from "../services/execution-map-builder";
+import type { HandlerResultContent, HeadersContent } from "@/types/journey-recorder";
+import type { SessionInfo, StepResult } from "@/types/trace";
+import type { FlowNodeChild, StepError } from "@/types/flow-node";
+import type { BackendApiCall, UiSettings } from "@/types/trace";
 import { ClipKind } from "../constants/keys";
+import type { FlowTreeBuilder } from "../domain/flow-tree-builder";
+import type { JourneyStack } from "../domain/journey-stack";
+import type { ExecutionMapBuilder } from "../services/execution-map-builder";
+import type { StatebagAccumulator } from "../services/statebag-accumulator";
+
+/**
+ * Mutable step metadata accumulated during clip interpretation.
+ * Reset per step. Replaces TraceStepBuilder for lightweight field accumulation.
+ */
+export interface PendingStepData {
+    uiSettings?: UiSettings;
+    selectableOptions: string[];
+    selectedOption?: string;
+    backendApiCalls: BackendApiCall[];
+    result: StepResult;
+    actionHandler?: string;
+    errorMessage?: string;
+    errorHResult?: string;
+}
 
 /**
  * Sequential processing state maintained as clips are processed one-by-one.
@@ -54,10 +70,13 @@ export interface ClipProcessingContext {
     flowTreeBuilder: FlowTreeBuilder;
 
     // === Step Building ===
-    currentStepBuilder: TraceStepBuilder | null;
+    pendingStepData: PendingStepData;
+
+    // === Pending FlowNode children (accumulated per-step, attached on finalize) ===
+    pendingFlowChildren: FlowNodeChild[];
+    pendingStepErrors: StepError[];
 
     // === Output ===
-    traceSteps: TraceStep[];
     sequenceNumber: number;
     errors: string[];
 
@@ -75,20 +94,14 @@ export interface ClipProcessingContext {
      */
     sessionFlowCount: number;
     /** Collected session boundary info */
-    sessions: import("@/types/trace").SessionInfo[];
-    /** Index of the first trace step in the current session (for computing stepCount) */
-    sessionStartStepIndex: number;
+    sessions: SessionInfo[];
 }
 
 /**
  * Resets the per-log metadata when processing a new log entry.
  * Called when the pipeline begins processing a new log, before iterating its clips.
  */
-export function resetLogContext(
-    ctx: ClipProcessingContext,
-    logId: string,
-    timestamp: Date,
-): void {
+export function resetLogContext(ctx: ClipProcessingContext, logId: string, timestamp: Date): void {
     ctx.currentLogId = logId;
     ctx.currentTimestamp = timestamp;
     ctx.lastClipKind = null;
@@ -136,9 +149,11 @@ export function createInitialContext(
         executionMap,
         flowTreeBuilder,
 
-        currentStepBuilder: null,
+        pendingStepData: createDefaultPendingStepData(),
 
-        traceSteps: [],
+        pendingFlowChildren: [],
+        pendingStepErrors: [],
+
         sequenceNumber: 0,
         errors: [],
 
@@ -148,7 +163,6 @@ export function createInitialContext(
 
         sessionFlowCount: 0,
         sessions: [],
-        sessionStartStepIndex: 0,
     };
 }
 
@@ -170,10 +184,7 @@ export function beginNewSession(
     finalizeCurrentStep: (ctx: ClipProcessingContext) => void,
 ): void {
     // Record the completed session's step count
-    const currentSessionIndex = ctx.sessions.length - 1;
-    if (currentSessionIndex >= 0) {
-        ctx.sessions[currentSessionIndex].stepCount = ctx.traceSteps.length - ctx.sessionStartStepIndex;
-    }
+    // Session step counting now derived from FlowNode tree at finalization
 
     // Finalize any in-progress step before resetting
     finalizeCurrentStep(ctx);
@@ -193,7 +204,11 @@ export function beginNewSession(
     ctx.lastStepTimestamps.clear();
 
     // Reset step building
-    ctx.currentStepBuilder = null;
+    ctx.pendingStepData = createDefaultPendingStepData();
+
+    // Reset pending flow children/errors
+    ctx.pendingFlowChildren = [];
+    ctx.pendingStepErrors = [];
 
     // Reset sequential state
     ctx.lastClipKind = null;
@@ -204,4 +219,15 @@ export function beginNewSession(
     ctx.lastHandlerResult = null;
     ctx.lastTransition = null;
     ctx.currentHeaders = null;
+}
+
+/**
+ * Creates a default PendingStepData with empty/default values.
+ */
+export function createDefaultPendingStepData(): PendingStepData {
+    return {
+        selectableOptions: [],
+        backendApiCalls: [],
+        result: "Success",
+    };
 }

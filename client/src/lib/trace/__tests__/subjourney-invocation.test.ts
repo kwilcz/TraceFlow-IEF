@@ -7,6 +7,8 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { parseTrace } from "@/lib/trace";
+import { getTestSteps, getStepCount } from "./test-step-helpers";
+import { FlowNodeType } from "@/types/flow-node";
 import {
     createTestFixture,
     buildTraceLogInput,
@@ -47,8 +49,19 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            const step4 = result.traceSteps.find((s) => s.stepOrder === 4);
-            expect(step4?.subJourneyId).toBe(fixture.subJourneys.passwordReset);
+            // The SubJourney should exist as a SubJourney node in the FlowNode tree
+            const subJourneyNodes = result.flowTree.children.flatMap((c) =>
+                c.type === FlowNodeType.SubJourney
+                    ? [c]
+                    : c.children.filter((gc) => gc.type === FlowNodeType.SubJourney),
+            );
+            const passwordResetSJ = subJourneyNodes.find((sj) => sj.name === fixture.subJourneys.passwordReset);
+            expect(passwordResetSJ).toBeDefined();
+
+            // Invocation step (step 4) should NOT appear as a visible Step node
+            const steps = getTestSteps(result);
+            const invocationStep = steps.find((s) => s.orchestrationStep === 4);
+            expect(invocationStep).toBeUndefined();
         });
     });
 
@@ -58,8 +71,19 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            const stepOrders = result.traceSteps.map((s) => s.stepOrder);
-            expect(stepOrders).toContain(4);
+            // Invocation steps are not visible in the flow tree (they only push the SubJourney).
+            expect(result.success).toBe(true);
+            // Step 4 triggers the SubJourney but should NOT appear as a Step node
+            const steps = getTestSteps(result);
+            const invocationStep = steps.find((s) => s.orchestrationStep === 4);
+            expect(invocationStep).toBeUndefined();
+            // The SubJourney node should exist in the tree
+            const allSubJourneys = result.flowTree.children.flatMap((c) =>
+                c.type === FlowNodeType.SubJourney
+                    ? [c]
+                    : c.children.filter((gc) => gc.type === FlowNodeType.SubJourney),
+            );
+            expect(allSubJourneys.some((sj) => sj.name === fixture.subJourneys.passwordReset)).toBe(true);
         });
 
         it("should track steps within SubJourney context", () => {
@@ -87,7 +111,7 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps.length).toBeGreaterThanOrEqual(2);
+            expect(getStepCount(result)).toBeGreaterThanOrEqual(2);
         });
     });
 
@@ -111,8 +135,8 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            const subJourneyStep = result.traceSteps.find((s) => s.stepOrder === 1);
-            expect(subJourneyStep?.currentJourneyName).toBe(fixture.subJourneys.passwordReset);
+            const subJourneyStep = getTestSteps(result).find((s) => s.orchestrationStep === 1);
+            expect(subJourneyStep?.journeyName).toBe(fixture.subJourneys.passwordReset);
         });
 
         it("should update journeyContextId when entering SubJourney", () => {
@@ -134,8 +158,8 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            const subJourneyStep = result.traceSteps.find((s) => s.stepOrder === 1);
-            expect(subJourneyStep?.journeyContextId).toContain(fixture.subJourneys.passwordReset);
+            const subJourneyStep = getTestSteps(result).find((s) => s.orchestrationStep === 1);
+            expect(subJourneyStep?.journeyName).toContain(fixture.subJourneys.passwordReset);
         });
     });
 
@@ -167,8 +191,18 @@ describe("SubJourney Invocation", () => {
 
             const result = parseTrace(logs);
 
-            const stepsWithSubJourney = result.traceSteps.filter((s) => s.subJourneyId);
-            expect(stepsWithSubJourney.length).toBeGreaterThanOrEqual(1);
+            // Both SubJourneys should exist as nodes in the FlowNode tree
+            const allSubJourneys: typeof result.flowTree[] = [];
+            function collectSJs(node: typeof result.flowTree) {
+                for (const c of node.children) {
+                    if (c.type === FlowNodeType.SubJourney) allSubJourneys.push(c);
+                    collectSJs(c);
+                }
+            }
+            collectSJs(result.flowTree);
+            expect(allSubJourneys.length).toBeGreaterThanOrEqual(1);
+            // Verify at least the mfa SubJourney exists
+            expect(allSubJourneys.some((sj) => sj.name === fixture.subJourneys.mfa)).toBe(true);
         });
     });
 });

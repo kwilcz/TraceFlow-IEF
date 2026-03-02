@@ -7,20 +7,24 @@
  * Note: The last step has no duration (undefined) since there's no subsequent step.
  */
 
+import { collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
+import type { StepFlowData } from "@/types/flow-node";
+
 import { BasePostProcessor, type PostProcessorContext, type PostProcessorResult } from "./base-post-processor";
 
 export class StepDurationPostProcessor extends BasePostProcessor {
     readonly name = "StepDuration";
 
     process(context: PostProcessorContext): PostProcessorResult {
-        const { traceSteps } = context;
+        const stepNodes = collectStepNodes(context.flowTree);
 
-        for (let i = 0; i < traceSteps.length - 1; i++) {
-            const currentStep = traceSteps[i];
-            const nextStep = traceSteps[i + 1];
+        for (let i = 0; i < stepNodes.length - 1; i++) {
+            const current = stepNodes[i];
+            const next = stepNodes[i + 1];
 
-            currentStep.duration =
-                nextStep.timestamp.getTime() - currentStep.timestamp.getTime();
+            const duration =
+                next.context.timestamp.getTime() - current.context.timestamp.getTime();
+            (current.data as StepFlowData).duration = duration;
         }
 
         // Last step has no duration (undefined by default)

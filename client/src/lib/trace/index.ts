@@ -6,7 +6,7 @@
  */
 
 import type { LogRecord } from "@/types/logs";
-import type { TraceLogInput, TraceParseResult, TraceStep } from "@/types/trace";
+import type { TraceLogInput } from "@/types/trace";
 
 // Constants
 export * from "./constants";
@@ -35,19 +35,4 @@ export function logsToTraceInput(logs: LogRecord[]): TraceLogInput[] {
         correlationId: log.correlationId,
         clips: log.clips,
     }));
-}
-
-/**
- * Get all trace steps for a specific node.
- */
-export function getTraceStepsForNode(
-    result: TraceParseResult,
-    nodeId: string
-): TraceStep[] {
-    const entry = result.executionMap[nodeId];
-    if (!entry) {
-        return [];
-    }
-
-    return entry.stepIndices.map((idx) => result.traceSteps[idx]).filter(Boolean);
 }

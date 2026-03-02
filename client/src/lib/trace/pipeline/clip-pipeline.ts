@@ -23,19 +23,20 @@ import { PredicateProcessor } from "./processors/predicate.processor";
 import { ActionProcessor } from "./processors/action.processor";
 import { HandlerResultProcessor } from "./processors/handler-result.processor";
 import { ExceptionProcessor } from "./processors/exception.processor";
-import { ResultApplicator } from "./result-applicator";
+import { StepLifecycleManager } from "./step-lifecycle-manager";
 
 export class ClipPipeline {
     private readonly processors: Map<string, ClipProcessor>;
+    readonly stepLifecycleManager: StepLifecycleManager;
 
     constructor(interpreterRegistry: InterpreterRegistry) {
-        const resultApplicator = new ResultApplicator();
+        this.stepLifecycleManager = new StepLifecycleManager();
         this.processors = new Map<string, ClipProcessor>([
-            [ClipKind.Headers, new HeadersProcessor(resultApplicator)],
+            [ClipKind.Headers, new HeadersProcessor(this.stepLifecycleManager)],
             [ClipKind.Transition, new TransitionProcessor()],
             [ClipKind.Predicate, new PredicateProcessor()],
             [ClipKind.Action, new ActionProcessor()],
-            [ClipKind.HandlerResult, new HandlerResultProcessor(interpreterRegistry)],
+            [ClipKind.HandlerResult, new HandlerResultProcessor(interpreterRegistry, this.stepLifecycleManager)],
             [ClipKind.Exception, new ExceptionProcessor()],
         ]);
     }

@@ -82,7 +82,7 @@ function SelectionSetter({ action }: { action: SelectionAction | null }) {
 
 function renderWithProvider(selection: Selection | null) {
     const action: SelectionAction | null = selection
-        ? { type: "select-step", stepIndex: selection.stepIndex }
+        ? { type: "select-step", nodeId: selection.nodeId }
         : null;
 
     return render(
@@ -117,18 +117,10 @@ function makeStepNode(
         children: [],
         data: {
             type: FlowNodeType.Step,
-            stepIndex,
             stepOrder: stepIndex,
-            journeyContextId: "journey-1",
             currentJourneyName: "TestJourney",
-            graphNodeId: `node-${stepIndex}`,
             result: "Success",
-            isInteractiveStep: false,
-            isFinalStep: false,
-            isVerificationStep: false,
-            technicalProfileNames: [],
-            claimsTransformationNames: [],
-            displayControlNames: [],
+            errors: [],
             selectableOptions: [],
         } as StepFlowData,
         context: makeFlowNodeContext(claimsSnapshot),
@@ -176,7 +168,7 @@ describe("ClaimsDiffTable", () => {
     // ── Test 2: Step with 0 claims ────────────────────────────────────
     it("shows 'No claims at this step' when step has empty snapshot", () => {
         setFlowTree(makeFlowTree(makeStepNode(0, {})));
-        renderWithProvider({ type: "step", stepIndex: 0 });
+        renderWithProvider({ type: "step", nodeId: "step-0" });
 
         expect(screen.getByText("No claims at this step")).toBeTruthy();
     });
@@ -184,7 +176,7 @@ describe("ClaimsDiffTable", () => {
     // ── Test 3: First step → all claims "Added" ──────────────────────
     it("marks all claims as ADDED on the first step", () => {
         setFlowTree(makeFlowTree(makeStepNode(0, { email: "user@test.com", name: "Joe" })));
-        renderWithProvider({ type: "step", stepIndex: 0 });
+        renderWithProvider({ type: "step", nodeId: "step-0" });
 
         const addedBadges = screen.getAllByText("ADDED");
         expect(addedBadges).toHaveLength(2);
@@ -196,7 +188,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { keep: "v", changed: "old", gone: "bye" }),
             makeStepNode(1, { keep: "v", changed: "new", fresh: "hello" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         expect(screen.getByText("ADDED")).toBeTruthy();
         expect(screen.getByText("MODIFIED")).toBeTruthy();
@@ -210,7 +202,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { a: "1" }),
             makeStepNode(1, { a: "1", b: "new" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         // Initially both ADDED and UNCHANGED should be visible
         expect(screen.getByText("ADDED")).toBeTruthy();
@@ -229,7 +221,7 @@ describe("ClaimsDiffTable", () => {
     // ── Test 6: Text filter → filters by key ─────────────────────────
     it("filters rows by text input matching claim key", () => {
         setFlowTree(makeFlowTree(makeStepNode(0, { email: "user@test.com", name: "Joe", phone: "123" })));
-        renderWithProvider({ type: "step", stepIndex: 0 });
+        renderWithProvider({ type: "step", nodeId: "step-0" });
 
         // All 3 claims visible initially
         expect(screen.getAllByText("ADDED")).toHaveLength(3);
@@ -248,7 +240,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { beta: "old", zebra: "old", keep: "v" }),
             makeStepNode(1, { keep: "v", zebra: "new", alpha: "new" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         // Get all key cells (font-mono text-xs)
         const table = screen.getByRole("table");
@@ -271,7 +263,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { claim: "old-val" }),
             makeStepNode(1, { claim: "new-val" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         expect(screen.getByText("old-val")).toBeTruthy();
         expect(screen.getByText("new-val")).toBeTruthy();
@@ -287,7 +279,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { gone: "old-val" }),
             makeStepNode(1, {}),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         expect(screen.getByText("old-val")).toBeTruthy();
         expect(screen.getByText("—")).toBeTruthy();
@@ -299,7 +291,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { a: "1", b: "2" }),
             makeStepNode(1, { a: "changed", c: "new" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         // Changes: a modified, b removed, c added = 3 changed
         expect(screen.getByText("3 changed")).toBeTruthy();
@@ -311,7 +303,7 @@ describe("ClaimsDiffTable", () => {
             makeStepNode(0, { keep: "v", changed: "old", gone: "bye" }),
             makeStepNode(1, { keep: "v", changed: "new", fresh: "hello" }),
         ));
-        renderWithProvider({ type: "step", stepIndex: 1 });
+        renderWithProvider({ type: "step", nodeId: "step-1" });
 
         const table = screen.getByRole("table");
         const rows = within(table).getAllByRole("row");

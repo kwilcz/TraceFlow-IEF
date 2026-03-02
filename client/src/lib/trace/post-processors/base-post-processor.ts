@@ -11,14 +11,14 @@
  * - Any other cross-step correlation
  */
 
-import type { TraceStep } from "@/types/trace";
+import type { FlowNode } from "@/types/flow-node";
 
 /**
  * Context provided to post-processors.
  */
 export interface PostProcessorContext {
-    /** All parsed trace steps (mutable - can be modified) */
-    traceSteps: TraceStep[];
+    /** The FlowNode tree root (mutable - post-processors mutate node data in place) */
+    flowTree: FlowNode;
 }
 
 /**

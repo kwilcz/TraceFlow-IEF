@@ -48,7 +48,7 @@ export function HrdRenderer({ stepNode, selection, dispatch }: HrdRendererProps)
                     segments={[
                         {
                             label: `Step ${stepData.stepOrder}`,
-                            onClick: () => dispatch({ type: "select-step", stepIndex: selection.stepIndex }),
+                            onClick: () => dispatch({ type: "select-step", nodeId: selection.nodeId }),
                         },
                         { label: "HRD" },
                     ]}

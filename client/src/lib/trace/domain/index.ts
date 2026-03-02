@@ -4,7 +4,6 @@
  * Re-exports all domain objects for clean imports.
  */
 
-export { TraceStepBuilder, TraceStepFactory } from "./trace-step-builder";
 export {
     JourneyStack,
     JourneyStackFactory,

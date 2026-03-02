@@ -54,7 +54,7 @@ export class ValidateApiResponseInterpreter extends BaseInterpreter {
     readonly handlerNames = [VALIDATE_API_RESPONSE] as const;
 
     interpret(context: InterpretContext): InterpretResult {
-        const { handlerResult, stepBuilder } = context;
+        const { handlerResult, pendingStepData } = context;
 
         if (!handlerResult) {
             return this.successNoOp();
@@ -67,7 +67,7 @@ export class ValidateApiResponseInterpreter extends BaseInterpreter {
         const selectedOption = this.extractTargetEntity(handlerResult);
 
         if (selectedOption) {
-            stepBuilder.withSelectedOption(selectedOption);
+            pendingStepData.selectedOption = selectedOption;
         }
 
         return this.successNoOp({

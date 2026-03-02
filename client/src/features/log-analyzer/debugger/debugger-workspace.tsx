@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useLogStore } from "@/stores/log-store";
+import { getStepPosition } from "@/lib/trace/domain/flow-node-utils";
 import { DebuggerProvider, useDebuggerContext } from "./debugger-context";
 import { InspectorPanel } from "./inspector-panel";
 import { JourneyTree } from "./journey-tree/journey-tree";
@@ -17,11 +18,17 @@ import { useResizer } from "./use-resizer";
  */
 function SelectionSync() {
     const { selection } = useDebuggerContext();
+    const flowTree = useLogStore((s) => s.flowTree);
     const setActiveStep = useLogStore((s) => s.setActiveStep);
 
     useEffect(() => {
-        setActiveStep(selection?.stepIndex ?? null);
-    }, [selection?.stepIndex, setActiveStep]);
+        if (!selection?.nodeId || !flowTree) {
+            setActiveStep(null);
+            return;
+        }
+        const position = getStepPosition(flowTree, selection.nodeId);
+        setActiveStep(position >= 0 ? position : null);
+    }, [selection?.nodeId, flowTree, setActiveStep]);
 
     return null;
 }

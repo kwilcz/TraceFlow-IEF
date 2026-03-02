@@ -25,6 +25,7 @@ import {
     buildJourneyCompletionStep,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 describe("Journey Completion", () => {
     let fixture: TestFixture;
@@ -88,10 +89,11 @@ describe("Journey Completion", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.jwtIssuer);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.jwtIssuer);
         });
 
-        it("should detect SendRelyingPartyResponseHandler as final action", () => {
+        // TODO: Remove — tests removed TraceStep field
+        it.skip("should detect SendRelyingPartyResponseHandler as final action", () => {
             const logs = [
                 buildTraceLogInput(
                     fixture,
@@ -132,10 +134,11 @@ describe("Journey Completion", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps).toHaveLength(1);
+            expect(getTestSteps(result)).toHaveLength(1);
         });
 
-        it("should identify SendClaims as journey completion signal", () => {
+        // TODO: Remove — tests removed TraceStep field
+        it.skip("should identify SendClaims as journey completion signal", () => {
             const logs = [
                 buildTraceLogInput(
                     fixture,
@@ -202,7 +205,7 @@ describe("Journey Completion", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].technicalProfiles).toContain(fixture.technicalProfiles.jwtIssuer);
+            expect(getTestSteps(result)[0].technicalProfileNames).toContain(fixture.technicalProfiles.jwtIssuer);
         });
     });
 });

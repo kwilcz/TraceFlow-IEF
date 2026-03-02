@@ -27,6 +27,7 @@ import {
     buildEidStatebag,
     type TestFixture,
 } from "./fixtures";
+import { getTestSteps } from "./test-step-helpers";
 
 /**
  * Builds an ApiUiManagerInfo record matching real B2C log format.
@@ -106,7 +107,7 @@ describe("UI Settings", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].uiSettings?.pageId).toBe(pageId);
+            expect(getTestSteps(result)[0].uiSettings?.pageId).toBe(pageId);
         });
 
         it("should extract content definition from UI info", () => {
@@ -129,7 +130,7 @@ describe("UI Settings", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].uiSettings?.contentDefinition).toBe(contentDefinition);
+            expect(getTestSteps(result)[0].uiSettings?.contentDefinition).toBe(contentDefinition);
         });
     });
 
@@ -155,7 +156,7 @@ describe("UI Settings", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].uiSettings?.pageType).toBe("SelfAsserted");
+            expect(getTestSteps(result)[0].uiSettings?.pageType).toBe("SelfAsserted");
         });
 
         it.skip("should extract input claims for self-asserted page", () => {
@@ -202,7 +203,7 @@ describe("UI Settings", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].uiSettings?.pageType).toBe("CombinedSigninAndSignup");
+            expect(getTestSteps(result)[0].uiSettings?.pageType).toBe("CombinedSigninAndSignup");
         });
 
         it.skip("should extract available identity providers", () => {
@@ -274,7 +275,7 @@ describe("UI Settings", () => {
 
             const result = parseTrace(logs);
 
-            expect(result.traceSteps[0].uiSettings?.language).toBe("en-US");
+            expect(getTestSteps(result)[0].uiSettings?.language).toBe("en-US");
         });
     });
 
