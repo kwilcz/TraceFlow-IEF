@@ -8,8 +8,9 @@ import {
 } from "@/types/flow-node";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
-import { InspectorErrorBanner } from "../inspector-error-banner";
 import { InspectorBreadcrumb } from "../inspector-breadcrumb";
+import { InspectorSection } from "../inspector-section";
+import { ErrorDetails, fromStepError, fromUiSettingsError } from "../error-details";
 import {
     ComponentsSection,
     StatebagSection,
@@ -29,6 +30,7 @@ interface StepRendererProps {
 
 export function StepRenderer({ stepNode }: StepRendererProps) {
     const stepData = stepNode.data as StepFlowData;
+    const uiErr = stepData.uiSettings ? fromUiSettingsError(stepData.uiSettings) : null;
     const tpNames = getStepTpNames(stepNode);
     const primaryTP = tpNames[0] || stepData.actionHandler || "Unknown";
     const stepLabel = `Step ${stepData.stepOrder} — ${primaryTP}`;
@@ -54,12 +56,17 @@ export function StepRenderer({ stepNode }: StepRendererProps) {
             {stepData.errors.length > 0 && (
                 <div className="px-3 space-y-2">
                     {stepData.errors.map((err, i) => (
-                        <InspectorErrorBanner
-                            key={i}
-                            message={err.message}
-                            hResult={err.hResult}
-                        />
+                        <ErrorDetails key={i} {...fromStepError(err)} />
                     ))}
+                </div>
+            )}
+
+            {/* 2b. UI Settings error */}
+            {uiErr && (
+                <div className="px-3">
+                    <InspectorSection title="UI Error">
+                        <ErrorDetails {...uiErr} />
+                    </InspectorSection>
                 </div>
             )}
 

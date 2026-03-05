@@ -1,5 +1,5 @@
 import type { HandlerResultContent, HeadersContent } from "@/types/journey-recorder";
-import type { SessionInfo, StepResult } from "@/types/trace";
+import type { SessionInfo, StepResult, GlobalFlowError } from "@/types/trace";
 import type { FlowNodeChild, StepError } from "@/types/flow-node";
 import type { BackendApiCall, UiSettings } from "@/types/trace";
 import { ClipKind } from "../constants/keys";
@@ -36,6 +36,8 @@ export interface ClipProcessingContext {
     tenantId: string;
     policyId: string;
     eventInstance: string;
+    /** All EventInstance values seen so far, in clip order (accumulated across sessions) */
+    eventInstances: string[];
 
     // === Sequential State (tracks clip-by-clip progression) ===
     /** The Kind of the last processed clip */
@@ -95,6 +97,9 @@ export interface ClipProcessingContext {
     sessionFlowCount: number;
     /** Collected session boundary info */
     sessions: SessionInfo[];
+
+    /** Accumulated global error data for a flow-level exception. Undefined for normal flows. */
+    pendingGlobalError?: Partial<GlobalFlowError>;
 }
 
 /**
@@ -130,6 +135,7 @@ export function createInitialContext(
         tenantId: "",
         policyId: "",
         eventInstance: "",
+        eventInstances: [],
 
         lastClipKind: null,
         lastPredicate: null,
@@ -163,6 +169,8 @@ export function createInitialContext(
 
         sessionFlowCount: 0,
         sessions: [],
+
+        pendingGlobalError: undefined,
     };
 }
 
@@ -219,6 +227,9 @@ export function beginNewSession(
     ctx.lastHandlerResult = null;
     ctx.lastTransition = null;
     ctx.currentHeaders = null;
+
+    // Reset global error state
+    ctx.pendingGlobalError = undefined;
 }
 
 /**

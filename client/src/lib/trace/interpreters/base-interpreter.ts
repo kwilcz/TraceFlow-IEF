@@ -15,6 +15,7 @@
 import type { Clip, ClipsArray, HandlerResultContent } from "@/types/journey-recorder";
 import type {
     StepResult,
+    GlobalFlowError,
 } from "@/types/trace";
 import type { FlowNodeChild, StepError } from "@/types/flow-node";
 import type { JourneyStack } from "../domain/journey-stack";
@@ -60,6 +61,13 @@ export interface InterpretContext {
 
     /** Accumulated claims state */
     claims: Record<string, string>;
+
+    /**
+     * Read-only snapshot of in-progress global error data.
+     * Set by TransitionProcessor when a fatal exception transition fires.
+     * Undefined for all normal flows.
+     */
+    pendingGlobalError?: Partial<GlobalFlowError>;
 }
 
 /**
@@ -104,6 +112,9 @@ export interface InterpretResult {
 
     /** Structured step errors (new model, alongside legacy error/errorHResult) */
     stepErrors?: StepError[];
+
+    /** Global flow error data to merge into ctx.pendingGlobalError */
+    globalError?: Partial<GlobalFlowError>;
 }
 
 /**

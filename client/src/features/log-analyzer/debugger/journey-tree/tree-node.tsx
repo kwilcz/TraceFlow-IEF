@@ -66,6 +66,9 @@ function handleRowClick(
 ) {
     switch (node.type) {
         case "userjourney":
+            onSelect();
+            onToggleExpand();
+            break;
         case "subjourney":
             onToggleExpand();
             break;
@@ -132,7 +135,7 @@ function NodeBadges({ node }: { node: TreeNode }) {
 
 /** Whether a node type is selectable (dispatches to inspector). */
 const selectableTypes = new Set([
-    "step", "technicalProfile", "dcTechnicalProfile", "selectedOption",
+    "userjourney", "step", "technicalProfile", "dcTechnicalProfile", "selectedOption",
     "transformation", "dcTransformation", "hrd", "displayControl",
 ]);
 

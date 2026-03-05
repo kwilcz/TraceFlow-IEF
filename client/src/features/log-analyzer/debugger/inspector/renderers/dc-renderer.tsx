@@ -10,8 +10,8 @@ import {
 import { findChildNode, getStepTpNames } from "@/lib/trace/domain/flow-node-utils";
 import type { Selection, SelectionAction } from "../../types";
 import { InspectorHeader } from "../inspector-header";
-import { InspectorErrorBanner } from "../inspector-error-banner";
 import { InspectorBreadcrumb } from "../inspector-breadcrumb";
+import { ErrorDetails, fromStepError } from "../error-details";
 import type { BreadcrumbSegment } from "../inspector-breadcrumb";
 import {
     ClaimsIoSection,
@@ -93,11 +93,7 @@ export function DcRenderer({ stepNode, selection, dispatch }: DcRendererProps) {
             {stepData.errors.length > 0 && (
                 <div className="px-3 space-y-2">
                     {stepData.errors.map((err, i) => (
-                        <InspectorErrorBanner
-                            key={i}
-                            message={err.message}
-                            hResult={err.hResult}
-                        />
+                        <ErrorDetails key={i} {...fromStepError(err)} />
                     ))}
                 </div>
             )}

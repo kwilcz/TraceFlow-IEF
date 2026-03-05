@@ -143,6 +143,14 @@ export interface RootFlowData {
     readonly type: FlowNodeType.Root;
     /** The policy ID for this flow */
     readonly policyId: string;
+    /** Tenant ID from Headers clip */
+    readonly tenantId: string;
+    /** Correlation ID from Headers clip */
+    readonly correlationId: string;
+    /** All EventInstance values seen during parsing, in clip order */
+    readonly eventInstances: readonly string[];
+    /** Number of Event:AUTH sessions in the log */
+    readonly sessionCount: number;
 }
 
 // ─── SubJourney ─────────────────────────────────────────────────────────────

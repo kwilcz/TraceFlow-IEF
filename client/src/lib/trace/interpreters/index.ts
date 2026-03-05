@@ -99,6 +99,11 @@ export {
 } from "./error-handler.interpreter";
 
 export {
+    GlobalExceptionInterpreter,
+    createGlobalExceptionInterpreter,
+} from "./global-exception.interpreter";
+
+export {
     DisplayControlInterpreter,
     createDisplayControlInterpreter,
 } from "./display-control.interpreter";
@@ -120,6 +125,7 @@ import { createSsoSessionInterpreter } from "./sso-session.interpreter";
 import { createUiSettingsInterpreter } from "./ui-settings.interpreter";
 import { createErrorHandlerInterpreter } from "./error-handler.interpreter";
 import { createDisplayControlInterpreter } from "./display-control.interpreter";
+import { createGlobalExceptionInterpreter } from "./global-exception.interpreter";
 import type { IClipInterpreter } from "./base-interpreter";
 
 /**
@@ -143,6 +149,7 @@ const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
     createUiSettingsInterpreter,
     createErrorHandlerInterpreter,
     createDisplayControlInterpreter,
+    createGlobalExceptionInterpreter,
 ];
 
 /**

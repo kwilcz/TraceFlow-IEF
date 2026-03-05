@@ -14,6 +14,29 @@ import type { FlowNode } from "./flow-node";
 export type StepResult = "Success" | "Skipped" | "Error" | "PendingInput";
 
 /**
+ * Represents a flow-level failure (e.g. a global exception state transition).
+ * NOT step-scoped — the entire flow is considered failed.
+ */
+export interface GlobalFlowError {
+    /** Short error type derived from the exception state FQCN (e.g. "CrossOriginException") */
+    errorType: string;
+    /** Full .NET state name from the Transition clip */
+    stateName: string;
+    /** Error code from Complex-API_RESULT (e.g. "UX004") */
+    errorCode?: string;
+    /** Human-readable description or failing resource URL from Complex-API_RESULT.desc */
+    description?: string;
+    /** Raw diagnostics JSON string from Complex-API_RESULT.diags */
+    diagnostics?: string;
+    /** CSRF token from Complex-API_RESULT.csrf_token */
+    csrfToken?: string;
+    /** Human-readable exception message from SendErrorHandler Exception.Message */
+    message?: string;
+    /** HResult hex string from SendErrorHandler Exception.HResult */
+    hResult?: string;
+}
+
+/**
  * Result of a user interaction (from Complex-API_RESULT).
  */
 export type InteractionResult = "Continue" | "Cancelled" | "Error";
@@ -212,6 +235,8 @@ export interface UserFlow {
     userEmail?: string;
     /** User's AAD object ID from Complex-CLMS objectId claim */
     userObjectId?: string;
+    /** Flow-level error for global exception state transitions (e.g. CrossOriginException) */
+    globalError?: GlobalFlowError;
 }
 
 /**
@@ -265,6 +290,8 @@ export interface TraceParseResult {
     finalClaims: Record<string, string>;
     /** Session boundaries detected during parsing (1 session = normal, 2+ = browser back detected) */
     sessions: SessionInfo[];
+    /** Flow-level error from a global exception state transition (e.g. CrossOriginException) */
+    globalError?: Partial<GlobalFlowError>;
 }
 
 /**

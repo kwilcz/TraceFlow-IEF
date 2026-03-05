@@ -11,6 +11,7 @@ import {
     CtRenderer,
     HrdRenderer,
     DcRenderer,
+    RootRenderer,
 } from "./inspector/renderers";
 
 // ============================================================================
@@ -39,6 +40,16 @@ export function InspectorPanel() {
             <div className="h-full flex items-center justify-center text-muted-foreground">
                 <p className="text-sm">Select a step to view details</p>
             </div>
+        );
+    }
+
+    if (selection?.type === "root") {
+        return (
+            <ScrollArea className="h-full">
+                <div className="px-3 pb-4">
+                    <RootRenderer />
+                </div>
+            </ScrollArea>
         );
     }
 

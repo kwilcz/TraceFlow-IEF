@@ -97,6 +97,7 @@ export class TraceParser {
             finalStatebag: ctx.statebag.getStatebagSnapshot(),
             finalClaims: ctx.statebag.getClaimsSnapshot(),
             sessions: ctx.sessions,
+            globalError: ctx.pendingGlobalError,
         };
     }
 

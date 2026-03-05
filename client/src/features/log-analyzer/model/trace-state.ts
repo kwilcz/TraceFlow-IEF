@@ -1,5 +1,5 @@
 import type { LogRecord } from "@/types/logs";
-import type { TraceExecutionMap, UserFlow, SessionInfo } from "@/types/trace";
+import type { TraceExecutionMap, UserFlow, SessionInfo, GlobalFlowError } from "@/types/trace";
 import type { FlowNode } from "@/types/flow-node";
 
 export interface TraceState {
@@ -17,6 +17,7 @@ export interface TraceState {
     searchText: string;
     traceLoading: boolean;
     sessions: SessionInfo[];
+    globalError?: Partial<GlobalFlowError>;
 }
 
 export interface TraceActions {
@@ -46,4 +47,5 @@ export const initialTraceState: TraceState = {
     searchText: "",
     traceLoading: false,
     sessions: [],
+    globalError: undefined,
 };

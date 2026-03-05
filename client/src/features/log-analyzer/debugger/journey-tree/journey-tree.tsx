@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ArrowsInIcon, ArrowsOutIcon } from "@phosphor-icons/react";
 import * as scroll from "@/components/ui/scroll-area";
 import { useLogStore } from "@/stores/log-store";
@@ -44,6 +44,8 @@ function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
     switch (node.type) {
         case "step":
             return selection.type === "step" && selection.nodeId === node.nodeId;
+        case "userjourney":
+            return selection.type === "root";
         case "technicalProfile":
         case "dcTechnicalProfile":
         case "selectedOption":
@@ -87,6 +89,13 @@ export function JourneyTree() {
 function JourneyTreeContent({ tree }: { tree: TreeNode[] }) {
 
     const { selection, dispatch } = useDebuggerContext();
+
+    // Auto-select root when a new flow is loaded (component remounts via key prop)
+    useEffect(() => {
+        if (tree.length > 0) {
+            dispatch({ type: "select-root" });
+        }
+    }, [dispatch, tree.length]);
 
     // Expand state — journey containers and steps expanded by default
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(() => collectDefaultExpandedIds(tree));
@@ -148,7 +157,10 @@ function JourneyTreeContent({ tree }: { tree: TreeNode[] }) {
                     metadata: (node.metadata ?? {}) as Record<string, unknown>,
                 });
                 break;
-            // subjourney, userjourney — no dispatch (toggle-only)
+            case "userjourney":
+                dispatch({ type: "select-root" });
+                break;
+            // subjourney — no dispatch (toggle-only)
         }
     };
 
