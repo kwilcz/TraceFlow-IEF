@@ -1,9 +1,10 @@
-import { FolderOpenIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { FolderOpenIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { useShallow } from "zustand/react/shallow";
 import { useLogStore } from "@/stores/log-store";
 import { FlowNodeType, type RootFlowData } from "@/types/flow-node";
 import { InspectorSection } from "../inspector-section";
+import { ErrorDetails, fromGlobalFlowError } from "../error-details";
 
 // ============================================================================
 // Root Renderer — inspector view for the top-level UserJourney node
@@ -76,34 +77,7 @@ export function RootRenderer() {
             {globalError && (
                 <div className="px-3">
                     <InspectorSection title="Global Error">
-                        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 space-y-2">
-                            <div className="flex items-center gap-2">
-                                <WarningCircleIcon className="w-4 h-4 text-destructive shrink-0" />
-                                <span className="text-sm font-semibold text-destructive">
-                                    {globalError.errorType}
-                                </span>
-                            </div>
-                            {globalError.message && (
-                                <LabelValueRow label="Message" value={globalError.message} />
-                            )}
-                            {globalError.errorCode && (
-                                <LabelValueRow label="Error Code" value={globalError.errorCode} mono />
-                            )}
-                            {globalError.hResult && (
-                                <LabelValueRow label="HResult" value={globalError.hResult} mono />
-                            )}
-                            {globalError.description && (
-                                <LabelValueRow label="Description / URL" value={globalError.description} />
-                            )}
-                            {globalError.diagnostics && (
-                                <div className="space-y-0.5">
-                                    <span className="text-xs text-muted-foreground">Diagnostics</span>
-                                    <pre className="text-xs font-mono bg-muted/50 rounded p-2 overflow-auto whitespace-pre-wrap break-all">
-                                        {globalError.diagnostics}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
+                        <ErrorDetails {...fromGlobalFlowError(globalError)} />
                     </InspectorSection>
                 </div>
             )}
