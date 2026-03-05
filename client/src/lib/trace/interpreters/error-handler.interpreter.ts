@@ -53,6 +53,20 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
             // Extract error message and HResult from Exception or RecorderRecord
             const errorInfo = this.extractErrorInfo(handlerResult);
 
+            // When SendErrorHandler fires during a global exception context — surface as
+            // flow-level globalError rather than creating a step-level error node.
+            if (isErrorHandler && context.pendingGlobalError) {
+                return this.successNoOp({
+                    statebagUpdates,
+                    claimsUpdates,
+                    globalError: {
+                        ...context.pendingGlobalError,
+                        ...(errorInfo.message !== undefined && { message: errorInfo.message }),
+                        ...(errorInfo.hResult !== undefined && { hResult: errorInfo.hResult }),
+                    },
+                });
+            }
+
             if (errorInfo.message) {
                 // Mark current step as error if one exists
                 // The error step will be created by the parser's handleFatalException equivalent

@@ -154,6 +154,34 @@ export const PRE_SETUP = "Web.TPEngine.StateMachineHandlers.PreSetupHandler";
 /** No-op placeholder handler */
 export const NO_OP = "Web.TPEngine.StateMachineHandlers.NoOpHandler";
 
+/** Alias for NoOpHandler used by GlobalExceptionInterpreter registration */
+export const NO_OP_HANDLER = NO_OP;
+
+// ============================================================================
+// GLOBAL EXCEPTION CONSTANTS
+// ============================================================================
+
+/** Fully-qualified state name for the CrossOriginException global error */
+export const CROSS_ORIGIN_EXCEPTION_STATE =
+    "Microsoft.Cpim.UserExperience.Client.CrossOriginException";
+
+/**
+ * Returns true when a Transition clip represents a global B2C exception state.
+ * These transitions signal a flow-wide fatal failure, not a step-level error.
+ */
+export function isGlobalExceptionTransition(eventName: string, stateName: string): boolean {
+    return eventName === "Global" && stateName.includes("Exception");
+}
+
+/**
+ * Extracts a short error type from a .NET FQCN state name.
+ * e.g. "Microsoft.Cpim.UserExperience.Client.CrossOriginException" → "CrossOriginException"
+ */
+export function extractErrorTypeFromStateName(stateName: string): string {
+    const parts = stateName.split(".");
+    return parts[parts.length - 1] ?? stateName;
+}
+
 /** Request input parameter generation */
 export const GENERATE_REQUEST_INPUT = "Web.TPEngine.StateMachineHandlers.GenerateRequestInputParamsHandler";
 

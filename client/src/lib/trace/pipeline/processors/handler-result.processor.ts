@@ -61,6 +61,10 @@ export class HandlerResultProcessor implements ClipProcessor {
             const interpretCtx = this.buildInterpretContext(handlerName, handlerResult, clip, ctx);
             const result = interpreter.interpret(interpretCtx);
 
+            // Merge any global error contribution from this interpreter into ctx
+            if (result.globalError) {
+                ctx.pendingGlobalError = { ...ctx.pendingGlobalError, ...result.globalError };
+            }
             // For createStep results, children belong to the NEW step — defer accumulation
             // until after apply() finalizes the previous step and resets pendingFlowChildren.
             // For all other results, children belong to the CURRENT step — push before apply.
@@ -131,6 +135,7 @@ export class HandlerResultProcessor implements ClipProcessor {
             logId: ctx.currentLogId,
             statebag: ctx.statebag.getStatebagSnapshot(),
             claims: ctx.statebag.getClaimsSnapshot(),
+            pendingGlobalError: ctx.pendingGlobalError,
         };
     }
 }

@@ -1,6 +1,6 @@
 import { logsToTraceInput, parseTrace } from "@/lib/trace";
 import type { LogRecord } from "@/types/logs";
-import type { UserFlow } from "@/types/trace";
+import type { UserFlow, GlobalFlowError } from "@/types/trace";
 import type { FlowNode } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
 import type { StepFlowData } from "@/types/flow-node";
@@ -41,6 +41,7 @@ export function generateTraceStateFromLogs(logs: LogRecord[]): Partial<TraceStat
         activeStepIndex: stepCount > 0 ? 0 : null,
         isTraceModeActive: stepCount > 0,
         sessions: result.sessions,
+        globalError: result.globalError,
     };
 }
 
@@ -58,7 +59,7 @@ export function enrichUserFlow(flow: UserFlow, tracePatch: Partial<TraceState>):
         ...flow,
         stepCount: steps.length,
         completed: steps.some(s => isStepFinal(s.data as StepFlowData)),
-        hasErrors: steps.some(s => (s.data as StepFlowData).result === "Error"),
+        hasErrors: steps.some(s => (s.data as StepFlowData).result === "Error") || !!tracePatch.globalError,
         cancelled: steps.some(s => {
             // A step is considered "cancelled" when the user abandoned an interactive step
             // resulting in an Error or specific result pattern
@@ -75,6 +76,7 @@ export function enrichUserFlow(flow: UserFlow, tracePatch: Partial<TraceState>):
         )],
         userEmail: latestEmail,
         userObjectId: claims.objectId ?? flow.userObjectId,
+        globalError: (tracePatch.globalError as GlobalFlowError | undefined) ?? flow.globalError,
     };
 }
 

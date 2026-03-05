@@ -13,6 +13,7 @@ import type { Clip, TransitionContent } from "@/types/journey-recorder";
 import type { ClipProcessingContext } from "../clip-processing-context";
 import type { ClipProcessor } from "./clip-processor";
 import { ClipKind } from "../../constants/keys";
+import { isGlobalExceptionTransition, extractErrorTypeFromStateName } from "../../constants/handlers";
 
 export class TransitionProcessor implements ClipProcessor {
     process(clip: Clip, ctx: ClipProcessingContext): void {
@@ -28,6 +29,13 @@ export class TransitionProcessor implements ClipProcessor {
         // Transition event name is no longer tracked on the step —
         // StepFlowData does not have a transitionEvent field.
         // The transition is available via ctx.lastTransition for interpreters.
+
+        if (isGlobalExceptionTransition(transition.EventName, transition.StateName)) {
+            ctx.pendingGlobalError = {
+                errorType: extractErrorTypeFromStateName(transition.StateName),
+                stateName: transition.StateName,
+            };
+        }
 
         ctx.lastClipKind = ClipKind.Transition;
     }
