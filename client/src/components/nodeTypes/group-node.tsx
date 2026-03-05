@@ -7,6 +7,7 @@ import { CaretDown, CaretUp, ArrowsOut as ExpandIcon } from "@phosphor-icons/rea
 import PolicyNode from "./components/policy-node";
 import {cn} from "@lib/utils";
 import {GROUP_NODE_COLLAPSED_HEIGHT, GROUP_NODE_HEADER_HEIGHT} from "@/constants/node-layout";
+import { useLogStore } from "@/stores/log-store";
 
 export type GroupNode = Node<
     {
@@ -28,6 +29,10 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
     const viewport = useViewport();
     const nodes = useNodes();
     const updateNodeInternals = useUpdateNodeInternals();
+
+    const globalError = useLogStore((s) =>
+        props.id === "root" ? s.selectedFlow?.globalError : undefined
+    );
 
     const handleToggleCollapse = () => {
         toggleCollapse(props.id);
@@ -67,6 +72,10 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
         return nodeColors[index];
     }, [props.id]);
 
+    const resolvedNodeColor = globalError
+        ? "bg-danger/20 border-danger text-danger-foreground"
+        : nodeColor;
+
     // Calculate nesting depth by traversing parent chain
     const depth = useMemo(() => {
         const calculateDepth = (nodeId: string): number => {
@@ -99,7 +108,7 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
     const nodeClassName = cn(
         "p-[18px] rounded border-[2px] shadow-lg transition-all duration-150 w-full",
         props.data.isCollapsed ? "h-auto" : "h-full",
-        nodeColor,
+        resolvedNodeColor,
         highlightClasses
     );
 
@@ -111,7 +120,7 @@ export default function GroupNode(props: NodeProps<GroupNode>) {
                     <PolicyNode.Header
                         className={cn(
                             "backdrop-blur-md rounded border-2 space-x-3 p-2 gap-3",
-                            nodeColor,
+                            resolvedNodeColor,
                         )}
                         style={{
                             position: "absolute",

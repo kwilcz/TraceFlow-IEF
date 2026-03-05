@@ -238,6 +238,28 @@ export class FlowTreeBuilder {
         (this.root.data as { policyId: string }).policyId = policyId;
     }
 
+    /**
+     * Updates the root node's header-derived metadata.
+     * Called from HeadersProcessor each time a Headers clip is processed.
+     */
+    setRootHeaderInfo(
+        tenantId: string,
+        correlationId: string,
+        eventInstances: string[],
+        sessionCount: number,
+    ): void {
+        const d = this.root.data as {
+            tenantId: string;
+            correlationId: string;
+            eventInstances: string[];
+            sessionCount: number;
+        };
+        d.tenantId = tenantId;
+        d.correlationId = correlationId;
+        d.eventInstances = [...eventInstances];
+        d.sessionCount = sessionCount;
+    }
+
     // --- internal ---
 
     private updateLastStep(orchStep: number): void {
@@ -256,7 +278,7 @@ export class FlowTreeBuilder {
             triggeredAtStep: 0,
             lastStep: 0,
             children: [],
-            data: { type: FlowNodeType.Root, policyId: "" },
+            data: { type: FlowNodeType.Root, policyId: "", tenantId: "", correlationId: "", eventInstances: [], sessionCount: 0 },
             context: {
                 timestamp: new Date(0),
                 sequenceNumber: 0,

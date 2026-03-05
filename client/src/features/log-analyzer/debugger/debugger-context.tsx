@@ -35,6 +35,8 @@ export function selectionReducer(state: Selection | null, action: SelectionActio
             return { type: "hrd", nodeId: action.nodeId };
         case "select-dc":
             return { type: "displayControl", nodeId: action.nodeId, itemId: action.dcId, metadata: action.metadata };
+        case "select-root":
+            return { type: "root", nodeId: "root" };
         case "clear":
             return null;
         default:

@@ -53,5 +53,16 @@ export class HeadersProcessor implements ClipProcessor {
             });
             ctx.sessionFlowCount++;
         }
+
+        // Track all event instances seen (accumulated across sessions for root node metadata)
+        ctx.eventInstances.push(headers.EventInstance);
+
+        // Continuously enrich the root FlowNode with header-derived metadata
+        ctx.flowTreeBuilder.setRootHeaderInfo(
+            ctx.tenantId,
+            ctx.correlationId,
+            ctx.eventInstances,
+            ctx.sessions.length,
+        );
     }
 }

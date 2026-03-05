@@ -7,7 +7,7 @@ import type { FlowNode } from "@/types/flow-node";
 
 /** Selection state — which tree item is active in the debugger. */
 export interface Selection {
-    type: "step" | "technicalProfile" | "transformation" | "hrd" | "displayControl";
+    type: "step" | "technicalProfile" | "transformation" | "hrd" | "displayControl" | "root";
     nodeId: string;
     /** For TP, CT, or selected option */
     itemId?: string;
@@ -22,6 +22,7 @@ export type SelectionAction =
     | { type: "select-ct"; nodeId: string; ctId: string }
     | { type: "select-hrd"; nodeId: string }
     | { type: "select-dc"; nodeId: string; dcId: string; metadata: Record<string, unknown> }
+    | { type: "select-root" }
     | { type: "clear" };
 
 // ============================================================================

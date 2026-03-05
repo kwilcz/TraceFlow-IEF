@@ -36,6 +36,8 @@ export interface ClipProcessingContext {
     tenantId: string;
     policyId: string;
     eventInstance: string;
+    /** All EventInstance values seen so far, in clip order (accumulated across sessions) */
+    eventInstances: string[];
 
     // === Sequential State (tracks clip-by-clip progression) ===
     /** The Kind of the last processed clip */
@@ -133,6 +135,7 @@ export function createInitialContext(
         tenantId: "",
         policyId: "",
         eventInstance: "",
+        eventInstances: [],
 
         lastClipKind: null,
         lastPredicate: null,
