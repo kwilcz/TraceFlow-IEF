@@ -135,6 +135,8 @@ export interface StepError {
     readonly kind: "Handled" | "Unhandled";
     readonly hResult: string;
     readonly message: string;
+    /** Exception.Data — additional diagnostic context (e.g. TechnicalProfileId, ClaimsTransformation.*) */
+    readonly data?: Record<string, unknown>;
 }
 
 // ─── Root ───────────────────────────────────────────────────────────────────

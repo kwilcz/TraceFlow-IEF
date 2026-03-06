@@ -464,6 +464,14 @@ export class AppInsightsProcessor {
             Message: this.toStringSafe(raw.Message) || "Unknown error",
         };
 
+        if (typeof raw.HResult === "string" && raw.HResult) {
+            result.HResult = raw.HResult;
+        }
+
+        if (typeof raw.Kind === "string" && raw.Kind) {
+            result.Kind = raw.Kind;
+        }
+
         if (raw.Data && typeof raw.Data === "object") {
             result.Data = raw.Data as ExceptionContent["Data"];
         }

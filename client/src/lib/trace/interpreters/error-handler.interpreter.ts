@@ -83,6 +83,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                         kind: "Unhandled",
                         hResult: errorInfo.hResult ?? "",
                         message: errorInfo.message!,
+                        data: errorInfo.data,
                     }],
                     actionHandler: this.getActionHandlerName(handlerName),
                 };
@@ -97,14 +98,15 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
     }
 
     /**
-     * Extracts error information (message and HResult) from handler result.
+     * Extracts error information (message, HResult, and Data) from handler result.
      */
-    private extractErrorInfo(result: HandlerResultContent): { message?: string; hResult?: string } {
+    private extractErrorInfo(result: HandlerResultContent): { message?: string; hResult?: string; data?: Record<string, unknown> } {
         // First check for direct Exception
         if (result.Exception?.Message) {
             return {
                 message: result.Exception.Message,
                 hResult: result.Exception.HResult,
+                data: result.Exception.Data as Record<string, unknown> | undefined,
             };
         }
 
@@ -116,11 +118,12 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                     if (validationValues) {
                         for (const v of validationValues) {
                             if (v.Key === "Exception" && typeof v.Value === "object") {
-                                const exception = v.Value as { Message?: string; HResult?: string };
+                                const exception = v.Value as { Message?: string; HResult?: string; Data?: Record<string, unknown> };
                                 if (exception.Message) {
                                     return {
                                         message: exception.Message,
                                         hResult: exception.HResult,
+                                        data: exception.Data,
                                     };
                                 }
                             }
@@ -130,11 +133,12 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
 
                 // Check for direct Exception entry
                 if (entry.Key === "Exception" && typeof entry.Value === "object") {
-                    const exception = entry.Value as { Message?: string; HResult?: string };
+                    const exception = entry.Value as { Message?: string; HResult?: string; Data?: Record<string, unknown> };
                     if (exception.Message) {
                         return {
                             message: exception.Message,
                             hResult: exception.HResult,
+                            data: exception.Data,
                         };
                     }
                 }

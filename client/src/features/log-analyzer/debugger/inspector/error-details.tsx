@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { XCircleIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import type { StepError } from "@/types/flow-node";
@@ -16,17 +17,19 @@ export interface ErrorDetailsProps {
     errorCode?: string;
     description?: string;
     diagnostics?: string;
+    /** Structured key-value extra data (e.g. Exception.Data) */
+    data?: Record<string, unknown>;
 }
 
-export function ErrorDetails({ errorType, kind, message, hResult, errorCode, description, diagnostics }: ErrorDetailsProps) {
+export function ErrorDetails({ errorType, kind, message, hResult, errorCode, description, diagnostics, data }: ErrorDetailsProps) {
     return (
         <div className="bg-danger/10 border border-danger/40 rounded-md p-3 space-y-2">
             {/* Header row — always rendered */}
             <div className="flex items-center gap-2">
                 <XCircleIcon className="text-danger w-4 h-4 shrink-0" />
-                {errorType && (
-                    <span className="text-sm font-semibold text-danger">{errorType}</span>
-                )}
+                <span className="text-sm font-semibold text-danger">
+                    {errorType ?? "Exception"}
+                </span>
                 {kind === "Unhandled" && (
                     <Badge variant="destructive">Unhandled</Badge>
                 )}
@@ -57,12 +60,12 @@ export function ErrorDetails({ errorType, kind, message, hResult, errorCode, des
 
             {/* Diagnostics */}
             {diagnostics && (
-                <div className="space-y-0.5">
-                    <span className="text-xs text-muted-foreground">Diagnostics</span>
-                    <pre className="text-xs font-mono bg-muted/50 rounded p-2 overflow-auto whitespace-pre-wrap break-all max-h-48">
-                        {diagnostics}
-                    </pre>
-                </div>
+                <JsonDataSection label="Diagnostics" json={diagnostics} />
+            )}
+
+            {/* Exception.Data */}
+            {data && (
+                <JsonDataSection label="Data" json={data} />
             )}
         </div>
     );
@@ -78,6 +81,7 @@ export function fromStepError(err: StepError): ErrorDetailsProps {
         kind: err.kind,
         message: err.message || undefined,
         hResult: err.hResult || undefined,
+        data: err.data,
     };
 }
 
@@ -104,8 +108,80 @@ export function fromUiSettingsError(ui: UiSettings): ErrorDetailsProps | null {
 }
 
 // ============================================================================
-// Shared sub-component
+// Shared sub-components
 // ============================================================================
+
+/**
+ * Collapsible key-value section for JSON data (Exception.Data, diagnostics).
+ * Collapsed by default; matches the ▸/▾ toggle pattern used in StatebagSection.
+ */
+function JsonDataSection({ label, json }: { label: string; json: Record<string, unknown> | string | undefined }) {
+    const [open, setOpen] = useState(false);
+
+    if (!json) return null;
+
+    let entries: [string, unknown][];
+    let parseError = false;
+
+    if (typeof json === "string") {
+        try {
+            const parsed = JSON.parse(json) as unknown;
+            if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+                entries = Object.entries(parsed as Record<string, unknown>);
+            } else {
+                // Parsed but not a plain object — fall back to raw display
+                entries = [];
+                parseError = true;
+            }
+        } catch {
+            entries = [];
+            parseError = true;
+        }
+    } else {
+        entries = Object.entries(json);
+    }
+
+    const count = parseError ? 0 : entries.length;
+
+    return (
+        <div className="space-y-0.5">
+            <button
+                type="button"
+                onClick={() => setOpen((s) => !s)}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+                {open ? "▾ Hide" : "▸ Show"} {label}
+                {!parseError && count > 0 && (
+                    <span className="font-normal ml-1">({count} {count === 1 ? "item" : "items"})</span>
+                )}
+            </button>
+
+            {open && (
+                parseError ? (
+                    <pre className="text-xs font-mono bg-muted/50 rounded p-2 overflow-auto whitespace-pre-wrap break-all max-h-48">
+                        {typeof json === "string" ? json : JSON.stringify(json, null, 2)}
+                    </pre>
+                ) : (
+                    <div className="mt-1 border border-border/50 rounded overflow-hidden">
+                        {entries.map(([key, value]) => (
+                            <div
+                                key={key}
+                                className="grid grid-cols-[minmax(140px,35%)_1fr] gap-x-2 px-2 py-1 even:bg-muted/30 items-start"
+                            >
+                                <span className="text-xs font-mono text-muted-foreground truncate" title={key}>
+                                    {key}
+                                </span>
+                                <span className="text-xs font-mono break-all">
+                                    {value === null ? "(null)" : value === "" ? "(empty)" : String(value)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )
+            )}
+        </div>
+    );
+}
 
 interface LabelValueRowProps {
     label: string;

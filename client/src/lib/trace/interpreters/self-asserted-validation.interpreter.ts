@@ -83,6 +83,7 @@ export class SelfAssertedValidationInterpreter extends BaseInterpreter {
                     kind: "Handled",
                     hResult: errorInfo.hResult ?? "",
                     message: errorInfo.message,
+                    data: errorInfo.data,
                 }],
                 flowChildren: flowChildren.length > 0 ? flowChildren : undefined,
             });
@@ -271,7 +272,7 @@ export class SelfAssertedValidationInterpreter extends BaseInterpreter {
      * This is typically seen in SelfAssertedMessageValidationHandler when
      * validation fails (e.g., "A user with the specified credential could not be found.")
      */
-    private extractValidationError(handlerResult: HandlerResultContent | null): { message?: string; hResult?: string } {
+    private extractValidationError(handlerResult: HandlerResultContent | null): { message?: string; hResult?: string; data?: Record<string, unknown> } {
         if (!handlerResult) {
             return {};
         }
@@ -281,6 +282,7 @@ export class SelfAssertedValidationInterpreter extends BaseInterpreter {
             return {
                 message: handlerResult.Exception.Message,
                 hResult: handlerResult.Exception.HResult,
+                data: handlerResult.Exception.Data as Record<string, unknown> | undefined,
             };
         }
 
@@ -298,11 +300,12 @@ export class SelfAssertedValidationInterpreter extends BaseInterpreter {
                 if (validationValue.Values) {
                     for (const innerEntry of validationValue.Values) {
                         if (innerEntry.Key === "Exception" && typeof innerEntry.Value === "object") {
-                            const exception = innerEntry.Value as { Message?: string; HResult?: string; Kind?: string };
+                            const exception = innerEntry.Value as { Message?: string; HResult?: string; Kind?: string; Data?: Record<string, unknown> };
                             if (exception.Message) {
                                 return {
                                     message: exception.Message,
                                     hResult: exception.HResult,
+                                    data: exception.Data,
                                 };
                             }
                         }
@@ -312,11 +315,12 @@ export class SelfAssertedValidationInterpreter extends BaseInterpreter {
 
             // Also check for direct Exception entry in RecorderRecord
             if (entry.Key === "Exception" && typeof entry.Value === "object") {
-                const exception = entry.Value as { Message?: string; HResult?: string };
+                const exception = entry.Value as { Message?: string; HResult?: string; Data?: Record<string, unknown> };
                 if (exception.Message) {
                     return {
                         message: exception.Message,
                         hResult: exception.HResult,
+                        data: exception.Data,
                     };
                 }
             }
