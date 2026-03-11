@@ -31,13 +31,15 @@ export class ClipPipeline {
 
     constructor(interpreterRegistry: InterpreterRegistry) {
         this.stepLifecycleManager = new StepLifecycleManager();
+        const exceptionProcessor = new ExceptionProcessor();
         this.processors = new Map<string, ClipProcessor>([
             [ClipKind.Headers, new HeadersProcessor(this.stepLifecycleManager)],
             [ClipKind.Transition, new TransitionProcessor()],
             [ClipKind.Predicate, new PredicateProcessor()],
             [ClipKind.Action, new ActionProcessor()],
             [ClipKind.HandlerResult, new HandlerResultProcessor(interpreterRegistry, this.stepLifecycleManager)],
-            [ClipKind.Exception, new ExceptionProcessor()],
+            [ClipKind.FatalException, exceptionProcessor],
+            [ClipKind.Exception, exceptionProcessor],
         ]);
     }
 

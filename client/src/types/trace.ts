@@ -34,6 +34,8 @@ export interface GlobalFlowError {
     message?: string;
     /** HResult hex string from SendErrorHandler Exception.HResult */
     hResult?: string;
+    /** Structured exception data from FatalException.Exception.Data */
+    data?: Record<string, unknown>;
 }
 
 /**

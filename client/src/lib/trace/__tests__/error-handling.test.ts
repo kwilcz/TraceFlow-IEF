@@ -92,6 +92,82 @@ describe("Error Handling", () => {
 
             expect(steps[0].errorMessage).toBe(errorMessage);
         });
+
+        it("should surface FatalException clips as flow-level errors even without a step context", () => {
+            const errorMessage = "Cross-origin fatal exception";
+            const hResult = "80131500";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        {
+                            Kind: "FatalException",
+                            Content: {
+                                Exception: {
+                                    Message: errorMessage,
+                                    HResult: hResult,
+                                    Data: { TechnicalProfileId: "TP-Fatal" },
+                                },
+                                Time: fixture.baseTimestamp.toISOString(),
+                            },
+                        },
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+
+            expect(getStepCount(result)).toBe(0);
+            expect(result.globalError).toMatchObject({
+                errorType: "FatalException",
+                message: errorMessage,
+                hResult,
+                data: { TechnicalProfileId: "TP-Fatal" },
+            });
+        });
+
+        it("should retain FatalException details on the active step when a step is in progress", () => {
+            const errorMessage = "Validation pipeline aborted.";
+            const hResult = "80004005";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                        {
+                            Kind: "FatalException",
+                            Content: {
+                                Exception: {
+                                    Message: errorMessage,
+                                    HResult: hResult,
+                                },
+                                Time: fixture.baseTimestamp.toISOString(),
+                            },
+                        },
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+            const steps = getTestSteps(result);
+
+            expect(steps).toHaveLength(1);
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].errorMessage).toBe(errorMessage);
+            expect(steps[0].errorHResult).toBe(hResult);
+            expect(result.globalError).toMatchObject({
+                errorType: "FatalException",
+                message: errorMessage,
+                hResult,
+            });
+        });
     });
 
     describe("Error with Technical Profile Context", () => {
