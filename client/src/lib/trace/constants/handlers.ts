@@ -168,9 +168,14 @@ export const CROSS_ORIGIN_EXCEPTION_STATE =
 /**
  * Returns true when a Transition clip represents a global B2C exception state.
  * These transitions signal a flow-wide fatal failure, not a step-level error.
+ *
+ * Live logs can surface terminal exception states under non-"Global" event names
+ * (for example `ClaimsExchange` followed by `...ClaimsTransformationException`
+ * and then `SendErrorHandler`). We treat any transition into an `*Exception`
+ * state as a flow-level error boundary.
  */
 export function isGlobalExceptionTransition(eventName: string, stateName: string): boolean {
-    return eventName === "Global" && stateName.includes("Exception");
+    return !!eventName && stateName.includes("Exception");
 }
 
 /**

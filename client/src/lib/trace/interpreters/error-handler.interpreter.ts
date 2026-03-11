@@ -47,7 +47,6 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
         // Check if this is a validation failure (Result: false) or error sending
         const isValidationFailure = handlerResult.Result === false;
         const isErrorHandler = handlerName.includes("SendErrorHandler");
-        const exception = handlerResult.Exception;
 
         if (isValidationFailure || isErrorHandler) {
             // Extract error message and HResult from Exception or RecorderRecord
@@ -63,6 +62,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                         ...context.pendingGlobalError,
                         ...(errorInfo.message !== undefined && { message: errorInfo.message }),
                         ...(errorInfo.hResult !== undefined && { hResult: errorInfo.hResult }),
+                        ...(errorInfo.data !== undefined && { data: errorInfo.data }),
                     },
                 });
             }

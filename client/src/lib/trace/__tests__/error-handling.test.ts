@@ -11,10 +11,14 @@ import {
     createTestFixture,
     buildTraceLogInput,
     buildHeadersClip,
+    buildActionClip,
+    buildActionResult,
     buildOrchestrationManagerAction,
     buildOrchestrationResult,
     buildErrorResult,
     buildCtpStatebag,
+    buildPredicateClip,
+    buildPredicateResult,
     type TestFixture,
 } from "./fixtures";
 import { getTestSteps, getStepCount } from "./test-step-helpers";
@@ -214,6 +218,80 @@ describe("Error Handling", () => {
             const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
             expect(result.executionMap[graphNodeId].status).toBe("Error");
+        });
+    });
+
+    describe("Global Exception Transitions", () => {
+        it("should surface ClaimsExchange exception transitions as flow-level errors", () => {
+            const errorMessage =
+                "An error was encountered while applying output claims transformations on technical profile with ID 'HRD-ValidateDomainWithLoginHint'";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:AUTH"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                        buildActionClip("OutputClaimsTransformationHandler"),
+                        buildActionResult(true),
+                        {
+                            Kind: "Transition",
+                            Content: {
+                                EventName: "ClaimsExchange",
+                                StateName: "Microsoft.Cpim.Data.Transformations.ClaimsTransformationException",
+                            },
+                        },
+                        buildPredicateClip("NoOpHandler"),
+                        buildPredicateResult(true),
+                        buildActionClip("SendErrorHandler"),
+                        buildActionResult(
+                            true,
+                            {
+                                Values: [
+                                    {
+                                        Key: "SendErrorTechnicalProfile",
+                                        Value: "OpenIdConnectProtocolProvider",
+                                    },
+                                    {
+                                        Key: "Exception",
+                                        Value: {
+                                            Kind: "Handled",
+                                            HResult: "80131500",
+                                            Message: errorMessage,
+                                            Data: { IsPolicySpecificError: false },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                SE: {
+                                    c: fixture.baseTimestamp.toISOString(),
+                                    k: "SE",
+                                    v: "",
+                                    p: true,
+                                },
+                            },
+                        ),
+                        buildActionClip("TransactionEndHandler"),
+                        buildActionResult(true),
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+            const steps = getTestSteps(result);
+
+            expect(steps).toHaveLength(1);
+            expect(steps[0].result).toBe("Success");
+            expect(result.globalError).toMatchObject({
+                errorType: "ClaimsTransformationException",
+                stateName: "Microsoft.Cpim.Data.Transformations.ClaimsTransformationException",
+                message: errorMessage,
+                hResult: "80131500",
+                data: { IsPolicySpecificError: false },
+            });
         });
     });
 
