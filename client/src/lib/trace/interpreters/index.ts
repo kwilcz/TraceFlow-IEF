@@ -108,6 +108,11 @@ export {
     createDisplayControlInterpreter,
 } from "./display-control.interpreter";
 
+export {
+    GetClaimsInterpreter,
+    createGetClaimsInterpreter,
+} from "./get-claims.interpreter";
+
 // Factory functions array for bulk registration
 import { createOrchestrationInterpreter } from "./orchestration.interpreter";
 import { createClaimsExchangeInterpreter } from "./claims-exchange.interpreter";
@@ -126,6 +131,7 @@ import { createUiSettingsInterpreter } from "./ui-settings.interpreter";
 import { createErrorHandlerInterpreter } from "./error-handler.interpreter";
 import { createDisplayControlInterpreter } from "./display-control.interpreter";
 import { createGlobalExceptionInterpreter } from "./global-exception.interpreter";
+import { createGetClaimsInterpreter } from "./get-claims.interpreter";
 import type { IClipInterpreter } from "./base-interpreter";
 
 /**
@@ -150,6 +156,7 @@ const ALL_INTERPRETER_FACTORIES: Array<() => IClipInterpreter> = [
     createErrorHandlerInterpreter,
     createDisplayControlInterpreter,
     createGlobalExceptionInterpreter,
+    createGetClaimsInterpreter,
 ];
 
 /**

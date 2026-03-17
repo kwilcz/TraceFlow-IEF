@@ -230,6 +230,11 @@ export const SELF_ASSERTED_ACTION = "Web.TPEngine.StateMachineHandlers.SelfAsser
 /** Self-asserted redirect handler */
 export const SELF_ASSERTED_REDIRECT = "Web.TPEngine.StateMachineHandlers.SelfAssertedAttributeProviderRedirectHandler";
 
+/**
+ * Extracts claims from the id_token_hint JWT passed by the relying party.
+ * Fires on GetClaims-type orchestration steps.
+ */
+export const GET_RELYING_PARTY_INPUT_CLAIMS = "Web.TPEngine.StateMachineHandlers.GetRelyingPartyInputClaimsHandler";
 
 // ============================================================================
 // HANDLER GROUPS - For categorization and filtering
