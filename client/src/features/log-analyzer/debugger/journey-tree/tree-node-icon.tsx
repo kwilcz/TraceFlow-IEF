@@ -10,6 +10,7 @@ import {
     MonitorPlayIcon,
     ShuffleIcon,
     TreeStructureIcon,
+    ArrowSquareInIcon,
 } from "@phosphor-icons/react";
 import type { StepResult } from "@/types/trace";
 import type { TreeNodeMetadata, TreeNodeType } from "../types";
@@ -76,6 +77,8 @@ export function TreeNodeIcon({ type, result, metadata }: TreeNodeIconProps) {
             return <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />;
         case "displayControl":
             return <MonitorPlayIcon className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />;
+        case "getClaims":
+            return <ArrowSquareInIcon className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" weight="duotone" />;
         default:
             return <HashIcon className="w-3.5 h-3.5 text-muted-foreground" />;
     }
