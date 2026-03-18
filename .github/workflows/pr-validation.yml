@@ -23,16 +23,16 @@ jobs:
         validation:
           - name: Lint
             command: npm run lint
-            matcher: ''
+            matcherFile: ''
           - name: Type check
             command: npm run tsc -- --pretty false
-            matcher: traceflow-tsc
+            matcherFile: tsc.json
           - name: Test
             command: npm run test
-            matcher: ''
+            matcherFile: ''
           - name: Build
             command: npx vite build
-            matcher: ''
+            matcherFile: ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,12 +48,12 @@ jobs:
         run: npm ci
 
       - name: Register TypeScript problem matcher
-        if: ${{ matrix.validation.matcher != '' }}
-        run: echo "::add-matcher::${{ github.workspace }}/.github/matchers/${{ matrix.validation.matcher }}.json"
+        if: ${{ matrix.validation.matcherFile != '' }}
+        run: echo "::add-matcher::${{ github.workspace }}/.github/matchers/${{ matrix.validation.matcherFile }}"
 
       - name: Run ${{ matrix.validation.name }}
         run: ${{ matrix.validation.command }}
 
       - name: Remove TypeScript problem matcher
-        if: ${{ always() && matrix.validation.matcher != '' }}
+        if: ${{ always() && matrix.validation.matcherFile != '' }}
         run: echo "::remove-matcher owner=traceflow-tsc::"
