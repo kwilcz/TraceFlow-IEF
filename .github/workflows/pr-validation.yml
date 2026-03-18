@@ -1,0 +1,59 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  VITE_BASE_PATH: /${{ github.event.repository.name }}/
+
+defaults:
+  run:
+    working-directory: client
+
+jobs:
+  validate-client:
+    name: ${{ matrix.validation.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        validation:
+          - name: Lint
+            command: npm run lint
+            matcher: ''
+          - name: Type check
+            command: npm run tsc -- --pretty false
+            matcher: traceflow-tsc
+          - name: Test
+            command: npm run test
+            matcher: ''
+          - name: Build
+            command: npx vite build
+            matcher: ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Register TypeScript problem matcher
+        if: ${{ matrix.validation.matcher != '' }}
+        run: echo "::add-matcher::${{ github.workspace }}/.github/matchers/${{ matrix.validation.matcher }}.json"
+
+      - name: Run ${{ matrix.validation.name }}
+        run: ${{ matrix.validation.command }}
+
+      - name: Remove TypeScript problem matcher
+        if: ${{ always() && matrix.validation.matcher != '' }}
+        run: echo "::remove-matcher owner=traceflow-tsc::"
