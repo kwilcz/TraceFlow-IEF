@@ -6,6 +6,7 @@ import type {
     ClaimsTransformationFlowData,
     HomeRealmDiscoveryFlowData,
     DisplayControlFlowData,
+    GetClaimsFlowData,
 } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
 
@@ -109,6 +110,7 @@ interface CategorizedChildren {
     ct: FlowNode[];
     hrd: FlowNode | null;
     dc: FlowNode[];
+    gc: FlowNode | null;
 }
 
 /**
@@ -119,6 +121,7 @@ function categorizeStepChildren(stepNode: FlowNode): CategorizedChildren {
     const ct: FlowNode[] = [];
     let hrd: FlowNode | null = null;
     const dc: FlowNode[] = [];
+    let gc: FlowNode | null = null;
 
     for (const child of stepNode.children) {
         switch (child.type) {
@@ -134,15 +137,35 @@ function categorizeStepChildren(stepNode: FlowNode): CategorizedChildren {
             case FlowNodeType.DisplayControl:
                 dc.push(child);
                 break;
+            case FlowNodeType.GetClaims:
+                gc = child;
+                break;
         }
     }
 
-    return { tp, ct, hrd, dc };
+    return { tp, ct, hrd, dc, gc };
 }
 
 // ============================================================================
 // Child node builders
 // ============================================================================
+
+/**
+ * Builds a GetClaims TreeNode from a GetClaims FlowNode.
+ */
+function buildGcTreeNode(gcNode: FlowNode, seq: number, nodeId: string): TreeNode {
+    const data = gcNode.data as GetClaimsFlowData;
+    return {
+        id: `gc-${seq}`,
+        label: "GetClaims",
+        type: "getClaims",
+        nodeId,
+        flowNode: gcNode,
+        metadata: {
+            result: data.result ? "Success" : "Error",
+        },
+    };
+}
 
 /**
  * Builds a TP TreeNode from a TP FlowNode, recursing for nested
@@ -300,7 +323,7 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
     const seq = stepNode.context.sequenceNumber;
     const nodeId = stepNode.id;
 
-    const { tp, ct, hrd, dc } = categorizeStepChildren(stepNode);
+    const { tp, ct, hrd, dc, gc } = categorizeStepChildren(stepNode);
 
     // Build DC TreeNodes
     const dcNodes = dc.map((d) => buildDcTreeNode(d, seq, nodeId));
@@ -370,11 +393,13 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
         });
     }
 
+    // GetClaims child node (id_token_hint extracted claims)
+    if (gc) {
+        children.push(buildGcTreeNode(gc, seq, nodeId));
+    }
+
     // ── Primary label ────────────────────────────────────────────────
-    const tpNames = stepNode.children
-        .filter((c) => c.type === FlowNodeType.TechnicalProfile)
-        .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId);
-    const primaryLabel = tpNames[0] || data.uiSettings?.pageType || data.actionHandler || "Unknown";
+    const primaryLabel = resolveStepPrimaryLabel(stepNode, data);
 
     return {
         id: `step-${seq}`,
@@ -390,7 +415,7 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
             isHrdStep,
             isFinalStep: data.actionHandler === "SendClaims",
             duration: data.duration,
-            tpCount: tpNames.length,
+            tpCount: tp.length,
             ctCount: stepNode.children.filter(
                 (c) => c.type === FlowNodeType.ClaimsTransformation,
             ).length + stepNode.children
@@ -403,4 +428,30 @@ export function buildStepNode(stepNode: FlowNode): TreeNode {
         },
         children: children.length > 0 ? children : undefined,
     };
+}
+
+// ============================================================================
+// Label Resolution
+// ============================================================================
+
+/**
+ * Resolves the primary display label for a step node.
+ *
+ * Priority order:
+ * 1. First TP name (most common — service calls, self-asserted, etc.)
+ * 2. GetClaims step type (id_token_hint extraction)
+ * 3. UI page type (CombinedSignInAndSignUp, etc.)
+ * 4. Raw action handler (last resort, rarely shown)
+ * 5. "Unknown"
+ */
+function resolveStepPrimaryLabel(stepNode: FlowNode, data: StepFlowData): string {
+    const tpName = stepNode.children
+        .filter((c) => c.type === FlowNodeType.TechnicalProfile)
+        .map((c) => (c.data as TechnicalProfileFlowData).technicalProfileId)[0];
+
+    if (tpName) return tpName;
+    if (stepNode.children.some((c) => c.type === FlowNodeType.GetClaims)) return "GetClaims";
+    if (data.uiSettings?.pageType) return data.uiSettings.pageType;
+    if (data.actionHandler) return data.actionHandler;
+    return "Unknown";
 }

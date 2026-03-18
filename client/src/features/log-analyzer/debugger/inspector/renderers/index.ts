@@ -4,3 +4,4 @@ export { CtRenderer } from "./ct-renderer";
 export { HrdRenderer } from "./hrd-renderer";
 export { DcRenderer } from "./dc-renderer";
 export { RootRenderer } from "./root-renderer";
+export { GcRenderer } from "./gc-renderer";

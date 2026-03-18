@@ -8,6 +8,7 @@ import type {
     HomeRealmDiscoveryFlowData,
     DisplayControlFlowData,
     SendClaimsFlowData,
+    GetClaimsFlowData,
 } from "@/types/flow-node";
 import { FlowNodeType } from "@/types/flow-node";
 
@@ -189,6 +190,23 @@ export class FlowTreeBuilder {
     }
 
     /**
+     * Add a GetClaims child node to a parent FlowNode.
+     */
+    addGetClaims(parent: FlowNode, data: GetClaimsFlowData, context: FlowNodeContext): void {
+        const node: FlowNode = {
+            id: `gc-${parent.id}`,
+            name: "GetClaims",
+            type: FlowNodeType.GetClaims,
+            triggeredAtStep: parent.triggeredAtStep,
+            lastStep: parent.triggeredAtStep,
+            children: [],
+            data,
+            context,
+        };
+        parent.children.push(node);
+    }
+
+    /**
      * Recursively converts FlowNodeChild[] into FlowNode children on a parent.
      * Called by StepLifecycleManager when a step is finalized.
      */
@@ -211,6 +229,9 @@ export class FlowTreeBuilder {
                 case FlowNodeType.SendClaims:
                     node = this.addSendClaims(parent, child.data, context);
                     break;
+                case FlowNodeType.GetClaims:
+                    this.addGetClaims(parent, child.data, context);
+                    continue; // GetClaims has no sub-children
                 default:
                     continue;
             }

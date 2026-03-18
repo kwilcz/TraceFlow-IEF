@@ -42,6 +42,7 @@ export enum FlowNodeType {
     HomeRealmDiscovery = "hrd",
     DisplayControl = "dc",
     SendClaims = "sendClaims",
+    GetClaims = "getClaims",
 }
 
 // ============================================================================
@@ -108,7 +109,8 @@ export type FlowNodeData =
     | ClaimsTransformationFlowData
     | HomeRealmDiscoveryFlowData
     | DisplayControlFlowData
-    | SendClaimsFlowData;
+    | SendClaimsFlowData
+    | GetClaimsFlowData;
 
 // ============================================================================
 // FlowNodeChild — interpreter output building block
@@ -310,4 +312,32 @@ export interface SendClaimsFlowData {
     readonly protocol?: string;
     /** Output claims sent to the relying party */
     readonly outputClaims?: ReadonlyArray<{ claimType: string; value: string }>;
+}
+
+// ─── GetClaims ───────────────────────────────────────────────────────────────
+
+/**
+ * Data for a GetClaims orchestration step child node.
+ *
+ * Appears as a direct child of a Step node when the B2C orchestration step
+ * is of Type="GetClaims". B2C extracts claims from an id_token_hint JWT
+ * passed by the relying party via GetRelyingPartyInputClaimsHandler.
+ *
+ * Children: none.
+ */
+export interface GetClaimsFlowData {
+    readonly type: FlowNodeType.GetClaims;
+    /** Whether claim extraction succeeded */
+    readonly result: boolean;
+    /** The source of the incoming claims — always "id_token_hint" for this handler */
+    readonly claimsSource: "id_token_hint";
+    /**
+     * Whether the id_token_hint JWT signature was validated.
+     * True when "ITH_V" appears in the HandlerResult's ComplexItems string.
+     */
+    readonly idTokenHintValidated: boolean;
+    /** The claims extracted from the id_token_hint, as key/value pairs */
+    readonly extractedClaims: ReadonlyArray<{ claimType: string; value: string }>;
+    /** Raw ComplexItems string from the HandlerResult statebag, for advanced diagnostics */
+    readonly complexItems?: string;
 }

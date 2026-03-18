@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { enrichUserFlow } from "@/features/log-analyzer/services/trace-bootstrap-service";
+import {
+    enrichUserFlow,
+    generateTraceStateFromLogs,
+} from "@/features/log-analyzer/services/trace-bootstrap-service";
+import type { LogRecord } from "@/types/logs";
 import type { TraceState } from "@/features/log-analyzer/model/trace-state";
 import type { UserFlow } from "@/types/trace";
 import type { FlowNode, FlowNodeContext, StepFlowData } from "@/types/flow-node";
@@ -68,6 +72,86 @@ function makeFlowTree(steps: FlowNode[]): FlowNode {
     };
 }
 
+function makeFatalExceptionLogRecord(errorMessage: string): LogRecord {
+    const id = "fatal-log-1";
+    const timestamp = new Date("2026-02-27T10:04:00.000Z");
+    const policyId = "B2C_1A_Test";
+    const correlationId = "corr-fatal-1";
+
+    return {
+        id,
+        timestamp,
+        policyId,
+        correlationId,
+        cloudRoleInstance: "test-instance",
+        rawIds: [id],
+        payloadText: JSON.stringify([
+            {
+                Kind: "Headers",
+                Content: {
+                    UserJourneyRecorderEndpoint: "urn:test",
+                    CorrelationId: correlationId,
+                    EventInstance: "Event:API",
+                    TenantId: "test.onmicrosoft.com",
+                    PolicyId: policyId,
+                },
+            },
+            {
+                Kind: "Transition",
+                Content: {
+                    EventName: "AUTH",
+                    StateName: "Error",
+                },
+            },
+            {
+                Kind: "FatalException",
+                Content: {
+                    Exception: {
+                        Message: errorMessage,
+                    },
+                    Time: timestamp.toISOString(),
+                },
+            },
+        ]),
+        parsedPayload: [],
+        clips: [
+            {
+                Kind: "Headers",
+                Content: {
+                    UserJourneyRecorderEndpoint: "urn:test",
+                    CorrelationId: correlationId,
+                    EventInstance: "Event:API",
+                    TenantId: "test.onmicrosoft.com",
+                    PolicyId: policyId,
+                },
+            },
+            {
+                Kind: "Transition",
+                Content: {
+                    EventName: "AUTH",
+                    StateName: "Error",
+                },
+            },
+            {
+                Kind: "FatalException",
+                Content: {
+                    Exception: {
+                        Message: errorMessage,
+                    },
+                    Time: timestamp.toISOString(),
+                },
+            },
+        ],
+        customDimensions: {
+            correlationId,
+            eventName: "",
+            tenant: "test.onmicrosoft.com",
+            userJourney: policyId,
+            version: "",
+        },
+    };
+}
+
 describe("enrichUserFlow email resolution", () => {
     it("uses the most recent non-null email by scanning trace steps from the end", () => {
         const flow = makeFlow({ userEmail: "existing@example.com" });
@@ -110,5 +194,34 @@ describe("enrichUserFlow email resolution", () => {
         const enriched = enrichUserFlow(flow, tracePatch);
 
         expect(enriched.userEmail).toBe("existing@example.com");
+    });
+});
+
+describe("fatal exception integration", () => {
+    it("marks flows with fatal exceptions as errored and preserves the root-level error details", () => {
+        const errorMessage = "Fatal exception surfaced from raw log.";
+        const logRecord = makeFatalExceptionLogRecord(errorMessage);
+        const tracePatch = generateTraceStateFromLogs([logRecord]);
+
+        const enriched = enrichUserFlow(
+            makeFlow({
+                correlationId: logRecord.correlationId,
+                policyId: logRecord.policyId,
+                logIds: [logRecord.id],
+            }),
+            tracePatch
+        );
+
+        expect(tracePatch.isTraceModeActive).toBe(false);
+        expect(tracePatch.globalError).toMatchObject({
+            errorType: "FatalException",
+            message: errorMessage,
+        });
+        expect(enriched.hasErrors).toBe(true);
+        expect(enriched.globalError).toMatchObject({
+            errorType: "FatalException",
+            message: errorMessage,
+        });
+        expect(enriched.completed).toBe(false);
     });
 });

@@ -12,6 +12,7 @@ import {
     HrdRenderer,
     DcRenderer,
     RootRenderer,
+    GcRenderer,
 } from "./inspector/renderers";
 
 // ============================================================================
@@ -73,6 +74,9 @@ export function InspectorPanel() {
                 )}
                 {selection.type === "displayControl" && (
                     <DcRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
+                )}
+                {selection.type === "getClaims" && (
+                    <GcRenderer stepNode={stepNode} selection={selection} dispatch={dispatch} />
                 )}
             </div>
         </ScrollArea>

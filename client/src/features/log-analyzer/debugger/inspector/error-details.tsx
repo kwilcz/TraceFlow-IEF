@@ -94,6 +94,7 @@ export function fromGlobalFlowError(ge: GlobalFlowError): ErrorDetailsProps {
         errorCode: ge.errorCode,
         description: ge.description,
         diagnostics: ge.diagnostics,
+        data: ge.data,
     };
 }
 

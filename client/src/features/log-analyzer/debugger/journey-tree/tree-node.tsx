@@ -53,6 +53,7 @@ const labelStyles: Record<string, string> = {
     transformation: "text-xs break-all text-cyan-700 dark:text-cyan-300",
     dcTransformation: "text-xs break-all text-cyan-600 dark:text-cyan-400",
     displayControl: "text-xs text-orange-700 dark:text-orange-300",
+    getClaims: "text-xs text-teal-700 dark:text-teal-300",
 };
 
 // -------------- Click handler with per-type semantics -----------------------
@@ -136,7 +137,7 @@ function NodeBadges({ node }: { node: TreeNode }) {
 /** Whether a node type is selectable (dispatches to inspector). */
 const selectableTypes = new Set([
     "userjourney", "step", "technicalProfile", "dcTechnicalProfile", "selectedOption",
-    "transformation", "dcTransformation", "hrd", "displayControl",
+    "transformation", "dcTransformation", "hrd", "displayControl", "getClaims",
 ]);
 
 export function TreeNodeRow({

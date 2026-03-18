@@ -69,6 +69,8 @@ function isNodeSelected(node: TreeNode, selection: Selection | null): boolean {
                 selection.nodeId === node.nodeId &&
                 selection.itemId === node.metadata?.displayControlId
             );
+        case "getClaims":
+            return selection.type === "getClaims" && selection.nodeId === node.nodeId;
         default:
             return false;
     }
@@ -156,6 +158,9 @@ function JourneyTreeContent({ tree }: { tree: TreeNode[] }) {
                     dcId: node.metadata?.displayControlId ?? node.label,
                     metadata: (node.metadata ?? {}) as Record<string, unknown>,
                 });
+                break;
+            case "getClaims":
+                dispatch({ type: "select-gc", nodeId: node.nodeId! });
                 break;
             case "userjourney":
                 dispatch({ type: "select-root" });

@@ -11,10 +11,14 @@ import {
     createTestFixture,
     buildTraceLogInput,
     buildHeadersClip,
+    buildActionClip,
+    buildActionResult,
     buildOrchestrationManagerAction,
     buildOrchestrationResult,
     buildErrorResult,
     buildCtpStatebag,
+    buildPredicateClip,
+    buildPredicateResult,
     type TestFixture,
 } from "./fixtures";
 import { getTestSteps, getStepCount } from "./test-step-helpers";
@@ -92,6 +96,82 @@ describe("Error Handling", () => {
 
             expect(steps[0].errorMessage).toBe(errorMessage);
         });
+
+        it("should surface FatalException clips as flow-level errors even without a step context", () => {
+            const errorMessage = "Cross-origin fatal exception";
+            const hResult = "80131500";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        {
+                            Kind: "FatalException",
+                            Content: {
+                                Exception: {
+                                    Message: errorMessage,
+                                    HResult: hResult,
+                                    Data: { TechnicalProfileId: "TP-Fatal" },
+                                },
+                                Time: fixture.baseTimestamp.toISOString(),
+                            },
+                        },
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+
+            expect(getStepCount(result)).toBe(0);
+            expect(result.globalError).toMatchObject({
+                errorType: "FatalException",
+                message: errorMessage,
+                hResult,
+                data: { TechnicalProfileId: "TP-Fatal" },
+            });
+        });
+
+        it("should retain FatalException details on the active step when a step is in progress", () => {
+            const errorMessage = "Validation pipeline aborted.";
+            const hResult = "80004005";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:API"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                        {
+                            Kind: "FatalException",
+                            Content: {
+                                Exception: {
+                                    Message: errorMessage,
+                                    HResult: hResult,
+                                },
+                                Time: fixture.baseTimestamp.toISOString(),
+                            },
+                        },
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+            const steps = getTestSteps(result);
+
+            expect(steps).toHaveLength(1);
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].errorMessage).toBe(errorMessage);
+            expect(steps[0].errorHResult).toBe(hResult);
+            expect(result.globalError).toMatchObject({
+                errorType: "FatalException",
+                message: errorMessage,
+                hResult,
+            });
+        });
     });
 
     describe("Error with Technical Profile Context", () => {
@@ -138,6 +218,80 @@ describe("Error Handling", () => {
             const graphNodeId = getTestSteps(result)[0].graphNodeId;
 
             expect(result.executionMap[graphNodeId].status).toBe("Error");
+        });
+    });
+
+    describe("Global Exception Transitions", () => {
+        it("should surface ClaimsExchange exception transitions as flow-level errors", () => {
+            const errorMessage =
+                "An error was encountered while applying output claims transformations on technical profile with ID 'HRD-ValidateDomainWithLoginHint'";
+
+            const logs = [
+                buildTraceLogInput(
+                    fixture,
+                    [
+                        buildHeadersClip(fixture, "Event:AUTH"),
+                        buildOrchestrationManagerAction(),
+                        buildOrchestrationResult(2),
+                        buildActionClip("OutputClaimsTransformationHandler"),
+                        buildActionResult(true),
+                        {
+                            Kind: "Transition",
+                            Content: {
+                                EventName: "ClaimsExchange",
+                                StateName: "Microsoft.Cpim.Data.Transformations.ClaimsTransformationException",
+                            },
+                        },
+                        buildPredicateClip("NoOpHandler"),
+                        buildPredicateResult(true),
+                        buildActionClip("SendErrorHandler"),
+                        buildActionResult(
+                            true,
+                            {
+                                Values: [
+                                    {
+                                        Key: "SendErrorTechnicalProfile",
+                                        Value: "OpenIdConnectProtocolProvider",
+                                    },
+                                    {
+                                        Key: "Exception",
+                                        Value: {
+                                            Kind: "Handled",
+                                            HResult: "80131500",
+                                            Message: errorMessage,
+                                            Data: { IsPolicySpecificError: false },
+                                        },
+                                    },
+                                ],
+                            },
+                            {
+                                SE: {
+                                    c: fixture.baseTimestamp.toISOString(),
+                                    k: "SE",
+                                    v: "",
+                                    p: true,
+                                },
+                            },
+                        ),
+                        buildActionClip("TransactionEndHandler"),
+                        buildActionResult(true),
+                    ],
+                    0
+                ),
+            ];
+
+            const result = parseTrace(logs);
+            const steps = getTestSteps(result);
+
+            expect(steps).toHaveLength(1);
+            expect(steps[0].result).toBe("Success");
+            expect(result.globalError).toMatchObject({
+                errorType: "ClaimsTransformationException",
+                stateName: "Microsoft.Cpim.Data.Transformations.ClaimsTransformationException",
+                message: errorMessage,
+                hResult: "80131500",
+                data: { IsPolicySpecificError: false },
+            });
         });
     });
 

@@ -20,7 +20,9 @@ export enum ClipKind {
     Predicate = "Predicate",
     /** Result of a handler execution */
     HandlerResult = "HandlerResult",
-    /** Exception/error information */
+    /** Fatal exception/error information */
+    FatalException = "FatalException",
+    /** Legacy exception clip kind kept for backwards compatibility */
     Exception = "Exception",
 }
 
