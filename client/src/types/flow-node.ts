@@ -139,6 +139,11 @@ export interface StepError {
     readonly message: string;
     /** Exception.Data — additional diagnostic context (e.g. TechnicalProfileId, ClaimsTransformation.*) */
     readonly data?: Record<string, unknown>;
+    /**
+     * Nested inner exception chain (recursive), ordered from outermost-inner to innermost.
+     * Present when the exception wraps one or more deeper exceptions.
+     */
+    readonly innerExceptions?: readonly StepError[];
 }
 
 // ─── Root ───────────────────────────────────────────────────────────────────
