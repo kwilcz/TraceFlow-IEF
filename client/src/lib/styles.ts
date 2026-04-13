@@ -63,13 +63,13 @@ export const invalidRing = cn(
 // =============================================================================
 
 /** Fast color transition (150ms) */
-export const transitionColors = cn("transition-colors duration-150 motion-reduce:transition-none");
+export const transitionColors = "transition-[color,background-color,border-color,box-shadow] duration-150 motion-reduce:transition-none";
 
 /** Fast all-property transition (150ms) */
 export const transitionAll = cn("transition-all duration-150 motion-reduce:transition-none");
 
 /** Smooth all-property transition (250ms, ease-out) */
-export const transitionSmooth = cn("transition-all duration-250 ease-out motion-reduce:transition-none");
+export const transitionSmooth = "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-250 ease-out motion-reduce:transition-none";
 
 // =============================================================================
 // INTERACTIVE ELEMENTS

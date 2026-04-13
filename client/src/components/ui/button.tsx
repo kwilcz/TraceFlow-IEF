@@ -1,11 +1,9 @@
-"use client";
-
 import * as React from "react";
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { focusRing, disabledState, noHighlight, transitionSmooth } from "@/lib/styles";
+import { focusRingCombined, disabledState, noHighlight, transitionSmooth } from "@/lib/styles";
 
 const buttonVariants = cva(
     cn(
@@ -15,7 +13,7 @@ const buttonVariants = cva(
         // Transitions
         transitionSmooth,
         // Focus state
-        focusRing,
+        focusRingCombined,
         // Disabled state
         disabledState,
         // Active/pressed
