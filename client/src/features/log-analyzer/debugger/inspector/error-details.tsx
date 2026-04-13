@@ -19,9 +19,11 @@ export interface ErrorDetailsProps {
     diagnostics?: string;
     /** Structured key-value extra data (e.g. Exception.Data) */
     data?: Record<string, unknown>;
+    /** Nested inner exceptions, ordered outermost-inner to innermost. */
+    innerExceptions?: readonly ErrorDetailsProps[];
 }
 
-export function ErrorDetails({ errorType, kind, message, hResult, errorCode, description, diagnostics, data }: ErrorDetailsProps) {
+export function ErrorDetails({ errorType, kind, message, hResult, errorCode, description, diagnostics, data, innerExceptions }: ErrorDetailsProps) {
     return (
         <div className="bg-danger/10 border border-danger/40 rounded-md p-3 space-y-2">
             {/* Header row — always rendered */}
@@ -67,6 +69,11 @@ export function ErrorDetails({ errorType, kind, message, hResult, errorCode, des
             {data && (
                 <JsonDataSection label="Data" json={data} />
             )}
+
+            {/* Inner exception chain */}
+            {innerExceptions && innerExceptions.length > 0 && (
+                <InnerExceptionsSection exceptions={innerExceptions} />
+            )}
         </div>
     );
 }
@@ -75,13 +82,14 @@ export function ErrorDetails({ errorType, kind, message, hResult, errorCode, des
 // Adapter functions
 // ============================================================================
 
-/** Normalize StepError → ErrorDetailsProps */
+/** Normalize StepError → ErrorDetailsProps (recursive) */
 export function fromStepError(err: StepError): ErrorDetailsProps {
     return {
         kind: err.kind,
         message: err.message || undefined,
         hResult: err.hResult || undefined,
         data: err.data,
+        innerExceptions: err.innerExceptions?.map(fromStepError),
     };
 }
 
@@ -95,9 +103,9 @@ export function fromGlobalFlowError(ge: GlobalFlowError): ErrorDetailsProps {
         description: ge.description,
         diagnostics: ge.diagnostics,
         data: ge.data,
+        innerExceptions: ge.innerExceptions?.map(fromStepError),
     };
 }
-
 /** Normalize UiSettings inline error → ErrorDetailsProps | null. Returns null if no error data. */
 export function fromUiSettingsError(ui: UiSettings): ErrorDetailsProps | null {
     if (!ui.errorMessage && !ui.errorCode && !ui.errorHResult) return null;
@@ -111,6 +119,39 @@ export function fromUiSettingsError(ui: UiSettings): ErrorDetailsProps | null {
 // ============================================================================
 // Shared sub-components
 // ============================================================================
+
+/**
+ * Collapsible section listing inner (nested) exceptions.
+ * Each level is rendered recursively via ErrorDetails, indented to convey depth.
+ */
+function InnerExceptionsSection({ exceptions }: { exceptions: readonly ErrorDetailsProps[] }) {
+    const [open, setOpen] = useState(false);
+    const count = exceptions.length;
+
+    return (
+        <div className="space-y-0.5">
+            <button
+                type="button"
+                onClick={() => setOpen((s) => !s)}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+                {open ? "▾ Hide" : "▸ Show"} inner exception{count !== 1 ? "s" : ""}
+                <span className="font-normal ml-1">({count})</span>
+            </button>
+
+            {open && (
+                <div className="mt-1 pl-3 border-l-2 border-danger/30 space-y-2">
+                    {exceptions.map((ex, i) => (
+                        /* TODO: when ex.data["identifierClaimMapping.PolicyClaimType.Id"] is present,
+                         * render a claim view badge/link for the referenced claim type.
+                         * Claim view component not yet implemented. */
+                        <ErrorDetails key={i} {...ex} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 /**
  * Collapsible key-value section for JSON data (Exception.Data, diagnostics).
