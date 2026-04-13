@@ -10,7 +10,7 @@
  */
 
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
-import type { HandlerResultContent, RecorderRecordEntry } from "@/types/journey-recorder";
+import type { ExceptionContent, HandlerResultContent, RecorderRecordEntry } from "@/types/journey-recorder";
 
 /**
  * Handler names for error-related handlers.
@@ -55,16 +55,34 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
             // When SendErrorHandler fires during a global exception context — surface as
             // flow-level globalError rather than creating a step-level error node.
             if (isErrorHandler && context.pendingGlobalError) {
-                return this.successNoOp({
+                const stepErrorEntry = errorInfo.message
+                    ? [{
+                        kind: "Handled" as const,
+                        hResult: errorInfo.hResult ?? "",
+                        message: errorInfo.message,
+                        data: errorInfo.data,
+                    }]
+                    : undefined;
+
+                return {
+                    success: true,
+                    createStep: false,
+                    finalizeStep: false,
                     statebagUpdates,
                     claimsUpdates,
+                    ...(errorInfo.message !== undefined && {
+                        stepResult: "Error" as const,
+                        error: errorInfo.message,
+                        errorHResult: errorInfo.hResult,
+                        stepErrors: stepErrorEntry,
+                    }),
                     globalError: {
                         ...context.pendingGlobalError,
                         ...(errorInfo.message !== undefined && { message: errorInfo.message }),
                         ...(errorInfo.hResult !== undefined && { hResult: errorInfo.hResult }),
                         ...(errorInfo.data !== undefined && { data: errorInfo.data }),
                     },
-                });
+                };
             }
 
             if (errorInfo.message) {
@@ -103,10 +121,11 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
     private extractErrorInfo(result: HandlerResultContent): { message?: string; hResult?: string; data?: Record<string, unknown> } {
         // First check for direct Exception
         if (result.Exception?.Message) {
+            const specific = this.findMostSpecificException(result.Exception);
             return {
-                message: result.Exception.Message,
-                hResult: result.Exception.HResult,
-                data: result.Exception.Data as Record<string, unknown> | undefined,
+                message: specific.Message,
+                hResult: specific.HResult,
+                data: specific.Data as Record<string, unknown> | undefined,
             };
         }
 
@@ -118,12 +137,13 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                     if (validationValues) {
                         for (const v of validationValues) {
                             if (v.Key === "Exception" && typeof v.Value === "object") {
-                                const exception = v.Value as { Message?: string; HResult?: string; Data?: Record<string, unknown> };
+                                const exception = v.Value as ExceptionContent;
                                 if (exception.Message) {
+                                    const specific = this.findMostSpecificException(exception);
                                     return {
-                                        message: exception.Message,
-                                        hResult: exception.HResult,
-                                        data: exception.Data,
+                                        message: specific.Message,
+                                        hResult: specific.HResult,
+                                        data: specific.Data as Record<string, unknown> | undefined,
                                     };
                                 }
                             }
@@ -133,12 +153,13 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
 
                 // Check for direct Exception entry
                 if (entry.Key === "Exception" && typeof entry.Value === "object") {
-                    const exception = entry.Value as { Message?: string; HResult?: string; Data?: Record<string, unknown> };
+                    const exception = entry.Value as ExceptionContent;
                     if (exception.Message) {
+                        const specific = this.findMostSpecificException(exception);
                         return {
-                            message: exception.Message,
-                            hResult: exception.HResult,
-                            data: exception.Data,
+                            message: specific.Message,
+                            hResult: specific.HResult,
+                            data: specific.Data as Record<string, unknown> | undefined,
                         };
                     }
                 }
@@ -146,6 +167,30 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
         }
 
         return {};
+    }
+
+    /**
+     * Traverses a nested exception chain and returns the most specific exception.
+     * Prefers the first nested exception that has "technicalProfile.Id" in its Data.
+     * Falls back to the first nested exception, then to the root exception.
+     */
+    private findMostSpecificException(exception: ExceptionContent): ExceptionContent {
+        let current: ExceptionContent | undefined = exception.Exception;
+        let withTpId: ExceptionContent | undefined;
+        let firstNested: ExceptionContent | undefined;
+
+        while (current) {
+            if (firstNested === undefined) {
+                firstNested = current;
+            }
+            if (current.Data && "technicalProfile.Id" in current.Data) {
+                withTpId = current;
+                break;
+            }
+            current = current.Exception;
+        }
+
+        return withTpId ?? firstNested ?? exception;
     }
 
     /**

@@ -284,7 +284,8 @@ describe("Error Handling", () => {
             const steps = getTestSteps(result);
 
             expect(steps).toHaveLength(1);
-            expect(steps[0].result).toBe("Success");
+            expect(steps[0].result).toBe("Error");
+            expect(steps[0].errorMessage).toContain("was encountered");
             expect(result.globalError).toMatchObject({
                 errorType: "ClaimsTransformationException",
                 stateName: "Microsoft.Cpim.Data.Transformations.ClaimsTransformationException",
