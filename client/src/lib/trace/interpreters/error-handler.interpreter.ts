@@ -11,6 +11,7 @@
 
 import { BaseInterpreter, type InterpretContext, type InterpretResult } from "./base-interpreter";
 import type { ExceptionContent, HandlerResultContent, RecorderRecordEntry } from "@/types/journey-recorder";
+import type { StepError } from "@/types/flow-node";
 
 /**
  * Handler names for error-related handlers.
@@ -61,6 +62,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                         hResult: errorInfo.hResult ?? "",
                         message: errorInfo.message,
                         data: errorInfo.data,
+                        innerExceptions: errorInfo.innerExceptions,
                     }]
                     : undefined;
 
@@ -81,6 +83,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                         ...(errorInfo.message !== undefined && { message: errorInfo.message }),
                         ...(errorInfo.hResult !== undefined && { hResult: errorInfo.hResult }),
                         ...(errorInfo.data !== undefined && { data: errorInfo.data }),
+                        ...(errorInfo.innerExceptions !== undefined && { innerExceptions: errorInfo.innerExceptions }),
                     },
                 };
             }
@@ -102,6 +105,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                         hResult: errorInfo.hResult ?? "",
                         message: errorInfo.message!,
                         data: errorInfo.data,
+                        innerExceptions: errorInfo.innerExceptions,
                     }],
                     actionHandler: this.getActionHandlerName(handlerName),
                 };
@@ -116,9 +120,9 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
     }
 
     /**
-     * Extracts error information (message, HResult, and Data) from handler result.
+     * Extracts error information (message, HResult, Data, and inner exception chain) from handler result.
      */
-    private extractErrorInfo(result: HandlerResultContent): { message?: string; hResult?: string; data?: Record<string, unknown> } {
+    private extractErrorInfo(result: HandlerResultContent): { message?: string; hResult?: string; data?: Record<string, unknown>; innerExceptions?: readonly StepError[] } {
         // First check for direct Exception
         if (result.Exception?.Message) {
             const specific = this.findMostSpecificException(result.Exception);
@@ -126,6 +130,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                 message: specific.Message,
                 hResult: specific.HResult,
                 data: specific.Data as Record<string, unknown> | undefined,
+                innerExceptions: this.buildInnerExceptionChain(specific.Exception),
             };
         }
 
@@ -144,6 +149,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                                         message: specific.Message,
                                         hResult: specific.HResult,
                                         data: specific.Data as Record<string, unknown> | undefined,
+                                        innerExceptions: this.buildInnerExceptionChain(specific.Exception),
                                     };
                                 }
                             }
@@ -160,6 +166,7 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
                             message: specific.Message,
                             hResult: specific.HResult,
                             data: specific.Data as Record<string, unknown> | undefined,
+                            innerExceptions: this.buildInnerExceptionChain(specific.Exception),
                         };
                     }
                 }
@@ -191,6 +198,23 @@ export class ErrorHandlerInterpreter extends BaseInterpreter {
         }
 
         return withTpId ?? firstNested ?? exception;
+    }
+
+    /**
+     * Recursively builds an inner exception chain from a nested ExceptionContent.
+     * Returns a single-element array containing the exception and its descendants,
+     * or undefined if the exception is absent.
+     * The chain starts at the exception BELOW the most-specific primary exception.
+     */
+    private buildInnerExceptionChain(exception: ExceptionContent | undefined): readonly StepError[] | undefined {
+        if (!exception) return undefined;
+        return [{
+            kind: (exception.Kind ?? "Unhandled") as "Handled" | "Unhandled",
+            hResult: exception.HResult ?? "",
+            message: exception.Message,
+            data: exception.Data as Record<string, unknown> | undefined,
+            innerExceptions: this.buildInnerExceptionChain(exception.Exception),
+        }];
     }
 
     /**
