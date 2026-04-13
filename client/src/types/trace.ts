@@ -6,7 +6,7 @@
  * into a coherent timeline for visualization.
  */
 
-import type { FlowNode } from "./flow-node";
+import type { FlowNode, StepError } from "./flow-node";
 
 /**
  * Result of a trace step execution.
@@ -36,6 +36,12 @@ export interface GlobalFlowError {
     hResult?: string;
     /** Structured exception data from FatalException.Exception.Data */
     data?: Record<string, unknown>;
+    /**
+     * Inner exception chain for the global error (outermost-inner to innermost).
+     * Mirrors StepError.innerExceptions — allows the root renderer to show full nesting.
+     * TODO: exception.processor.ts (FatalException path) does not yet populate this field.
+     */
+    innerExceptions?: readonly StepError[];
 }
 
 /**
