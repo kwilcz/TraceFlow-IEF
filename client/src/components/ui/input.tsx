@@ -25,6 +25,7 @@ const inputVariants = cva(
             variant: {
                 primary: "",
                 secondary: "shadow-none bg-default hover:bg-default-hover focus:bg-default",
+                ghost: "border-0 shadow-none bg-transparent"
             },
         },
         defaultVariants: {

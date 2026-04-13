@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 // NOTE: useEffect kept for View Source navigation (cross-component coordination via context)
 import { CopyIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import { getLogsForFlow } from "@/lib/trace";
 import { formatJsonPayload } from "@/lib/formatters/json-formatters";
 import { useDebuggerContext } from "../debugger-context";
 import { RawLogCode } from "./raw-log-code";
+import { useLogSearch } from "@hooks/use-log-search";
+import FloatingSearch, { type FloatingSearchRef } from "@/components/ui/floating-search";
 import type { LogRecord } from "@/types/logs";
 
 // ============================================================================
@@ -50,6 +52,9 @@ export function RawLogViewer() {
     // ── Active log index ────────────────────────────────────────────────
     // Reset when flow changes is handled by key={selectedFlowId} on <RawLogViewer>
     const [activeLogIndex, setActiveLogIndex] = useState(0);
+    const [searchScope, setSearchScope] = useState<'all' | 'current'>('all');
+    const [caseSensitive, setCaseSensitive] = useState(false);
+    const [wholeWord, setWholeWord] = useState(false);
 
     // ── "View Source" auto-navigation ───────────────────────────────────
     useEffect(() => {
@@ -64,29 +69,29 @@ export function RawLogViewer() {
 
     // ── Per-logId JSON format cache ──────────────────────────────────────
     // Cache is fresh on mount; component remounts on flow change via key={selectedFlowId}
-    const activeLog = flowLogs[activeLogIndex] ?? null;
     const jsonCacheRef = useRef(new Map<string, string>());
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- cache lookup uses activeLog but only recomputes on id change
-    const formattedJson = useMemo(() => {
-        if (!activeLog) return "";
-        const existing = jsonCacheRef.current.get(activeLog.id);
-        if (existing !== undefined) return existing;
-        const formatted = formatJsonPayload(activeLog.parsedPayload);
-        jsonCacheRef.current.set(activeLog.id, formatted);
-        return formatted;
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: use .id for referential stability
-    }, [activeLog?.id]);
+    const allLogJsons = useMemo(() => {
+        return flowLogs.map((log) => {
+            return jsonCacheRef.current.get(log.id) ?? formatJsonPayload(log.parsedPayload);
+        });
+    }, [flowLogs]);
+
+    useLayoutEffect(() => {
+        flowLogs.forEach((log, idx) => {
+            if (!jsonCacheRef.current.has(log.id)) {
+                jsonCacheRef.current.set(log.id, allLogJsons[idx]);
+            }
+        });
+    }, [flowLogs, allLogJsons]);
+
+    const formattedJson = allLogJsons[activeLogIndex] ?? "";
 
     // ── Line count for footer ────────────────────────────────────────────
-    const lineCount = useMemo(() => {
-        if (!formattedJson) return 0;
-        let count = 1;
-        for (let i = 0; i < formattedJson.length; i++) {
-            if (formattedJson.charCodeAt(i) === 10) count++;
-        }
-        return count;
-    }, [formattedJson]);
+    const lineCount = useMemo(
+        () => (formattedJson.match(/\n/g)?.length ?? 0) + 1,
+        [formattedJson]
+    );
 
     // ── Copy handler ────────────────────────────────────────────────────
     const handleCopy = useCallback(() => {
@@ -95,6 +100,69 @@ export function RawLogViewer() {
             () => toast.error("Failed to copy JSON"),
         );
     }, [formattedJson]);
+
+    // ── Search setup ─────────────────────────────────────────────────────
+    const search = useLogSearch({ logJsons: allLogJsons, scope: searchScope, currentLogIndex: activeLogIndex, caseSensitive, wholeWord });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const searchRef = useRef<FloatingSearchRef>(null);
+
+    // Track current scroll line per active tab (for "from cursor")
+    const scrollLineRef = useRef(0);
+    const handleScrollLineChange = useCallback((line: number) => {
+        scrollLineRef.current = line;
+    }, []);
+
+    // CTRL+F keyboard handler — stable ref pattern avoids re-registration on search object change
+    const searchStateRef = useRef(search);
+    useEffect(() => { searchStateRef.current = search; });
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const s = searchStateRef.current;
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                if (!containerRef.current?.contains(document.activeElement)) return;
+                e.preventDefault();
+                s.setAnchor(activeLogIndex, scrollLineRef.current);
+                const wasAlreadyVisible = s.isVisible;
+                s.show();
+                const selection = window.getSelection()?.toString().trim();
+                if (selection) {
+                    s.setSearchTerm(selection);
+                }
+                // If already visible (re-press CTRL+F), component won't remount — focus+select manually
+                if (wasAlreadyVisible) {
+                    searchRef.current?.focus();
+                    searchRef.current?.select();
+                }
+                // Otherwise: FloatingSearch mount useEffect handles focus+select
+            }
+            if (e.key === 'Escape' && s.isVisible) s.hide();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [activeLogIndex]); // only re-register when activeLogIndex changes
+
+    // Auto-switch tabs when active match is in a different log
+    useEffect(() => {
+        if (search.currentMatch && search.currentMatch.logIndex !== activeLogIndex) {
+            setActiveLogIndex(search.currentMatch.logIndex);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search.currentMatch]); // intentionally omit activeLogIndex — auto-switch only on match navigation, not manual tab switch
+
+    // ── Highlight props for RawLogCode ───────────────────────────────────
+    const { isVisible: searchIsVisible, getMatchLinesForLog, currentMatch: searchCurrentMatch } = search;
+    const highlightLines = useMemo(
+        () => (searchIsVisible ? getMatchLinesForLog(activeLogIndex) : undefined),
+        [searchIsVisible, getMatchLinesForLog, activeLogIndex]
+    );
+    const focusedLine = useMemo(
+        () =>
+            searchIsVisible && searchCurrentMatch?.logIndex === activeLogIndex
+                ? searchCurrentMatch.lineIndex
+                : null,
+        [searchIsVisible, searchCurrentMatch, activeLogIndex]
+    );
 
     // ── Empty state ─────────────────────────────────────────────────────
     if (!selectedFlowId || flowLogs.length === 0) {
@@ -106,6 +174,7 @@ export function RawLogViewer() {
     }
 
     return (
+        <div ref={containerRef} className="h-full flex flex-col min-h-0">
         <Tabs
             value={String(activeLogIndex)}
             onValueChange={(v) => setActiveLogIndex(Number(v))}
@@ -117,7 +186,7 @@ export function RawLogViewer() {
                     const event = getEventInstance(log);
                     return (
                         <TabsTrigger
-                            key={idx}
+                            key={log.id}
                             value={String(idx)}
                             className="text-xs px-3 py-1 whitespace-nowrap"
                         >
@@ -133,7 +202,38 @@ export function RawLogViewer() {
                 value={String(activeLogIndex)}
                 className="relative flex-1 min-h-0"
             >
-                <RawLogCode code={formattedJson} />
+                <RawLogCode
+                    code={formattedJson}
+                    highlightLines={highlightLines}
+                    focusedLine={focusedLine}
+                    onScrollLineChange={handleScrollLineChange}
+                />
+                {search.isVisible && (
+                    <FloatingSearch ref={searchRef}>
+                        <FloatingSearch.Input
+                            value={search.searchTerm}
+                            onChange={search.setSearchTerm}
+                            onNavigateNext={search.navigateToNext}
+                            onNavigatePrevious={search.navigateToPrevious}
+                            onClose={search.hide}
+                        />
+                        <FloatingSearch.Separator />
+                        <FloatingSearch.Results
+                            searchTerm={search.searchTerm}
+                            matchCount={search.matches.length}
+                            currentMatchIndex={search.currentMatchIndex}
+                            onNavigateNext={search.navigateToNext}
+                            onNavigatePrevious={search.navigateToPrevious}
+                        />
+                        <FloatingSearch.Separator />
+                        <FloatingSearch.Filters>
+                            <FloatingSearch.Filters.Nested scope={searchScope} onScopeChange={setSearchScope} />
+                            <FloatingSearch.Filters.CaseSensitive value={caseSensitive} onChange={setCaseSensitive} />
+                            <FloatingSearch.Filters.WholeWord value={wholeWord} onChange={setWholeWord} />
+                        </FloatingSearch.Filters>
+                        <FloatingSearch.Close onClose={search.hide} />
+                    </FloatingSearch>
+                )}
                 <Button
                     onClick={handleCopy}
                     size="icon-md"
@@ -151,5 +251,6 @@ export function RawLogViewer() {
                 <span>Log {activeLogIndex + 1}/{flowLogs.length}</span>
             </div>
         </Tabs>
+        </div>
     );
 }
