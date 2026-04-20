@@ -94,3 +94,4 @@ UpgradeLog*.XML
 
 .github/*
 !.github/workflows/
+!.github/matchers/
