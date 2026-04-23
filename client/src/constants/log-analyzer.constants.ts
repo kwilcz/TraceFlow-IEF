@@ -11,14 +11,29 @@ export const GUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[8
 export const ISO_DURATION_REGEX = /^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(\d+M)?(\d+S)?)?$/i;
 
 /**
- * LocalStorage key for persisting Application Insights credentials.
+ * LocalStorage key for persisted credential environments.
  */
-export const CREDENTIALS_STORAGE_KEY = "designer:analyzeLogsCredentials";
+export const LOCAL_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY = "designer:analyzeLogsCredentials";
 
 /**
- * SessionStorage key for session-scoped Application Insights credentials.
+ * SessionStorage key for tab-scoped credential environments.
  */
-export const SESSION_CREDENTIALS_STORAGE_KEY = "designer:analyzeLogsCredentials:session";
+export const SESSION_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY = "designer:analyzeLogsCredentials:session";
+
+/**
+ * LocalStorage key for the active credential environment id.
+ */
+export const ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY = "designer:analyzeLogsCredentials:activeEnvironmentId";
+
+/**
+ * Backward-compatible alias for the local credential environments storage key.
+ */
+export const CREDENTIALS_STORAGE_KEY = LOCAL_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY;
+
+/**
+ * Backward-compatible alias for the session credential environments storage key.
+ */
+export const SESSION_CREDENTIALS_STORAGE_KEY = SESSION_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY;
 
 /**
  * Predefined timespan options for Application Insights queries.
