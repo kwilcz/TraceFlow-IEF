@@ -11,6 +11,29 @@ export interface LogCredentials {
 }
 
 /**
+ * Supported log credential authentication mechanisms.
+ */
+export type LogCredentialAuthType = "app-insights";
+
+/**
+ * Named credential environment for the log analyzer.
+ */
+export interface LogCredentialEnvironment extends LogCredentials {
+    id: string;
+    name: string;
+    readonly authType: LogCredentialAuthType;
+    persist: boolean;
+}
+
+/**
+ * Combined credential environments restored from browser storage.
+ */
+export interface StoredLogCredentialEnvironments {
+    activeEnvironmentId: string | null;
+    environments: LogCredentialEnvironment[];
+}
+
+/**
  * User preferences for log queries.
  */
 export interface LogPreferences {

@@ -1,6 +1,6 @@
 import React from "react";
 import { useShallow } from "zustand/react/shallow";
-import { CaretDownIcon, GearIcon, MagnifyingGlassIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, MagnifyingGlassIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import * as card from "@/components/ui/card";
 import * as Field from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
@@ -19,10 +19,11 @@ import {
 import { LOG_LIMITS, TIMESPAN_OPTIONS } from "@/constants/log-analyzer.constants";
 import { clampRowCount, validateIsoDuration } from "@/lib/validators/log-validators";
 import { useLogStore } from "@/stores/log-store";
+import { EnvironmentPicker } from "@/features/log-analyzer/environment-picker";
 
 /** Props for the {@link QueryControls} component. */
 export type QueryControlsProps = {
-    /** Opens the credentials dialog so the user can change connection settings. */
+    /** Opens the environment manager so the user can switch or edit environments. */
     onOpenSettings: () => void;
     children?: React.ReactNode;
 };
@@ -96,11 +97,20 @@ const getTimespanLabel = (choice: string, customValue: string): string => {
 /**
  * Query controls toolbar for the log analyzer workspace.
  *
- * Renders a search input, timespan chip dropdown, max-rows chip dropdown,
- * and a credentials settings button in a responsive grid layout.
+ * Renders an environment picker, search input, and query option chips in a responsive grid layout.
  */
 export const QueryControls = ({ onOpenSettings, children }: QueryControlsProps) => {
-    const { fetchLogs, setSearchText, isLoading, credentials, preferences, searchText } = useLogStore(
+    const {
+        fetchLogs,
+        setSearchText,
+        isLoading,
+        credentials,
+        preferences,
+        searchText,
+        credentialEnvironments,
+        activeEnvironmentId,
+        setActiveEnvironment,
+    } = useLogStore(
         useShallow((state) => ({
             fetchLogs: state.fetchLogs,
             setSearchText: state.setSearchText,
@@ -108,6 +118,9 @@ export const QueryControls = ({ onOpenSettings, children }: QueryControlsProps) 
             credentials: state.credentials,
             preferences: state.preferences,
             searchText: state.searchText,
+            credentialEnvironments: state.credentialEnvironments,
+            activeEnvironmentId: state.activeEnvironmentId,
+            setActiveEnvironment: state.setActiveEnvironment,
         })),
     );
 
@@ -151,10 +164,12 @@ export const QueryControls = ({ onOpenSettings, children }: QueryControlsProps) 
             <card.CardContent>
                 <div className="grid w-full grid-cols-[auto_1fr] items-center gap-3 min-[1200px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[1200px]:gap-4">
                     <div className="col-start-1 row-start-2 justify-self-start min-[1200px]:row-start-1">
-                        <Button variant="secondary" size="xs" onClick={onOpenSettings}>
-                            <GearIcon />
-                            Credentials
-                        </Button>
+                        <EnvironmentPicker
+                            environments={credentialEnvironments}
+                            activeEnvironmentId={activeEnvironmentId}
+                            onSelectEnvironment={setActiveEnvironment}
+                            onManageEnvironments={onOpenSettings}
+                        />
                     </div>
 
                     <div className="col-span-2 w-full justify-self-stretch min-[1200px]:col-span-1 min-[1200px]:col-start-2 min-[1200px]:max-w-xl min-[1200px]:justify-self-center">
