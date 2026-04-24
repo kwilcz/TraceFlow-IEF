@@ -21,19 +21,9 @@ export const LOCAL_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY = "designer:analyzeLogsCr
 export const SESSION_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY = "designer:analyzeLogsCredentials:session";
 
 /**
- * LocalStorage key for the active credential environment id.
+ * SessionStorage key for the active credential environment id.
  */
 export const ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY = "designer:analyzeLogsCredentials:activeEnvironmentId";
-
-/**
- * Backward-compatible alias for the local credential environments storage key.
- */
-export const CREDENTIALS_STORAGE_KEY = LOCAL_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY;
-
-/**
- * Backward-compatible alias for the session credential environments storage key.
- */
-export const SESSION_CREDENTIALS_STORAGE_KEY = SESSION_CREDENTIAL_ENVIRONMENTS_STORAGE_KEY;
 
 /**
  * Predefined timespan options for Application Insights queries.

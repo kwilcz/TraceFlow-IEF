@@ -1,29 +1,92 @@
-import { create } from "zustand";
-import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { FetchLogsArgs, LogRecord, LogStore, LogStoreActions, LogStoreState } from "@/types/logs";
-import { LOG_LIMITS, APP_INSIGHTS_CONFIG } from "@/constants/log-analyzer.constants";
-import { getLogsForFlow } from "@/lib/trace";
-import { collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
+import { APP_INSIGHTS_CONFIG, LOG_LIMITS } from "@/constants/log-analyzer.constants";
 import { TraceActions, TraceState, initialTraceState } from "@/features/log-analyzer/model/trace-state";
+import { analyzeAllFlows, type FlowAnalysisCache } from "@/features/log-analyzer/services/background-flow-enrichment-service";
 import { runTwoPhaseLogFetchOrchestration } from "@/features/log-analyzer/services/log-fetch-orchestration-service";
 import {
-    resolveSelectionFromFlow,
-    resolveSelectionFromLog,
+    resolveSelectionFromLog
 } from "@/features/log-analyzer/services/log-selection-service";
-import { generateTraceStateFromLogs, enrichUserFlow } from "@/features/log-analyzer/services/trace-bootstrap-service";
-import { analyzeAllFlows, type FlowAnalysisCache } from "@/features/log-analyzer/services/background-flow-enrichment-service";
+import { enrichUserFlow, generateTraceStateFromLogs } from "@/features/log-analyzer/services/trace-bootstrap-service";
+import { persistActiveCredentialEnvironmentId } from "@/hooks/use-credential-persistence";
+import { getLogsForFlow } from "@/lib/trace";
+import { collectStepNodes } from "@/lib/trace/domain/flow-node-utils";
+import {
+    FetchLogsArgs,
+    LogCredentialEnvironment,
+    LogCredentials,
+    LogStore,
+    LogStoreActions,
+    StoredLogCredentialEnvironments
+} from "@/types/logs";
+import { create } from "zustand";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 
 let pendingComputeId: symbol | null = null;
 /** Module-level trace cache — stores full parse results per flow for instant switching. */
-let traceCache = new Map<string, FlowAnalysisCache>();
+const traceCache = new Map<string, FlowAnalysisCache>();
 /** AbortController for background analysis — cancelled on new fetchLogs/reset. */
 let backgroundAbort: AbortController | null = null;
 
-const initialState: Omit<LogStore, keyof LogStoreActions> & TraceState = {
+type CredentialEnvironmentState = {
+    credentialEnvironments: LogCredentialEnvironment[];
+    activeEnvironmentId: string | null;
+};
+
+type CredentialEnvironmentActions = {
+    setCredentialEnvironments: (payload: StoredLogCredentialEnvironments) => void;
+    setActiveEnvironment: (environmentId: string | null) => void;
+};
+
+const resolveActiveEnvironment = (
+    environments: LogCredentialEnvironment[],
+    environmentId: string | null,
+): LogCredentialEnvironment | null => {
+    if (!environmentId) {
+        return null;
+    }
+
+    return environments.find((environment) => environment.id === environmentId) ?? null;
+};
+
+const resolveDerivedCredentials = (
+    environments: LogCredentialEnvironment[],
+    environmentId: string | null,
+): LogCredentials => {
+    const activeEnvironment = resolveActiveEnvironment(environments, environmentId);
+
+    return activeEnvironment
+        ? {
+            applicationId: activeEnvironment.applicationId,
+            apiKey: activeEnvironment.apiKey,
+        }
+        : {
+            applicationId: "",
+            apiKey: "",
+        };
+};
+
+const syncActiveEnvironmentCredentials = (
+    environments: LogCredentialEnvironment[],
+    activeEnvironmentId: string | null,
+    credentials: Partial<LogCredentials>,
+): LogCredentialEnvironment[] => {
+    if (!activeEnvironmentId) {
+        return environments;
+    }
+
+    return environments.map((environment) =>
+        environment.id === activeEnvironmentId
+            ? { ...environment, ...credentials }
+            : environment,
+    );
+};
+
+const initialState: Omit<LogStore, keyof LogStoreActions> & TraceState & CredentialEnvironmentState = {
     credentials: {
         applicationId: "",
         apiKey: "",
     },
+    credentialEnvironments: [],
+    activeEnvironmentId: null,
     preferences: {
         maxRows: LOG_LIMITS.DEFAULT_ROWS,
         timespan: APP_INSIGHTS_CONFIG.DEFAULT_TIMESPAN,
@@ -36,7 +99,11 @@ const initialState: Omit<LogStore, keyof LogStoreActions> & TraceState = {
     ...initialTraceState,
 };
 
-export type ExtendedLogStore = LogStore & TraceState & TraceActions;
+export type ExtendedLogStore = LogStore &
+    TraceState &
+    TraceActions &
+    CredentialEnvironmentState &
+    CredentialEnvironmentActions;
 
 export const useLogStore = create<ExtendedLogStore>()(
     devtools(
@@ -46,7 +113,41 @@ export const useLogStore = create<ExtendedLogStore>()(
                 setCredentials: (credentials) =>
                     set((state) => ({
                         credentials: { ...state.credentials, ...credentials },
+                        credentialEnvironments: syncActiveEnvironmentCredentials(
+                            state.credentialEnvironments,
+                            state.activeEnvironmentId,
+                            credentials,
+                        ),
                     })),
+                setCredentialEnvironments: ({ environments, activeEnvironmentId }) => {
+                    const resolvedActiveEnvironmentId = resolveActiveEnvironment(
+                        environments,
+                        activeEnvironmentId,
+                    )?.id ?? null;
+
+                    set({
+                        credentialEnvironments: environments,
+                        activeEnvironmentId: resolvedActiveEnvironmentId,
+                        credentials: resolveDerivedCredentials(environments, resolvedActiveEnvironmentId),
+                    });
+                },
+                setActiveEnvironment: (environmentId) => {
+                    const { credentialEnvironments } = get();
+                    const resolvedActiveEnvironmentId = resolveActiveEnvironment(
+                        credentialEnvironments,
+                        environmentId,
+                    )?.id ?? null;
+
+                    persistActiveCredentialEnvironmentId(resolvedActiveEnvironmentId);
+
+                    set({
+                        activeEnvironmentId: resolvedActiveEnvironmentId,
+                        credentials: resolveDerivedCredentials(
+                            credentialEnvironments,
+                            resolvedActiveEnvironmentId,
+                        ),
+                    });
+                },
                 setPreferences: (preferences) =>
                     set((state) => ({
                         preferences: { ...state.preferences, ...preferences },
@@ -96,9 +197,15 @@ export const useLogStore = create<ExtendedLogStore>()(
                             },
                             searchText,
                         });
+                        const { activeEnvironmentId, credentialEnvironments } = get();
 
                         set({
                             credentials: { applicationId, apiKey },
+                            credentialEnvironments: syncActiveEnvironmentCredentials(
+                                credentialEnvironments,
+                                activeEnvironmentId,
+                                { applicationId, apiKey },
+                            ),
                             preferences: { maxRows: effectiveMaxRows, timespan },
                             logs: processed,
                             selectedLog,

@@ -14,6 +14,7 @@ import type {
 const APP_INSIGHTS_AUTH_TYPE: LogCredentialAuthType = "app-insights";
 const DEFAULT_ENVIRONMENT_ID = "default";
 const DEFAULT_ENVIRONMENT_NAME = "Default";
+const NO_ACTIVE_ENVIRONMENT_SENTINEL = "";
 
 type StorageScope = "local" | "session";
 
@@ -41,7 +42,6 @@ const parseStoredEnvironment = (value: unknown, persist: boolean): LogCredential
     if (
         typeof value.id !== "string" ||
         typeof value.name !== "string" ||
-        typeof value.persist !== "boolean" ||
         value.authType !== APP_INSIGHTS_AUTH_TYPE
     ) {
         return null;
@@ -53,6 +53,7 @@ const parseStoredEnvironment = (value: unknown, persist: boolean): LogCredential
         authType: APP_INSIGHTS_AUTH_TYPE,
         applicationId: credentials.applicationId,
         apiKey: credentials.apiKey,
+        // The storage bucket determines persistence; ignore any serialized flag.
         persist,
     };
 };
@@ -118,14 +119,17 @@ const loadCredentialEnvironmentsFromStorage = (): StoredLogCredentialEnvironment
     );
     const environments = [...localEnvironments, ...sessionEnvironments];
 
-    const storedActiveEnvironmentId = window.localStorage.getItem(
+    const storedActiveEnvironmentId = window.sessionStorage.getItem(
         ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY,
     );
-    const activeEnvironmentId = environments.some(
-        (environment) => environment.id === storedActiveEnvironmentId,
-    )
-        ? storedActiveEnvironmentId
-        : (environments[0]?.id ?? null);
+    const activeEnvironmentId =
+        storedActiveEnvironmentId === NO_ACTIVE_ENVIRONMENT_SENTINEL
+            ? null
+            : environments.some((environment) => environment.id === storedActiveEnvironmentId)
+                ? storedActiveEnvironmentId
+                : storedActiveEnvironmentId === null
+                    ? (environments[0]?.id ?? null)
+                    : null;
 
     return {
         activeEnvironmentId,
@@ -141,6 +145,29 @@ const getActiveEnvironment = (
 const hasPersistedActiveEnvironment = (): boolean =>
     getActiveEnvironment(loadCredentialEnvironmentsFromStorage())?.persist ?? false;
 
+export const persistActiveCredentialEnvironmentId = (
+    activeEnvironmentId: string | null,
+): void => {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.localStorage.removeItem(ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY);
+
+    if (activeEnvironmentId) {
+        window.sessionStorage.setItem(
+            ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY,
+            activeEnvironmentId,
+        );
+        return;
+    }
+
+    window.sessionStorage.setItem(
+        ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY,
+        NO_ACTIVE_ENVIRONMENT_SENTINEL,
+    );
+};
+
 const saveCredentialEnvironmentsToStorage = (
     environments: LogCredentialEnvironment[],
     activeEnvironmentId: string | null,
@@ -154,27 +181,24 @@ const saveCredentialEnvironmentsToStorage = (
 
     writeStoredEnvironments(localEnvironments, "local");
     writeStoredEnvironments(sessionEnvironments, "session");
-
-    if (activeEnvironmentId) {
-        window.localStorage.setItem(
-            ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY,
-            activeEnvironmentId,
-        );
-        return;
-    }
-
-    window.localStorage.removeItem(ACTIVE_CREDENTIAL_ENVIRONMENT_ID_STORAGE_KEY);
-}
+    persistActiveCredentialEnvironmentId(activeEnvironmentId);
+};
 
 const upsertEnvironment = (
     environments: LogCredentialEnvironment[],
     environment: LogCredentialEnvironment,
 ): LogCredentialEnvironment[] => {
-    const nextEnvironments = environments.filter(
-        (existingEnvironment) => existingEnvironment.id !== environment.id,
+    const existingIndex = environments.findIndex(
+        (existingEnvironment) => existingEnvironment.id === environment.id,
     );
-    nextEnvironments.push(environment);
-    return nextEnvironments;
+
+    if (existingIndex === -1) {
+        return [...environments, environment];
+    }
+
+    return environments.map((existingEnvironment, index) =>
+        index === existingIndex ? environment : existingEnvironment,
+    );
 };
 
 export const useCredentialPersistence = () => {
@@ -186,21 +210,43 @@ export const useCredentialPersistence = () => {
         const normalizedEnvironment: LogCredentialEnvironment = {
             ...environment,
             authType: APP_INSIGHTS_AUTH_TYPE,
-            persist: environment.persist,
         };
         const stored = loadCredentialEnvironmentsFromStorage();
         const environments = upsertEnvironment(stored.environments, normalizedEnvironment);
+        const nextActiveEnvironmentId = stored.activeEnvironmentId ?? normalizedEnvironment.id;
 
-        saveCredentialEnvironmentsToStorage(environments, normalizedEnvironment.id);
-        setShouldSave(normalizedEnvironment.persist);
+        saveCredentialEnvironmentsToStorage(environments, nextActiveEnvironmentId);
+        setShouldSave(
+            getActiveEnvironment({
+                activeEnvironmentId: nextActiveEnvironmentId,
+                environments,
+            })?.persist ?? false,
+        );
+    };
+
+    const deleteCredentialEnvironment = (environmentId: string): void => {
+        if (typeof window === "undefined") return;
+
+        const stored = loadCredentialEnvironmentsFromStorage();
+        const environments = stored.environments.filter(
+            (environment) => environment.id !== environmentId,
+        );
+        const activeEnvironmentId =
+            stored.activeEnvironmentId === environmentId ? null : stored.activeEnvironmentId;
+
+        saveCredentialEnvironmentsToStorage(environments, activeEnvironmentId);
+        setShouldSave(
+            getActiveEnvironment({
+                activeEnvironmentId,
+                environments,
+            })?.persist ?? false,
+        );
     };
 
     const saveCredentials = (credentials: LogCredentials, persistOverride?: boolean): void => {
         if (typeof window === "undefined") return;
 
         if (!credentials.applicationId || !credentials.apiKey) {
-            saveCredentialEnvironmentsToStorage([], null);
-            setShouldSave(false);
             return;
         }
 
@@ -261,6 +307,7 @@ export const useCredentialPersistence = () => {
         loadCredentialEnvironments: loadCredentialEnvironmentsFromStorage,
         loadCredentials,
         saveCredentialEnvironment,
+        deleteCredentialEnvironment,
         saveCredentials,
         clearCredentials,
         togglePersistence,
